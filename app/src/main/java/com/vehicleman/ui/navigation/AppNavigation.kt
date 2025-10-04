@@ -7,7 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.vehicleman.ui.screens.AddEditVehicleScreen
-import com.vehicleman.ui.screens.HomeScreen // Θα δημιουργηθεί στο επόμενο βήμα
+import com.vehicleman.ui.screens.HomeScreen
 
 /**
  * Κεντρικό σύστημα πλοήγησης (NavHost) της εφαρμογής.
@@ -28,17 +28,30 @@ fun AppNavigation() {
             // Η HomeScreen θα περιέχει το Bottom Navigation και θα εμφανίζει
             // τα tabs (Entries, Stats, Settings).
             HomeScreen(
-                // Λειτουργία για πλοήγηση στην οθόνη προσθήκης/επεξεργασίας οχήματος
-                onNavigateToAddEditVehicle = { vehicleId ->
+                // 1. FAB click: Προσθήκη Νέου Οχήματος
+                onNavigateToAddVehicle = {
+                    // Ο ID είναι "new"
+                    val route = NavDestinations.ADD_EDIT_VEHICLE_ROUTE + "/new"
+                    navController.navigate(route)
+                },
+                // 2. Tap σε Όχημα: Πλοήγηση στη φόρμα καταχώρισης (Θα είναι EntryForm, προς το παρόν πάμε στο Vehicle Form)
+                onNavigateToEntryForm = { vehicleId ->
+                    // Χρησιμοποιούμε τον ID του οχήματος για επεξεργασία (προς το παρόν)
+                    val route = NavDestinations.ADD_EDIT_VEHICLE_ROUTE + "/$vehicleId"
+                    navController.navigate(route)
+                },
+                // 3. Edit Icon click: Πλοήγηση στη φόρμα επεξεργασίας οχήματος
+                onNavigateToVehicleForm = { vehicleId ->
+                    // Χρησιμοποιούμε τον ID του οχήματος για επεξεργασία
                     val route = NavDestinations.ADD_EDIT_VEHICLE_ROUTE + "/$vehicleId"
                     navController.navigate(route)
                 }
             )
         }
 
-        // ----------------------------------------------------
+        // ----------------------------------------------------\
         // 2. ADD_EDIT_VEHICLE_ROUTE (Φόρμα Προσθήκης/Επεξεργασίας)
-        // ----------------------------------------------------
+        // ----------------------------------------------------\
         composable(
             route = NavDestinations.ADD_EDIT_VEHICLE_ROUTE + "/{${NavDestinations.VEHICLE_ID_KEY}}",
             arguments = listOf(
@@ -54,8 +67,5 @@ fun AppNavigation() {
         }
 
         // --- ΠΡΟΣΟΧΗ: Θα προσθέσουμε αργότερα τις επιπλέον οθόνες των Tabs ---
-        // composable(NavDestinations.HomeTabs.Statistics.route) { StatsScreen() }
-        // ... κλπ
     }
 }
-

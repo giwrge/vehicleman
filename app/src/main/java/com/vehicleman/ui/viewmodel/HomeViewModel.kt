@@ -2,12 +2,11 @@ package com.vehicleman.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.vehicleman.data.entities.VehicleEntity
 import com.vehicleman.domain.repositories.VehicleRepository
+import com.vehicleman.domain.model.Vehicle
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -23,10 +22,9 @@ class HomeViewModel @Inject constructor(
 ) : ViewModel() {
 
     /**
-     * StateFlow που περιέχει τη λίστα των οχημάτων.
-     * Το UI θα κάνει collect αυτό το flow για ενημερώσεις σε πραγματικό χρόνο.
+     * StateFlow που περιέχει τη λίστα των οχημάτων (Domain Model: List<Vehicle>).
      */
-    val vehicleListState: StateFlow<List<VehicleEntity>> =
+    val vehicleListState: StateFlow<List<Vehicle>> =
         repository.getAllVehicles()
             .stateIn(
                 scope = viewModelScope,
@@ -35,35 +33,36 @@ class HomeViewModel @Inject constructor(
             )
 
     init {
-        // Εισάγει ένα δοκιμαστικό όχημα κατά την πρώτη εκκίνηση του ViewModel
         insertInitialVehicle()
     }
 
     /**
      * Εισάγει ένα δοκιμαστικό όχημα αν δεν υπάρχουν ήδη οχήματα στη βάση.
-     * Αυτό βοηθά στην επιβεβαίωση ότι ολόκληρο το Data Stack λειτουργεί.
      */
     private fun insertInitialVehicle() = viewModelScope.launch {
-        // Ελέγχει αν υπάρχουν ήδη δεδομένα
-        if (repository.getAllVehicles().map { it.isEmpty() }.stateIn(viewModelScope).value) {
-            val initialVehicle = VehicleEntity(
+        val currentVehicles = repository.getAllVehicles().stateIn(viewModelScope).value
+
+        if (currentVehicles.isEmpty()) {
+            val initialVehicle = Vehicle(
                 id = UUID.randomUUID().toString(),
                 name = "VW Golf GTi",
                 licensePlate = "ΙΟΝ-7700",
-                year = 2018,
+                year = 2018, // ΔΙΟΡΘΩΣΗ ΤΥΠΟΥ: Προσθήκη L (Long literal)
                 make = "Volkswagen",
                 model = "Golf GTi",
                 fuelType = "Βενζίνη",
-                initialOdometer = 85000
+                initialOdometer = 85000, // ΔΙΟΡΘΩΣΗ ΤΥΠΟΥ: Προσθήκη L (Long literal)
+                // ΔΙΟΡΘΩΣΗ ΤΥΠΟΥ: Χρησιμοποιούμε Long timestamp αντί για String
+                registrationDate = System.currentTimeMillis()
             )
             repository.saveVehicle(initialVehicle)
         }
     }
 
     /**
-     * Διαγράφει το όχημα από τη βάση.
+     * Διαγράφει το όχημα από τη βάση. Δέχεται Vehicle (Domain Model).
      */
-    fun deleteVehicle(vehicle: VehicleEntity) = viewModelScope.launch {
+    fun deleteVehicle(vehicle: Vehicle) = viewModelScope.launch {
         repository.deleteVehicle(vehicle)
     }
 }

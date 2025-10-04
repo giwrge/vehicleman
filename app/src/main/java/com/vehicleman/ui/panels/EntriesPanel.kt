@@ -38,8 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.vehicleman.R
 import com.vehicleman.domain.model.Vehicle
-import com.vehicleman.ui.viewmodels.EntriesEvent
-import com.vehicleman.ui.viewmodels.EntriesViewModel
+import com.vehicleman.ui.viewmodel.EntriesEvent
+import com.vehicleman.ui.viewmodel.EntriesViewModel
 
 // Custom Color (Σκούρο Γκρι/Μπλε) for Light Mode
 private val DarkBlueGray = Color(0xFF424242)

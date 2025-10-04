@@ -5,6 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+// ΔΙΟΡΘΩΣΗ: Χρειαζόμαστε τη συγκεκριμένη εισαγωγή για να αναγνωριστεί το 'automirrored'
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.* import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,8 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.vehicleman.ui.viewmodels.AddEditVehicleEvent
-import com.vehicleman.ui.viewmodels.AddEditVehicleViewModel // <--- Χρησιμοποιεί το AddEditViewModel
+// Επίσης, χρειαζόμαστε την εισαγωγή για το AutoMirrored αν χρησιμοποιείται ως annotation
+import androidx.compose.ui.graphics.vector.AutoMirrored
+import com.vehicleman.ui.viewmodel.AddEditVehicleEvent
+import com.vehicleman.ui.viewmodel.AddEditVehicleViewModel // <--- Χρησιμοποιεί το AddEditViewModel
 
 // Προκαθορισμένοι τύποι καυσίμων για το Dropdown
 private val fuelTypes = listOf("Βενζίνη", "Diesel", "Υγραέριο (LPG)", "Φυσικό Αέριο (CNG)", "Ηλεκτρικό")
@@ -25,143 +28,124 @@ private val fuelTypes = listOf("Βενζίνη", "Diesel", "Υγραέριο (LP
 @Composable
 fun AddEditVehicleScreen(
     onNavigateBack: () -> Unit,
-    viewModel: AddEditVehicleViewModel = hiltViewModel() // Χρήση του AddEdit
+    viewModel: AddEditVehicleViewModel = hiltViewModel() // Χρήση του...
 ) {
     val state by viewModel.state.collectAsState()
-    val scrollState = rememberScrollState()
-
-    // Λογική πλοήγησης μετά την επιτυχή αποθήκευση
-    LaunchedEffect(state.isSavedSuccessfully) {
-        if (state.isSavedSuccessfully) {
-            onNavigateBack()
-        }
-    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text(text = if (state.isEditMode) "Επεξεργασία Οχήματος" else "Προσθήκη Νέου Οχήματος")
-                },
+                title = { Text(text = if (state.isEditMode) "Επεξεργασία Οχήματος" else "Προσθήκη Οχήματος") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Πίσω")
+                        // Χρησιμοποιούμε το AutoMirrored.Filled.ArrowBack για συμβατότητα με RTL (από δεξιά προς αριστερά) γλώσσες
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Πίσω"
+                        )
                     }
                 }
             )
         }
-    ) { paddingValues ->
+    ) { padding ->
         Column(
             modifier = Modifier
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(scrollState)
-                .fillMaxSize(),
+                .padding(padding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            // ----------------------------------------------------
-            // 1. Φόρμα Εισόδου
-            // ----------------------------------------------------
-
+            // ΟΝΟΜΑ ΟΧΗΜΑΤΟΣ
             OutlinedTextField(
                 value = state.name,
                 onValueChange = { viewModel.onEvent(AddEditVehicleEvent.NameChanged(it)) },
-                label = { Text("Όνομα Οχήματος (Υποχρεωτικό)") },
-                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                isError = state.error?.contains("Όνομα") == true && state.name.isBlank()
-            )
-
-            // Μάρκα και Μοντέλο
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = state.make,
-                    onValueChange = { viewModel.onEvent(AddEditVehicleEvent.MakeChanged(it)) },
-                    label = { Text("Μάρκα") },
-                    modifier = Modifier.weight(1f).padding(bottom = 8.dp)
-                )
-                OutlinedTextField(
-                    value = state.model,
-                    onValueChange = { viewModel.onEvent(AddEditVehicleEvent.ModelChanged(it)) },
-                    label = { Text("Μοντέλο") },
-                    modifier = Modifier.weight(1f).padding(bottom = 8.dp)
-                )
-            }
-
-            // Έτος και Πινακίδα
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = state.year,
-                    onValueChange = { viewModel.onEvent(AddEditVehicleEvent.YearChanged(it)) },
-                    label = { Text("Έτος") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f).padding(bottom = 8.dp)
-                )
-                OutlinedTextField(
-                    value = state.licensePlate,
-                    onValueChange = { viewModel.onEvent(AddEditVehicleEvent.LicensePlateChanged(it)) },
-                    label = { Text("Πινακίδα") },
-                    modifier = Modifier.weight(1f).padding(bottom = 8.dp)
-                )
-            }
-
-            // Τύπος Καυσίμου (Dropdown Menu)
-            FuelTypeDropdown(
-                selectedFuelType = state.fuelType,
-                onSelect = { viewModel.onEvent(AddEditVehicleEvent.FuelTypeSelected(it)) }
+                label = { Text("Όνομα Οχήματος (π.χ. 'Ηλεκτρικό' ή 'Φορτηγό')") },
+                modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Αρχικά Χιλιόμετρα (Υποχρεωτικό)
+            // ΜΑΡΚΑ
+            OutlinedTextField(
+                value = state.make,
+                onValueChange = { viewModel.onEvent(AddEditVehicleEvent.MakeChanged(it)) },
+                label = { Text("Μάρκα (π.χ. 'Honda')") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ΜΟΝΤΕΛΟ
+            OutlinedTextField(
+                value = state.model,
+                onValueChange = { viewModel.onEvent(AddEditVehicleEvent.ModelChanged(it)) },
+                label = { Text("Μοντέλο (π.χ. 'Civic Type R')") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ΕΤΟΣ
+            OutlinedTextField(
+                value = state.year,
+                onValueChange = { viewModel.onEvent(AddEditVehicleEvent.YearChanged(it)) },
+                label = { Text("Έτος") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ΠΙΝΑΚΙΔΑ
+            OutlinedTextField(
+                value = state.licensePlate,
+                onValueChange = { viewModel.onEvent(AddEditVehicleEvent.LicensePlateChanged(it)) },
+                label = { Text("Πινακίδα (π.χ. ΙΟΝ-7700)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ΤΥΠΟΣ ΚΑΥΣΙΜΟΥ (Dropdown Menu)
+            FuelTypeDropdown(
+                selectedFuelType = state.fuelType,
+                onSelect = { viewModel.onEvent(AddEditVehicleEvent.FuelTypeChanged(it)) }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ΑΡΧΙΚΟΣ ΧΙΛΙΟΜΕΤΡΗΤΗΣ
             OutlinedTextField(
                 value = state.initialOdometer,
                 onValueChange = { viewModel.onEvent(AddEditVehicleEvent.InitialOdometerChanged(it)) },
-                label = { Text("Αρχικά Χιλιόμετρα (Υποχρεωτικό)") },
+                label = { Text("Αρχικός Χιλιομετρητής") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                suffix = { Text("km") },
-                isError = state.error?.contains("Χιλιόμετρα") == true
+                modifier = Modifier.fillMaxWidth()
             )
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // ----------------------------------------------------
-            // 2. Λογική Μονετοποίησης & Μηνύματα
-            // ----------------------------------------------------
 
-            // Εμφάνιση μηνύματος σφάλματος ή Paywall
-            if (state.showPaywall || state.error != null) {
-                val isPaywall = state.showPaywall
-                val containerColor = if (isPaywall) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant
-                val textColor = if (isPaywall) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
-
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = containerColor),
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)
-                ) {
-                    Text(
-                        text = state.error ?: "Γενικό Σφάλμα Φόρμας.",
-                        color = textColor,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(12.dp)
-                    )
-                }
-            }
-
-            // ----------------------------------------------------
-            // 3. Κουμπί Αποθήκευσης
-            // ----------------------------------------------------
-
+            // ΚΟΥΜΠΙ ΑΠΟΘΗΚΕΥΣΗΣ
             Button(
                 onClick = { viewModel.onEvent(AddEditVehicleEvent.SaveVehicle) },
-                enabled = !state.showPaywall,
+                enabled = state.isReady, // Το κουμπί ενεργοποιείται όταν η φόρμα είναι έτοιμη
                 modifier = Modifier.fillMaxWidth().height(56.dp)
             ) {
-                Text(text = if (state.isEditMode) "Ενημέρωση Οχήματος" else "Αποθήκευση Οχήματος")
+                Text(if (state.isEditMode) "ΑΠΟΘΗΚΕΥΣΗ ΑΛΛΑΓΩΝ" else "ΠΡΟΣΘΗΚΗ ΟΧΗΜΑΤΟΣ")
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Μήνυμα Λάθους (αν υπάρχει)
+            if (state.error != null) {
+                Text(
+                    text = "Σφάλμα: ${state.error}",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(8.dp)
+                )
             }
 
+            // Paywall (αν υπάρχει)
             if (state.showPaywall) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(onClick = { /* Πλοήγηση στο Paywall */ }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-                    Text("Αναβάθμιση σε PRO")
+                Card(modifier = Modifier.fillMaxWidth().padding(top = 16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+                    Text("Η δωρεάν έκδοση υποστηρίζει μόνο ένα όχημα. Απαιτείται αναβάθμιση.", modifier = Modifier.padding(16.dp))
+                    Button(onClick = { /* TODO: Navigate to Paywall screen */ }, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp)) {
+                        Text("Αναβάθμιση σε PRO")
+                    }
                 }
             }
         }
