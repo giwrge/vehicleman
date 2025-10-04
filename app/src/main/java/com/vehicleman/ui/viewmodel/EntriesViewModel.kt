@@ -1,8 +1,8 @@
-package com.vehicleman.ui.viewmodels
+package com.vehicleman.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.vehicleman.domain.model.Vehicle // ΔΙΟΡΘΩΘΗΚΕ: από .models σε .model
+import com.vehicleman.domain.model.Vehicle // ΔΙΟΡΘΩΣΗ: Χρησιμοποιούμε το σωστό Domain Model package (.models)
 import com.vehicleman.domain.repositories.VehicleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -66,12 +66,13 @@ class EntriesViewModel @Inject constructor(
             EntriesEvent.DeleteSelectedVehicles -> {
                 // Deletion happens in the background
                 viewModelScope.launch {
-                    val vehiclesToDelete = _state.value.vehicles.filter {
-                        _state.value.selectedVehicleIds.contains(it.id)
+                    val idsToDelete = _state.value.selectedVehicleIds
+
+                    if (idsToDelete.isNotEmpty()) {
+                        // ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ: Χρησιμοποιούμε τη μαζική διαγραφή με τα IDs
+                        repository.deleteVehiclesByIds(idsToDelete)
                     }
-                    vehiclesToDelete.forEach { vehicle ->
-                        repository.deleteVehicle(vehicle)
-                    }
+
                     // After deletion, exit Selection Mode
                     onEvent(EntriesEvent.ExitSelectionMode)
                 }

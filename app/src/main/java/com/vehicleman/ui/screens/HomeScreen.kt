@@ -3,7 +3,7 @@ package com.vehicleman.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vehicleman.data.entities.VehicleEntity
-import com.vehicleman.domain.VehicleRepository
+import com.vehicleman.domain.repositories.VehicleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
