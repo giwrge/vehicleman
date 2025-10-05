@@ -17,7 +17,7 @@ import com.vehicleman.data.entities.VehicleEntity
  */
 @Database(
     entities = [VehicleEntity::class, EntryEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class VehicleDatabase : RoomDatabase() {

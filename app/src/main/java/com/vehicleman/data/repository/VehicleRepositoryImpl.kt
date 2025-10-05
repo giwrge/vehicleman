@@ -46,6 +46,13 @@ class VehicleRepositoryImpl @Inject constructor(
         vehicleDao.insertVehicle(vehicle.toEntity())
     }
 
+    override suspend fun insertVehicle(vehicle: Vehicle) {
+        vehicleDao.insertVehicle(vehicle.toEntity())
+    }
+
+    override suspend fun updateVehicle(vehicle: Vehicle) {
+        vehicleDao.updateVehicle(vehicle.toEntity())
+    }
     /**
      * Διαγράφει ένα μόνο όχημα.
      */

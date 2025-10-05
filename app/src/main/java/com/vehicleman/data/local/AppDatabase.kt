@@ -18,6 +18,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun expenseDao(): ExpenseDao
 
     companion object {
-        const val DATABASE_NAME = "car_manager_db"
+        const val DATABASE_NAME = "vehicle_man_db"
     }
 }

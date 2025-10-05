@@ -24,7 +24,7 @@ interface VehicleDao {
     @Delete
     suspend fun deleteVehicle(vehicle: VehicleEntity)
 
-    @Query("SELECT * FROM vehicles ORDER BY registrationDate DESC")
+    @Query("SELECT * FROM vehicles ORDER BY reg_date DESC")
     fun getAllVehicles(): Flow<List<VehicleEntity>>
 
     /**

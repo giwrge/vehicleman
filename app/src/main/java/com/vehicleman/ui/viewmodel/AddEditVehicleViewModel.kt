@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.vehicleman.domain.model.Vehicle // Χρησιμοποιούμε το Domain Model
 import com.vehicleman.domain.repositories.VehicleRepository // Σωστό package για το Interface
 import com.vehicleman.ui.navigation.NavDestinations
+import com.vehicleman.data.dao.VehicleDao
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -95,19 +96,12 @@ class AddEditVehicleViewModel @Inject constructor(
         viewModelScope.launch {
             // Ο ΕΛΕΓΧΟΣ ΟΡΙΟΥ ΑΠΑΙΤΕΙ ΤΟ getVehicleCount()
             if (currentVehicleId == null) {
-                // Έλεγχος ορίου οχημάτων (PRO Feature)
-                // ΕΔΩ ΥΠΑΡΧΕΙ ΤΟ ΣΦΑΛΜΑ: Το Repository Interface δεν έχει getVehicleCount().
-                // Για να λυθεί, πρέπει να το προσθέσουμε στο Repository Interface.
-                // Προσωρινά, το σχολιάζω/αφήνω ως έχει, περιμένοντας τη διόρθωση του Repository.
-
-                // *** ΠΡΟΣΩΡΙΝΗ ΔΙΟΡΘΩΣΗ: ΑΝΑΜΕΝΕΤΑΙ getVehicleCount() ΣΤΟ REPO ***
-                // Αν υποθέσουμε ότι το Repo θα διορθωθεί:
-                // val currentCount = repository.getVehicleCount()
-                // val maxFreeVehicles = 4
-                // if (currentCount >= maxFreeVehicles) {
-                //     _state.update { it.copy(showPaywall = true, isSavedSuccessfully = false, error = "Έχετε φτάσει το όριο των $maxFreeVehicles οχημάτων (PRO Feature).") }
-                //     return@launch
-                // }
+                 val currentCount = repository.getVehicleCount()
+                 val maxFreeVehicles = 4
+                 if (currentCount >= maxFreeVehicles) {
+                     _state.update { it.copy(showPaywall = true, isSavedSuccessfully = false, error = "Έχετε φτάσει το όριο των $maxFreeVehicles οχημάτων (PRO Feature).") }
+                     return@launch
+                 }
             }
 
             // Δημιουργία/Ενημέρωση Domain Model
@@ -128,13 +122,10 @@ class AddEditVehicleViewModel @Inject constructor(
             // Η ΣΩΣΤΗ ΛΟΓΙΚΗ ΓΙΑ ΤΟ CLEAN ARCHITECTURE ΕΙΝΑΙ insert/update:
 
             if (currentVehicleId != null) {
-                // repository.updateVehicle(vehicleToSave) // <--- Πρέπει να υπάρχει στο Interface
+                repository.updateVehicle(vehicleToSave)
             } else {
-                // repository.insertVehicle(vehicleToSave) // <--- Πρέπει να υπάρχει στο Interface
+                repository.insertVehicle(vehicleToSave)
             }
-            // *** ΕΠΙΔΙΟΡΘΩΣΗ: ΠΡΕΠΕΙ ΝΑ ΕΙΣΑΓΟΥΜΕ ΤΟ insertVehicle ΚΑΙ updateVehicle ΣΤΟ REPOSITORY ***
-
-            // Επιτυχής αποθήκευση
             _state.update { it.copy(isSavedSuccessfully = true, error = null) }
         }
     }

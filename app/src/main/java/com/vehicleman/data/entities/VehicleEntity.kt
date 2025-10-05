@@ -1,5 +1,6 @@
 package com.vehicleman.data.entities
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -19,5 +20,6 @@ data class VehicleEntity(
     val fuelType: String,
     val initialOdometer: Int,
     // ΝΕΟ: Προστέθηκε ξανά το πεδίο registrationDate
+    @ColumnInfo(name = "reg_date")
     val registrationDate: Long = System.currentTimeMillis()
 )
