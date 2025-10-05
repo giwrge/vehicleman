@@ -6,7 +6,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 // ΔΙΟΡΘΩΣΗ: Χρειαζόμαστε τη συγκεκριμένη εισαγωγή για να αναγνωριστεί το 'automirrored'
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.* import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -14,7 +14,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 // Επίσης, χρειαζόμαστε την εισαγωγή για το AutoMirrored αν χρησιμοποιείται ως annotation
-import androidx.compose.ui.graphics.vector.AutoMirrored
 import com.vehicleman.ui.viewmodel.AddEditVehicleEvent
 import com.vehicleman.ui.viewmodel.AddEditVehicleViewModel // <--- Χρησιμοποιεί το AddEditViewModel
 
@@ -40,7 +39,7 @@ fun AddEditVehicleScreen(
                     IconButton(onClick = onNavigateBack) {
                         // Χρησιμοποιούμε το AutoMirrored.Filled.ArrowBack για συμβατότητα με RTL (από δεξιά προς αριστερά) γλώσσες
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = Icons.Filled.ArrowBack,
                             contentDescription = "Πίσω"
                         )
                     }
@@ -105,7 +104,7 @@ fun AddEditVehicleScreen(
             // ΤΥΠΟΣ ΚΑΥΣΙΜΟΥ (Dropdown Menu)
             FuelTypeDropdown(
                 selectedFuelType = state.fuelType,
-                onSelect = { viewModel.onEvent(AddEditVehicleEvent.FuelTypeChanged(it)) }
+                onSelect = { viewModel.onEvent(AddEditVehicleEvent.LicensePlateChanged(it)) }
             )
             Spacer(modifier = Modifier.height(8.dp))
 
