@@ -44,6 +44,13 @@ class VehicleRepositoryImpl @Inject constructor(
     override suspend fun saveVehicle(vehicle: Vehicle) {
         // Μετατρέπει το Domain Model σε Entity πριν την εισαγωγή
         vehicleDao.insertVehicle(vehicle.toEntity())
+     //   override suspend fun saveVehicle(vehicle: Vehicle) {
+      //      // Αν θέλουμε να κάνουμε insert ή update με βάση to IF διότι θα γράφει από πάνω συνέχεια
+      //      val existing = vehicleDao.getVehicleById(vehicle.id)
+      //      if (existing != null) {
+      //          vehicleDao.updateVehicle(vehicle.toEntity())
+      //      } else {
+      //          vehicleDao.insertVehicle(vehicle.toEntity())
     }
 
     override suspend fun insertVehicle(vehicle: Vehicle) {

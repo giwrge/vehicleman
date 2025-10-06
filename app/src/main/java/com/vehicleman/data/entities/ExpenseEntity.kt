@@ -1,12 +1,11 @@
-// app/src/main/java/com/vehicleman/data/local/entities/Expense.kt
 
-package com.vehicleman.data.local.entities
+package com.vehicleman.data.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "expenses")
-data class Expense(
+data class ExpenseEntity(
     @PrimaryKey(autoGenerate = true)
     val expenseId: Int = 0,
     val vehicleId: Int,

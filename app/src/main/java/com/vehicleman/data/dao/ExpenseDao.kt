@@ -3,9 +3,9 @@
 package com.vehicleman.data.dao
 
 import androidx.room.*
-import com.vehicleman.data.local.entities.Expense
-import com.vehicleman.data.local.entities.User
-import com.vehicleman.data.local.entities.Vehicle
+import com.vehicleman.data.entities.Expense
+import com.vehicleman.data.entities.User
+import com.vehicleman.data.entities.VehicleEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
