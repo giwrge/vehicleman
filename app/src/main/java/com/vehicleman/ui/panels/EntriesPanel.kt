@@ -129,13 +129,14 @@ fun AppBannerAndActions(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        // Logo / Title (Independent of Selection Mode)
+        // 1. Logo / Title (ΔΙΟΡΘΩΣΗ ΕΔΩ)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                painter = painterResource(id = R.drawable.ic_app_icon_placeholder), // Your Icon
-                contentDescription = "Λογότυπο Εφαρμογής",
+                // >>> ΧΡΗΣΗ ΤΟΥ ΔΙΚΟΥ ΣΟΥ CUSTOM ICON: ic_entries_placeholder <<<
+                painter = painterResource(id = R.drawable.ic_entries_placeholder),
+                contentDescription = "Λογότυπο Εφαρμογής / Ενότητα Καταχωρήσεων",
                 modifier = Modifier.size(32.dp),
-                tint = MaterialTheme.colorScheme.primary // Icon Color
+                tint = MaterialTheme.colorScheme.primary
             )
             Text(
                 text = stringResource(id = R.string.app_name), // Assuming stringResource(R.string.app_name)

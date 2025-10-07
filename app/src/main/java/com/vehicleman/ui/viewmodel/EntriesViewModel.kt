@@ -2,7 +2,7 @@ package com.vehicleman.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.vehicleman.domain.model.Vehicle // ΔΙΟΡΘΩΣΗ: Χρησιμοποιούμε το σωστό Domain Model package (.models)
+import com.vehicleman.domain.model.Vehicle
 import com.vehicleman.domain.repositories.VehicleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
+import kotlinx.coroutines.flow.update
 /**
  * ViewModel for the Entries Panel.
  * Handles the list of vehicles, selection logic (long tap),
@@ -31,8 +31,7 @@ class EntriesViewModel @Inject constructor(
         // Monitoring all vehicles from the database
         repository.getAllVehicles()
             .onEach { vehicles ->
-                _state.value = _state.value.copy(vehicles = vehicles)
-            }
+                _state.update { it.copy(vehicles = vehicles) }            }
             .launchIn(viewModelScope)
     }
 
@@ -43,33 +42,37 @@ class EntriesViewModel @Inject constructor(
         when (event) {
             is EntriesEvent.ToggleVehicleSelection -> {
                 val selectedId = event.vehicleId
-                val currentlySelected = _state.value.selectedVehicleIds.toMutableSet()
 
-                if (currentlySelected.contains(selectedId)) {
-                    currentlySelected.remove(selectedId)
-                } else {
-                    currentlySelected.add(selectedId)
+                _state.update { currentState -> // Χρήση του update{}
+                    val currentlySelected = currentState.selectedVehicleIds.toMutableSet()
+
+                    if (currentlySelected.contains(selectedId)) {
+                        currentlySelected.remove(selectedId)
+                    } else {
+                        currentlySelected.add(selectedId)
+                    }
+
+                    currentState.copy(
+                        selectedVehicleIds = currentlySelected,
+                        // If no vehicle is selected anymore, exit Selection Mode
+                        isSelectionMode = currentlySelected.isNotEmpty()
+                    )
                 }
-
-                _state.value = _state.value.copy(
-                    selectedVehicleIds = currentlySelected,
-                    // If no vehicle is selected anymore, exit Selection Mode
-                    isSelectionMode = currentlySelected.isNotEmpty()
-                )
             }
             EntriesEvent.ExitSelectionMode -> {
-                _state.value = _state.value.copy(
-                    isSelectionMode = false,
-                    selectedVehicleIds = emptySet()
-                )
+                _state.update {
+                    it.copy(
+                        isSelectionMode = false,
+                        selectedVehicleIds = emptySet()
+                    )
+                }
             }
             EntriesEvent.DeleteSelectedVehicles -> {
-                // Deletion happens in the background
                 viewModelScope.launch {
                     val idsToDelete = _state.value.selectedVehicleIds
 
                     if (idsToDelete.isNotEmpty()) {
-                        // ΒΕΛΤΙΣΤΟΠΟΙΗΣΗ: Χρησιμοποιούμε τη μαζική διαγραφή με τα IDs
+                        // Χρησιμοποιούμε Set<String> όπως ορίζεται στο Repository
                         repository.deleteVehiclesByIds(idsToDelete)
                     }
 

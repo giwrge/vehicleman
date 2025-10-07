@@ -6,7 +6,7 @@ import com.vehicleman.data.entities.VehicleEntity
 import com.vehicleman.data.mappers.toDomain
 import com.vehicleman.data.mappers.toEntity
 import com.vehicleman.domain.repositories.VehicleRepository
-import com.vehicleman.domain.model.Vehicle // ΔΙΟΡΘΩΘΗΚΕ: Σωστό import
+import com.vehicleman.domain.model.Vehicle
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -38,28 +38,27 @@ class VehicleRepositoryImpl @Inject constructor(
         return vehicleDao.getVehicleById(id)?.toDomain()
     }
 
-    /**
-     * Αποθηκεύει (εισάγει ή ενημερώνει) ένα όχημα.
-     */
-    override suspend fun saveVehicle(vehicle: Vehicle) {
-        // Μετατρέπει το Domain Model σε Entity πριν την εισαγωγή
-        vehicleDao.insertVehicle(vehicle.toEntity())
-     //   override suspend fun saveVehicle(vehicle: Vehicle) {
-      //      // Αν θέλουμε να κάνουμε insert ή update με βάση to IF διότι θα γράφει από πάνω συνέχεια
-      //      val existing = vehicleDao.getVehicleById(vehicle.id)
-      //      if (existing != null) {
-      //          vehicleDao.updateVehicle(vehicle.toEntity())
-      //      } else {
-      //          vehicleDao.insertVehicle(vehicle.toEntity())
+    /* * ΔΙΑΓΡΑΦΗ: Η saveVehicle δεν υπάρχει πλέον στο VehicleRepository interface.
+     * Η λογική insert/update γίνεται από τα ViewModels.
+     * override suspend fun saveVehicle(vehicle: Vehicle) {
+        // ... παλιά λογική
     }
+    */
 
+    /**
+     * Εισάγει ένα νέο όχημα (Χρησιμοποιείται όταν το ID είναι νέο).
+     */
     override suspend fun insertVehicle(vehicle: Vehicle) {
         vehicleDao.insertVehicle(vehicle.toEntity())
     }
 
+    /**
+     * Ενημερώνει ένα υπάρχον όχημα (Χρησιμοποιείται όταν το ID υπάρχει ήδη).
+     */
     override suspend fun updateVehicle(vehicle: Vehicle) {
         vehicleDao.updateVehicle(vehicle.toEntity())
     }
+
     /**
      * Διαγράφει ένα μόνο όχημα.
      */

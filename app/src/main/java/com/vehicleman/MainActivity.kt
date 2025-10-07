@@ -17,11 +17,12 @@ import com.vehicleman.ui.screens.AddEditVehicleScreen
 import com.vehicleman.ui.screens.HomeScreen
 import com.vehicleman.ui.theme.VehicleManTheme
 import dagger.hilt.android.AndroidEntryPoint
+import com.vehicleman.ui.navigation.NavDestinations
+import com.vehicleman.ui.navigation.NavDestinations.HOME_ROUTE
+import com.vehicleman.ui.navigation.NavDestinations.ADD_EDIT_VEHICLE_ROUTE
+import com.vehicleman.ui.navigation.NavDestinations.VEHICLE_ID_KEY
 
-/**
- * Main Activity of the application.
- * Annotated with @AndroidEntryPoint to enable Hilt injection.
- */
+
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,63 +41,51 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/**
- * Defines all navigation routes for the application.
- */
-object Routes {
-    // Κύρια οθόνη (Vehicle List, Stats, Settings)
-    const val HOME_SCREEN = "home"
-
-    // Οθόνη καταχώρησης/τροποποίησης οχήματος. Χρειάζεται vehicleId.
-    // 'new' για νέα καταχώρηση (από FAB), το ID για τροποποίηση (από Edit icon).
-    const val ADD_EDIT_VEHICLE_SCREEN = "add_edit_vehicle_form/{vehicleId}"
-
-    // Οθόνη καταχώρησης/τροποποίησης συμβάντος (π.χ. συντήρησης, βλάβης). Χρειάζεται vehicleId.
-    const val ADD_EDIT_ENTRY_SCREEN = "add_edit_entry_form/{vehicleId}"
-
-    // Helper function to build the vehicle form route
-    fun addEditVehicleRoute(vehicleId: String) = "add_edit_vehicle_form/$vehicleId"
-
-    // Helper function to build the entry form route
-    fun addEditEntryRoute(vehicleId: String) = "add_edit_entry_form/$vehicleId"
-}
-
-/**
- * The main application screen that handles navigation using NavHost.
- */
 @Composable
 fun AppScreen() {
     val navController = rememberNavController()
 
+    // ----------------------------------------------------------------------------------
+    // *** Helper Functions (Πρόταση: Μεταφέρθηκαν στο NavDestinations.kt) ***
+    // ----------------------------------------------------------------------------------
+    // ΣΗΜΕΙΩΣΗ: Πρέπει να υπάρχουν στο NavDestinations.kt
+    // const val ADD_EDIT_ENTRY_ROUTE = "add_edit_entry_route"
+    // fun addEditVehicleRoute(vehicleId: String) = "$ADD_EDIT_VEHICLE_ROUTE/$vehicleId"
+    // fun addEditEntryRoute(vehicleId: String) = "$ADD_EDIT_ENTRY_ROUTE/$vehicleId"
+    // ----------------------------------------------------------------------------------
+
     NavHost(
         navController = navController,
-        startDestination = Routes.HOME_SCREEN
+        startDestination = HOME_ROUTE // Χρησιμοποιώ HOME_ROUTE από το NavDestinations
     ) {
         // 1. HOME SCREEN
-        composable(Routes.HOME_SCREEN) {
+        composable(HOME_ROUTE) { // Χρησιμοποιώ HOME_ROUTE
             HomeScreen(
                 // FAB Tap -> New Vehicle
                 onNavigateToAddVehicle = {
-                    navController.navigate(Routes.addEditVehicleRoute("new"))
+                    // Χρειάζεται η helper function από το NavDestinations
+                    navController.navigate(NavDestinations.addEditVehicleRoute("new"))
                 },
                 // Vehicle Card Tap -> Add/Edit Entry
                 onNavigateToEntryForm = { vehicleId ->
-                    navController.navigate(Routes.addEditEntryRoute(vehicleId))
+                    // Χρειάζεται η helper function από το NavDestinations
+                    navController.navigate(NavDestinations.addEditEntryRoute(vehicleId))
                 },
                 // Edit Icon Tap -> Edit Vehicle
                 onNavigateToVehicleForm = { vehicleId ->
-                    navController.navigate(Routes.addEditVehicleRoute(vehicleId))
+                    // Χρειάζεται η helper function από το NavDestinations
+                    navController.navigate(NavDestinations.addEditVehicleRoute(vehicleId))
                 }
             )
         }
 
         // 2. ADD/EDIT VEHICLE SCREEN
         composable(
-            Routes.ADD_EDIT_VEHICLE_SCREEN,
+            route = "$ADD_EDIT_VEHICLE_ROUTE/{$VEHICLE_ID_KEY}", // Σωστό format για route με argument
             arguments = listOf(
-                navArgument("vehicleId") {
+                navArgument(VEHICLE_ID_KEY) {
                     type = NavType.StringType
-                    nullable = true // Το 'new' είναι string, αλλά το αφήνουμε nullable για ευελιξία
+                    nullable = true
                 }
             )
         ) {
@@ -109,16 +98,14 @@ fun AppScreen() {
 
         // 3. ADD/EDIT ENTRY SCREEN (Placeholder for next step)
         composable(
-            Routes.ADD_EDIT_ENTRY_SCREEN,
+            route = "${NavDestinations.ADD_EDIT_ENTRY_ROUTE}/{$VEHICLE_ID_KEY}", // Υπόθεση: Πρέπει να ορίσεις ADD_EDIT_ENTRY_ROUTE στο NavDestinations
             arguments = listOf(
-                navArgument("vehicleId") {
+                navArgument(VEHICLE_ID_KEY) {
                     type = NavType.StringType
-                    // To vehicleId δεν μπορεί να είναι null εδώ, καθώς προέρχεται από Tap σε υπάρχον όχημα
                 }
             )
         ) {
-            // Placeholder: Θα υλοποιηθεί στο επόμενο βήμα.
-            // AddEditEntryScreen(onNavigateBack = { navController.popBackStack() })
+            // Placeholder
         }
     }
 }

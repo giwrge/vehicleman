@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.first // ΝΕΟ IMPORT
 import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
@@ -23,6 +24,7 @@ class HomeViewModel @Inject constructor(
 
     /**
      * StateFlow που περιέχει τη λίστα των οχημάτων (Domain Model: List<Vehicle>).
+     * ΣΗΜΕΙΩΣΗ: Όπως συζητήσαμε, αυτό θα έπρεπε ιδανικά να είναι HomeUiState.
      */
     val vehicleListState: StateFlow<List<Vehicle>> =
         repository.getAllVehicles()
@@ -40,22 +42,23 @@ class HomeViewModel @Inject constructor(
      * Εισάγει ένα δοκιμαστικό όχημα αν δεν υπάρχουν ήδη οχήματα στη βάση.
      */
     private fun insertInitialVehicle() = viewModelScope.launch {
-        val currentVehicles = repository.getAllVehicles().stateIn(viewModelScope).value
+        // ΒΕΛΤΙΩΣΗ: Χρήση first() για ανάγνωση της πρώτης τιμής.
+        val currentVehicles = repository.getAllVehicles().first()
 
         if (currentVehicles.isEmpty()) {
             val initialVehicle = Vehicle(
                 id = UUID.randomUUID().toString(),
                 name = "VW Golf GTi",
                 licensePlate = "ΙΟΝ-7700",
-                year = 2018, // ΔΙΟΡΘΩΣΗ ΤΥΠΟΥ: Προσθήκη L (Long literal)
+                year = 2018,
                 make = "Volkswagen",
                 model = "Golf GTi",
                 fuelType = "Βενζίνη",
-                initialOdometer = 85000, // ΔΙΟΡΘΩΣΗ ΤΥΠΟΥ: Προσθήκη L (Long literal)
-                // ΔΙΟΡΘΩΣΗ ΤΥΠΟΥ: Χρησιμοποιούμε Long timestamp αντί για String
+                initialOdometer = 85000,
                 registrationDate = System.currentTimeMillis()
             )
-            repository.saveVehicle(initialVehicle)
+            // ΔΙΟΡΘΩΣΗ: Χρήση insertVehicle αντί για saveVehicle.
+            repository.insertVehicle(initialVehicle)
         }
     }
 
