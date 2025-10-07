@@ -1,26 +1,26 @@
-package com.vehicleman.ui.forms
+package com.vehicleman.presentation.vehicles
 
 /**
  * State class that holds the data for the Add/Edit Vehicle form.
- * @param vehicleId The ID of the vehicle being edited, or null for a new vehicle.
  */
 data class VehicleFormState(
-    val vehicleId: String? = null,
+    val vehicleId: String? = null, // Το ID του οχήματος (null για νέο).
     val name: String = "",
     val make: String = "",
     val model: String = "",
     val licensePlate: String = "",
     val year: String = "",
-    val fuelType: String = "",
-    val initialOdometer: String = "", // Keep as String for input fields
+    val fuelType: String = "Βενζίνη", // Προκαθορισμένη τιμή όπως στο UI
+    val initialOdometer: String = "", // String για τα πεδία εισόδου
     val isLoading: Boolean = false,
     val isSaved: Boolean = false,
+    val isEditMode: Boolean = false, // Προσθήκη για διαχείριση mode
+    val showPaywall: Boolean = false, // Προσθήκη για έλεγχο ορίου
     val validationErrors: VehicleFormErrorState = VehicleFormErrorState()
 )
 
 /**
  * Data class to hold all potential validation errors for the form fields.
- * If a string is not null, it means there is an error message to display.
  */
 data class VehicleFormErrorState(
     val nameError: String? = null,
@@ -30,7 +30,7 @@ data class VehicleFormErrorState(
     val yearError: String? = null,
     val fuelTypeError: String? = null,
     val initialOdometerError: String? = null,
-    val generalError: String? = null // For saving failures, etc.
+    val generalError: String? = null // Για αποτυχίες αποθήκευσης, κλπ.
 )
 
 /**

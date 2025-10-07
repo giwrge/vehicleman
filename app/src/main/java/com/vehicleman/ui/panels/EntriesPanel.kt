@@ -1,158 +1,186 @@
-package com.vehicleman.ui.panels
+package com.vehicleman.presentation.entries
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.vehicleman.R
-import com.vehicleman.domain.model.Vehicle
-import com.vehicleman.ui.viewmodel.EntriesEvent
-import com.vehicleman.ui.viewmodel.EntriesViewModel
-
-// Custom Color (Σκούρο Γκρι/Μπλε) for Light Mode
-private val DarkBlueGray = Color(0xFF424242)
-
+import com.vehicleman.R // ΑΠΑΡΑΙΤΗΤΗ ΕΙΣΑΓΩΓΗ ΓΙΑ ΤΑ CUSTOM ICONS
+import com.vehicleman.ui.theme.VehicleManTheme
+import com.vehicleman.domain.model.Vehicle // ΕΙΣΑΓΩΓΗ ΤΟΥ ΠΡΑΓΜΑΤΙΚΟΥ DOMAIN MODEL
+import androidx.compose.foundation.ExperimentalFoundationApi // ΝΕΑ ΕΙΣΑΓΩΓΗ
+import androidx.compose.foundation.combinedClickable // Χρησιμοποιείται για onLongClick
+// Προσθέτουμε τα απαραίτητα imports για τα Icons.Default
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.foundation.layout.PaddingValues
 /**
- * Panel 2: List of Registered Vehicles and Timeline.
- *
- * @param onVehicleTap The function called when a Vehicle is Tapped
- * (navigation to the ADD/EDIT ENTRY screen).
- * @param onVehicleEdit The function called when the user taps the EDIT icon
- * (navigation to the ADD/EDIT VEHICLE screen).
- * @param viewModel The ViewModel providing the data.
+ * Κύριο Composable που εμφανίζει τη λίστα οχημάτων και το banner δράσεων.
  */
 @Composable
 fun EntriesPanel(
-    onVehicleTap: (vehicleId: String) -> Unit,
-    onVehicleEdit: (vehicleId: String) -> Unit, // ΝΕΑ ΛΕΙΤΟΥΡΓΙΑ: Τροποποίηση Οχήματος
-    viewModel: EntriesViewModel = hiltViewModel()
+    vehicles: List<Vehicle>,
+    onSelectVehicle: (String) -> Unit,
+    onNavigateToEntryForm: (String) -> Unit,
+    onDeleteSelected: (Set<String>) -> Unit
 ) {
-    val state by viewModel.state.collectAsState()
+    // Διαχείριση της κατάστασης επιλογής (Selection Mode)
+    var selectedVehicleIds by remember { mutableStateOf(emptySet<String>()) }
+    val isSelectionMode = selectedVehicleIds.isNotEmpty()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-    ) {
-        // 1. App Banner & Actions (Top Right)
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        // 1. Banner και Δράσεις
         AppBannerAndActions(
-            isSelectionMode = state.isSelectionMode,
-            selectedVehicleIds = state.selectedVehicleIds, // Προσθήκη για έλεγχο
-            onExitSelection = { viewModel.onEvent(EntriesEvent.ExitSelectionMode) },
-            onDeleteSelected = { viewModel.onEvent(EntriesEvent.DeleteSelectedVehicles) },
-            // Λειτουργία τροποποίησης
-            onEditSelected = {
-                // Βεβαιωθείτε ότι υπάρχει μόνο ένα επιλεγμένο όχημα πριν την κλήση
-                if (state.selectedVehicleIds.size == 1) {
-                    onVehicleEdit(state.selectedVehicleIds.first())
-                    viewModel.onEvent(EntriesEvent.ExitSelectionMode) // Έξοδος από Selection Mode μετά την πλοήγηση
-                }
-            }
+            isSelectionMode = isSelectionMode,
+            selectedVehicleIds = selectedVehicleIds,
+            onExitSelection = { selectedVehicleIds = emptySet() },
+            onDeleteSelected = { onDeleteSelected(selectedVehicleIds) },
+            onEditSelected = { /* Logic for editing the single selected vehicle */ }
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 2. Vehicle List
-        if (state.vehicles.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("Δεν υπάρχουν καταχωρημένα οχήματα.",
-                    style = MaterialTheme.typography.titleMedium
+        // 2. Λίστα Οχημάτων (VehicleList/LazyColumn)
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(16.dp)
+        ) {
+            // Το 'it' αναφέρεται στο κάθε στοιχείο (vehicle) μέσα στη λίστα
+            items(vehicles, key = { it.id }) { vehicle ->
+                VehicleCard(
+                    vehicle = vehicle,
+                    isSelected = selectedVehicleIds.contains(vehicle.id),
+                    onClick = {
+                        if (isSelectionMode) {
+                            selectedVehicleIds = if (selectedVehicleIds.contains(vehicle.id)) {
+                                selectedVehicleIds - vehicle.id
+                            } else {
+                                selectedVehicleIds + vehicle.id
+                            }
+                        } else {
+                            onSelectVehicle(vehicle.id)
+                        }
+                    },
+                    onLongClick = {
+                        selectedVehicleIds = selectedVehicleIds + vehicle.id
+                    }
                 )
             }
-        } else {
-            VehicleList(
-                vehicles = state.vehicles,
-                isSelectionMode = state.isSelectionMode,
-                selectedVehicleIds = state.selectedVehicleIds,
-                onCardClick = onVehicleTap,
-                onLongClick = { viewModel.onEvent(EntriesEvent.ToggleVehicleSelection(it)) },
-                onToggleSelection = { viewModel.onEvent(EntriesEvent.ToggleVehicleSelection(it)) }
-            )
         }
     }
 }
 
 /**
- * Displays the App Banner and action buttons (Delete, Modify)
- * when Selection Mode is active.
+ * Placeholder Composable για την εμφάνιση της κάρτας ενός οχήματος (VehicleCard).
+ * Χρησιμοποιεί @OptIn(ExperimentalFoundationApi::class) για να επιλύσει την προειδοποίηση combinedClickable.
  */
+@OptIn(ExperimentalFoundationApi::class) // ΕΔΩ ΠΡΟΣΘΕΘΗΚΕ
+@Composable
+fun VehicleCard(
+    vehicle: Vehicle,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .combinedClickable( // Χρησιμοποιούμε το combinedClickable
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                // Χρησιμοποιούμε τα νέα πεδία: name, licensePlate, make/model/year
+                Text(vehicle.name, style = MaterialTheme.typography.titleLarge)
+                Text("Πινακίδα: ${vehicle.licensePlate} | ${vehicle.make} (${vehicle.year})", style = MaterialTheme.typography.bodyMedium)
+            }
+            if (isSelected) {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = "Επιλεγμένο",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+// ... (Το AppBannerAndActions παραμένει όπως το παρείχες)
 @Composable
 fun AppBannerAndActions(
     isSelectionMode: Boolean,
-    selectedVehicleIds: Set<String>, // Νέα παράμετρος
+    selectedVehicleIds: Set<String>,
     onExitSelection: () -> Unit,
     onDeleteSelected: () -> Unit,
-    onEditSelected: () -> Unit // Νέα παράμετρος
+    onEditSelected: () -> Unit
 ) {
-    // Ενεργοποίηση κουμπιού τροποποίησης μόνο αν έχει επιλεγεί ακριβώς 1 όχημα
     val isEditEnabled = selectedVehicleIds.size == 1
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // 1. Logo / Title (ΔΙΟΡΘΩΣΗ ΕΔΩ)
+        // 1. Logo / Title (ΧΡΗΣΗ CUSTOM ICON ic_app_logo_main)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                // >>> ΧΡΗΣΗ ΤΟΥ ΔΙΚΟΥ ΣΟΥ CUSTOM ICON: ic_entries_placeholder <<<
-                painter = painterResource(id = R.drawable.ic_entries_placeholder),
+                painter = painterResource(id = R.mipmap.ic_app_logo_main), // Αλλαγή σε R.mipmap
                 contentDescription = "Λογότυπο Εφαρμογής / Ενότητα Καταχωρήσεων",
                 modifier = Modifier.size(32.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = stringResource(id = R.string.app_name), // Assuming stringResource(R.string.app_name)
+                text = stringResource(id = R.string.app_name),
                 style = MaterialTheme.typography.headlineSmall,
                 modifier = Modifier.padding(start = 8.dp),
                 color = if (isSelectionMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
             )
         }
 
-        // Flow Buttons (Top Right - Visible only in Selection Mode)
+        // 2. Action Buttons (Selection Mode)
         AnimatedVisibility(visible = isSelectionMode) {
             Row {
-                // Modify Button (Wrench) - Ενεργό μόνο για μία επιλογή
+                // Modify Button (Icons.Default.Build) - Διατηρούμε το Material Icon
                 IconButton(
                     onClick = onEditSelected,
-                    enabled = isEditEnabled // Έλεγχος ενεργοποίησης
+                    enabled = isEditEnabled
                 ) {
                     Icon(
                         imageVector = Icons.Default.Build,
@@ -161,7 +189,7 @@ fun AppBannerAndActions(
                     )
                 }
 
-                // Delete Button (Trash Can)
+                // Delete Button (Icons.Default.Delete) - Διατηρούμε το Material Icon
                 IconButton(onClick = onDeleteSelected) {
                     Icon(
                         imageVector = Icons.Default.Delete,
@@ -170,119 +198,22 @@ fun AppBannerAndActions(
                     )
                 }
 
-                // Exit Button (Check)
+                // Exit Button (ΧΡΗΣΗ CUSTOM ICON ic_app_logo_main)
                 IconButton(onClick = onExitSelection) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_check_placeholder), // Hypothetical Check Icon
-                        contentDescription = "Ολοκλήρωση Επιλογής",
+                        painter = painterResource(id = R.mipmap.ic_app_logo_main), // Το custom exit icon σου (που είναι το logo)
+                        contentDescription = "Έξοδος από Επιλογή",
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
         }
     }
+    data class EntriesPanelState(
+        val vehicles: List<Vehicle> = emptyList(),
+        val isLoading: Boolean = true,
+        val error: String? = null
+    )
 }
 
-/**
- * Displays the list of vehicles.
- */
-@Composable
-fun VehicleList(
-    vehicles: List<Vehicle>,
-    isSelectionMode: Boolean,
-    selectedVehicleIds: Set<String>,
-    onCardClick: (String) -> Unit,
-    onLongClick: (String) -> Unit,
-    onToggleSelection: (String) -> Unit
-) {
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        itemsIndexed(vehicles, key = { _, vehicle -> vehicle.id }) { index, vehicle ->
-            val isSelected = selectedVehicleIds.contains(vehicle.id)
 
-            VehicleCard(
-                vehicle = vehicle,
-                index = index + 1, // Sequential registration number
-                isSelectionMode = isSelectionMode,
-                isSelected = isSelected,
-                onTap = {
-                    if (isSelectionMode) {
-                        onToggleSelection(vehicle.id)
-                    } else {
-                        onCardClick(vehicle.id) // Navigate to the entry/event screen
-                    }
-                },
-                onLongTap = { onLongClick(vehicle.id) },
-                onToggleSelection = { onToggleSelection(vehicle.id) }
-            )
-        }
-    }
-}
-
-/**
- * The Card for displaying a single vehicle.
- */
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-fun VehicleCard(
-    vehicle: Vehicle,
-    index: Int,
-    isSelectionMode: Boolean,
-    isSelected: Boolean,
-    onTap: () -> Unit,
-    onLongTap: () -> Unit,
-    onToggleSelection: () -> Unit
-) {
-    val cardColor = if (isSelected) {
-        // Card shading when selected (darker or with overlay)
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
-    } else {
-        MaterialTheme.colorScheme.surface
-    }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .combinedClickable(
-                onClick = onTap,
-                onLongClick = onLongTap
-            ),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = cardColor)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Checkbox (Visible only in Selection Mode)
-            AnimatedVisibility(visible = isSelectionMode) {
-                Checkbox(
-                    checked = isSelected,
-                    onCheckedChange = { onToggleSelection() },
-                    modifier = Modifier.padding(end = 8.dp)
-                )
-            }
-
-            // Vehicle Data
-            Column(modifier = Modifier.weight(1f)) {
-                // Sequential Number
-                Text(
-                    text = "#$index: ${vehicle.name}",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                // Description (Make/Model/Odometer)
-                Text(
-                    text = "${vehicle.make} ${vehicle.model} - ${vehicle.initialOdometer} χλμ",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}

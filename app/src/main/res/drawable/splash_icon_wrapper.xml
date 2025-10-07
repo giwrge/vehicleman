@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 1. Ορισμός λευκού background για το logo (Προαιρετικό, αλλά συνιστάται για καθαρότητα) -->
+    <item android:drawable="@android:color/white"/>
+
+    <!-- 2. Τοποθέτηση της εικόνας (Bitmap) στο κέντρο. Αναφορά σε mipmap/ic_splash_logo -->
+    <item>
+        <bitmap
+            android:src="@mipmap/ic_splash_logo"
+            android:gravity="center"
+            android:mipMap="true" />
+    </item>
+
+</layer-list>
