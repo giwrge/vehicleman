@@ -40,10 +40,13 @@ data class VehicleDisplayItem(
  */
 @HiltViewModel
 class EntriesPanelViewModel @Inject constructor(
-    private val repository: VehicleRepository // Τώρα το Hilt μπορεί να κάνει inject αυτό
+    private val repository: VehicleRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(EntriesPanelState())
+    private val _state = MutableStateFlow(EntriesPanelState(
+        isSelectionMode = false, // ΔΕΝ ΧΡΕΙΑΖΕΤΑΙ ΠΛΕΟΝ
+        selectedVehicleIds = emptySet() // ΔΕΝ ΧΡΕΙΑΖΕΤΑΙ ΠΛΕΟΝ
+    ))
     val state: StateFlow<EntriesPanelState> = _state
 
     init {
@@ -54,7 +57,6 @@ class EntriesPanelViewModel @Inject constructor(
         viewModelScope.launch {
             repository.getAllVehicles()
                 .catch { e ->
-                    // Χειρισμός σφάλματος φόρτωσης
                     _state.update { it.copy(isLoading = false, error = "Αποτυχία φόρτωσης οχημάτων: ${e.message}") }
                 }
                 .collectLatest { vehicles ->
@@ -63,10 +65,9 @@ class EntriesPanelViewModel @Inject constructor(
                             VehicleDisplayItem(
                                 id = vehicle.id,
                                 name = vehicle.name,
-                                // Κατασκευή του string makeModel από το domain model
                                 makeModel = "${vehicle.make} ${vehicle.model} (${vehicle.year})",
                                 licensePlate = vehicle.licensePlate,
-                                isSelected = currentState.selectedVehicleIds.contains(vehicle.id)
+                                isSelected = false // ΔΕΝ ΧΡΕΙΑΖΕΤΑΙ ΠΛΕΟΝ
                             )
                         }
                         currentState.copy(
@@ -82,52 +83,20 @@ class EntriesPanelViewModel @Inject constructor(
     /** Handles UI Events from the Entries Panel Composable. */
     fun onEvent(event: EntriesPanelEvent) {
         when (event) {
-            EntriesPanelEvent.AddNewVehicleClicked -> { /* Handled in HomeScreen for navigation */ }
-            is EntriesPanelEvent.VehicleClicked -> { /* Handled in HomeScreen for navigation */ }
+            EntriesPanelEvent.AddNewVehicleClicked -> { /* Χειρισμός πλοήγησης στο HomeScreen */ }
 
-            EntriesPanelEvent.ToggleSelectionMode -> {
-                _state.update {
-                    it.copy(
-                        isSelectionMode = !it.isSelectionMode,
-                        // Όταν βγαίνουμε από το selection mode, καθαρίζουμε τις επιλογές
-                        selectedVehicleIds = if (!it.isSelectionMode) it.selectedVehicleIds else emptySet()
-                    )
-                }
-            }
-
-            is EntriesPanelEvent.ToggleVehicleSelection -> {
-                val vehicleId = event.vehicleId
-                _state.update { currentState ->
-                    val newSelection = if (currentState.selectedVehicleIds.contains(vehicleId)) {
-                        currentState.selectedVehicleIds - vehicleId
-                    } else {
-                        currentState.selectedVehicleIds + vehicleId
-                    }
-                    currentState.copy(
-                        selectedVehicleIds = newSelection,
-                        // Μπαίνουμε σε selection mode αν υπάρχει τουλάχιστον ένα επιλεγμένο
-                        isSelectionMode = newSelection.isNotEmpty()
-                    )
-                }
-            }
-
-            EntriesPanelEvent.DeleteSelectedVehicles -> {
-                val idsToDelete = _state.value.selectedVehicleIds
-                if (idsToDelete.isNotEmpty()) {
-                    viewModelScope.launch {
-                        // Καλούμε τη συνάρτηση διαγραφής στο Repository
-                        repository.deleteVehiclesByIds(idsToDelete)
-
-                        // Επαναφορά κατάστασης UI μετά τη διαγραφή
-                        _state.update {
-                            it.copy(
-                                isSelectionMode = false,
-                                selectedVehicleIds = emptySet()
-                            )
-                        }
+            is EntriesPanelEvent.DeleteVehicleById -> {
+                viewModelScope.launch {
+                    try {
+                        repository.deleteVehicleById(event.vehicleId)
+                        // Η λίστα θα ενημερωθεί αυτόματα μέσω του Flow
+                    } catch (e: Exception) {
+                        // Εμφάνιση σφάλματος στο UI αν χρειαστεί
+                        _state.update { it.copy(error = "Αδυναμία διαγραφής: ${e.message}") }
                     }
                 }
             }
+            // Αφαιρούμε τους παλιούς χειρισμούς συμβάντων
         }
     }
 }

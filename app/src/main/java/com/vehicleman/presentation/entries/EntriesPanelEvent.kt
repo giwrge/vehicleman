@@ -1,21 +1,12 @@
 package com.vehicleman.presentation.entries
 
-/**
- * Sealed class representing all possible user actions/events on the Entries Panel.
- */
-sealed class EntriesPanelEvent {
-    /** Called when the user clicks the FAB to add a new vehicle. */
-    object AddNewVehicleClicked : EntriesPanelEvent()
+sealed interface EntriesPanelEvent {
+    data object AddNewVehicleClicked : EntriesPanelEvent
+    // Η διαγραφή γίνεται πλέον με ID
+    data class DeleteVehicleById(val vehicleId: String) : EntriesPanelEvent
 
-    /** Called when the user clicks to view/edit a specific vehicle. */
-    data class VehicleClicked(val vehicleId: String) : EntriesPanelEvent()
-
-    /** Toggles the selection mode on/off. */
-    object ToggleSelectionMode : EntriesPanelEvent()
-
-    /** Toggles the selection state of a specific vehicle. */
-    data class ToggleVehicleSelection(val vehicleId: String) : EntriesPanelEvent()
-
-    /** Deletes all currently selected vehicles. */
-    object DeleteSelectedVehicles : EntriesPanelEvent()
+    // Αφαιρούμε τις παλιές εκδηλώσεις:
+    // data object ToggleSelectionMode : EntriesPanelEvent
+    // data class ToggleVehicleSelection(val vehicleId: String) : EntriesPanelEvent
+    // data object DeleteSelectedVehicles : EntriesPanelEvent
 }

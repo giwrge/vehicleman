@@ -2,30 +2,30 @@ package com.vehicleman.data.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.util.UUID
+import java.util.Date
 
 /**
- * Οντότητα Room που αντιπροσωπεύει ένα Συμβάν (π.χ., ανεφοδιασμός, σέρβις)
- * στη βάση δεδομένων.
- *
- * @param id Μοναδικό αναγνωριστικό συμβάντος (UUID string).
- * @param vehicleId Το ID του οχήματος στο οποίο ανήκει το συμβάν.
- * @param date Ημερομηνία/ώρα του συμβάντος (ως timestamp).
- * @param odometer Η ένδειξη του οδόμετρου κατά τη στιγμή του συμβάντος.
- * @param type Ο τύπος του συμβάντος (π.χ., "Refuel", "Service", "Repair").
- * @param notes Σημειώσεις για το συμβάν.
+ * Defines the structure for the 'entries' table (Expenses/Reminders) in the Room database.
  */
 @Entity(tableName = "entries")
 data class EntryEntity(
     @PrimaryKey
-    val id: String = UUID.randomUUID().toString(),
-    val vehicleId: String,
-    val date: Long = System.currentTimeMillis(),
-    val odometer: Int,
-    val type: String,
-    val notes: String? = null,
-    // Πεδία ειδικά για ανεφοδιασμό (μπορεί να είναι null για άλλα συμβάντα)
-    val fuelQuantityLiters: Double? = null,
-    val pricePerLiter: Double? = null,
-    val totalCost: Double? = null
+    val id: String,
+    val vehicleId: String, // Ξένο κλειδί για σύνδεση με το όχημα
+    val entryType: String, // 'EXPENSE' ή 'REMINDER'
+    val title: String, // Περιγραφή ή τίτλος υπενθύμισης
+    val description: String?,
+    val date: Date, // Ημερομηνία συμβάντος/δαπάνης
+    val odometer: Int, // Χιλιόμετρα
+
+    // Πεδία Δαπανών
+    val cost: Double?,
+    val quantity: Double?, // π.χ., λίτρα βενζίνης
+    val pricePerUnit: Double?, // π.χ., τιμή λίτρου
+
+    // Πεδία Υπενθυμίσεων
+    val isReminder: Boolean,
+    val reminderDate: Date?,
+    val reminderOdometer: Int?,
+    val isCompleted: Boolean = false // Για υπενθυμίσεις
 )
