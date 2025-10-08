@@ -1,33 +1,25 @@
 package com.vehicleman.ui.navigation
 
 /**
- * Ορισμός των διαδρομών (routes) για την πλοήγηση.
+ * Defines the navigation constants (routes and keys) used across the application.
  */
 object NavDestinations {
-    // Κεντρική Οθόνη: Περιέχει το Bottom Navigation Bar
+    // Basic Routes
     const val HOME_ROUTE = "home_route"
-
-    // Φόρμα Προσθήκης/Επεξεργασίας Οχήματος
-    // Χρησιμοποιεί το vehicleId ως argument (π.χ., "add_edit_vehicle/new" ή "add_edit_vehicle/1234")
     const val ADD_EDIT_VEHICLE_ROUTE = "add_edit_vehicle_route"
+    const val ADD_EDIT_ENTRY_ROUTE = "add_edit_entry_route" // Θα το χρησιμοποιήσουμε αργότερα
+
+    // Argument Key
     const val VEHICLE_ID_KEY = "vehicleId"
-    // ΝΕΑ ΣΤΑΘΕΡΑ: Route για τις καταχωρήσεις (Entries)
-    const val ADD_EDIT_ENTRY_ROUTE = "add_edit_entry_route" // Έλειπε
 
-    // -------------------------------------------------------------
-    // ΝΕΕΣ HELPER FUNCTIONS:
-    // Χτίζουν το route με το argument (π.χ. "add_edit_vehicle_route/123")
-    // -------------------------------------------------------------
+    /**
+     * Helper function to build the route for the Add/Edit Vehicle Form.
+     * @param vehicleId The ID of the vehicle to edit, or "new" for adding a new one.
+     */
+    fun addEditVehicleRoute(vehicleId: String) = "$ADD_EDIT_VEHICLE_ROUTE/$vehicleId"
 
-    fun addEditVehicleRoute(vehicleId: String) =
-        "$ADD_EDIT_VEHICLE_ROUTE/$vehicleId"
-
-    fun addEditEntryRoute(vehicleId: String) =
-        "$ADD_EDIT_ENTRY_ROUTE/$vehicleId"
-    // Διαδρομές για τα Tabs (μέσα στο Bottom Navigation)
-    sealed class HomeTabs(val route: String, val title: String) {
-        object Statistics : HomeTabs("stats", "Στατιστικά")
-        object Entries : HomeTabs("entries", "Καταχωρήσεις") // Λίστα Οχημάτων
-        object Settings : HomeTabs("settings", "Ρυθμίσεις")
-    }
+    /**
+     * Helper function to build the route for the Add/Edit Entry Form (Future feature).
+     */
+    fun addEditEntryRoute(vehicleId: String) = "$ADD_EDIT_ENTRY_ROUTE/$vehicleId"
 }

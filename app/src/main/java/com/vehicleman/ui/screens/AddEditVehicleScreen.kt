@@ -13,28 +13,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.vehicleman.presentation.vehicles.AddEditVehicleViewModel
 import com.vehicleman.presentation.vehicles.VehicleFormEvent
+import com.vehicleman.presentation.vehicles.VehicleFormViewModel
+import com.vehicleman.ui.theme.VehicleManTheme
 
 // Προκαθορισμένοι τύποι καυσίμων για το Dropdown
 private val fuelTypes = listOf("Βενζίνη", "Diesel", "Υγραέριο (LPG)", "Φυσικό Αέριο (CNG)", "Ηλεκτρικό")
 
 /**
- * Οθόνη 1: Φόρμα Προσθήκης/Επεξεργασίας Οχήματος.
+ * Οθόνη Φόρμας Προσθήκης/Επεξεργασίας Οχήματος.
  */
-@OptIn(ExperimentalMaterial3Api::class) // ΑΠΑΡΑΙΤΗΤΟ για ExposedDropdownMenuBox και TopAppBar
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditVehicleScreen(
     onNavigateBack: () -> Unit,
-    viewModel: AddEditVehicleViewModel = hiltViewModel()
+    viewModel: VehicleFormViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
-    val validationErrors = state.validationErrors
-    val isReady = !state.isLoading
 
-    // Λογική για πλοήγηση πίσω αν η αποθήκευση ήταν επιτυχής
-    LaunchedEffect(state.isSaved) {
-        if (state.isSaved) {
+    // Χειρισμός Επιτυχούς Αποθήκευσης
+    LaunchedEffect(state.isSavedSuccess) {
+        if (state.isSavedSuccess) {
             onNavigateBack()
         }
     }
@@ -45,9 +44,8 @@ fun AddEditVehicleScreen(
                 title = { Text(text = if (state.isEditMode) "Επεξεργασία Οχήματος" else "Προσθήκη Οχήματος") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        // Χρησιμοποιούμε το Icons.Filled.ArrowBack
                         Icon(
-                            imageVector = Icons.Filled.ArrowBack, // ΑΛΛΑΓΗ: Χρησιμοποιούμε το απλό Filled.ArrowBack
+                            imageVector = Icons.Filled.ArrowBack,
                             contentDescription = "Πίσω"
                         )
                     }
@@ -55,120 +53,131 @@ fun AddEditVehicleScreen(
             )
         }
     ) { padding ->
-        if (state.isLoading) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+        // Κλειδώνουμε το state.validationErrors σε μια τοπική μεταβλητή για το Smart Cast
+        val errors = state.validationErrors
+
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // ΟΝΟΜΑ ΟΧΗΜΑΤΟΣ
+            OutlinedTextField(
+                value = state.name,
+                onValueChange = { viewModel.onEvent(VehicleFormEvent.NameChanged(it)) },
+                label = { Text("Όνομα Οχήματος (π.χ. 'Ηλεκτρικό')") },
+                modifier = Modifier.fillMaxWidth(),
+                isError = errors.nameError != null,
+                supportingText = {
+                    if (errors.nameError != null) {
+                        // Χρησιμοποιούμε 'errors.nameError!!' αφού το ελέγξαμε στο isError
+                        Text(text = errors.nameError!!, color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ΜΑΡΚΑ
+            OutlinedTextField(
+                value = state.make,
+                onValueChange = { viewModel.onEvent(VehicleFormEvent.MakeChanged(it)) },
+                label = { Text("Μάρκα (π.χ. 'Honda')") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ΜΟΝΤΕΛΟ
+            OutlinedTextField(
+                value = state.model,
+                onValueChange = { viewModel.onEvent(VehicleFormEvent.ModelChanged(it)) },
+                label = { Text("Μοντέλο (π.χ. 'Civic Type R')") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ΕΤΟΣ
+            OutlinedTextField(
+                value = state.year,
+                onValueChange = { viewModel.onEvent(VehicleFormEvent.YearChanged(it)) },
+                label = { Text("Έτος") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ΠΙΝΑΚΙΔΑ
+            OutlinedTextField(
+                value = state.licensePlate,
+                onValueChange = { viewModel.onEvent(VehicleFormEvent.LicensePlateChanged(it)) },
+                label = { Text("Πινακίδα (π.χ. ΙΟΝ-7700)") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ΤΥΠΟΣ ΚΑΥΣΙΜΟΥ (Dropdown Menu)
+            FuelTypeDropdown(
+                selectedFuelType = state.fuelType,
+                onSelect = { viewModel.onEvent(VehicleFormEvent.FuelTypeSelected(it)) }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ΑΡΧΙΚΟΣ ΧΙΛΙΟΜΕΤΡΗΤΗΣ
+            OutlinedTextField(
+                value = state.initialOdometer,
+                onValueChange = { viewModel.onEvent(VehicleFormEvent.InitialOdometerChanged(it)) },
+                label = { Text("Αρχικός Χιλιομετρητής") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+                isError = errors.initialOdometerError != null,
+                supportingText = {
+                    if (errors.initialOdometerError != null) {
+                        // Χρησιμοποιούμε 'errors.initialOdometerError!!' αφού το ελέγξαμε στο isError
+                        Text(text = errors.initialOdometerError!!, color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Μήνυμα Λάθους (General Error)
+            if (errors.generalError != null) {
+                Text(
+                    text = "Σφάλμα: ${errors.generalError!!}",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(8.dp)
+                )
             }
-        } else {
-            Column(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+
+            // ΚΟΥΜΠΙ ΑΠΟΘΗΚΕΥΣΗΣ
+            Button(
+                onClick = { viewModel.onEvent(VehicleFormEvent.SaveVehicle) },
+                enabled = state.isReady && !state.isLoading,
+                modifier = Modifier.fillMaxWidth().height(56.dp)
             ) {
-                // ΟΝΟΜΑ ΟΧΗΜΑΤΟΣ
-                OutlinedTextField(
-                    value = state.name,
-                    onValueChange = { viewModel.onEvent(VehicleFormEvent.NameChanged(it)) },
-                    label = { Text("Όνομα Οχήματος (π.χ. 'Ηλεκτρικό' ή 'Φορτηγό')") },
-                    isError = validationErrors.nameError != null,
-                    supportingText = { if (validationErrors.nameError != null) Text(validationErrors.nameError) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // ΜΑΡΚΑ
-                OutlinedTextField(
-                    value = state.make,
-                    onValueChange = { viewModel.onEvent(VehicleFormEvent.MakeChanged(it)) },
-                    label = { Text("Μάρκα (π.χ. 'Honda')") },
-                    isError = validationErrors.makeError != null,
-                    supportingText = { if (validationErrors.makeError != null) Text(validationErrors.makeError) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // ΜΟΝΤΕΛΟ
-                OutlinedTextField(
-                    value = state.model,
-                    onValueChange = { viewModel.onEvent(VehicleFormEvent.ModelChanged(it)) },
-                    label = { Text("Μοντέλο (π.χ. 'Civic Type R')") },
-                    isError = validationErrors.modelError != null,
-                    supportingText = { if (validationErrors.modelError != null) Text(validationErrors.modelError) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // ΕΤΟΣ
-                OutlinedTextField(
-                    value = state.year,
-                    onValueChange = { viewModel.onEvent(VehicleFormEvent.YearChanged(it)) },
-                    label = { Text("Έτος") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    isError = validationErrors.yearError != null,
-                    supportingText = { if (validationErrors.yearError != null) Text(validationErrors.yearError) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // ΠΙΝΑΚΙΔΑ
-                OutlinedTextField(
-                    value = state.licensePlate,
-                    onValueChange = { viewModel.onEvent(VehicleFormEvent.LicensePlateChanged(it)) },
-                    label = { Text("Πινακίδα (π.χ. ΙΟΝ-7700)") },
-                    isError = validationErrors.licensePlateError != null,
-                    supportingText = { if (validationErrors.licensePlateError != null) Text(validationErrors.licensePlateError) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // ΤΥΠΟΣ ΚΑΥΣΙΜΟΥ (Dropdown Menu)
-                FuelTypeDropdown(
-                    selectedFuelType = state.fuelType,
-                    onSelect = { viewModel.onEvent(VehicleFormEvent.FuelTypeChanged(it)) } // Χρησιμοποιεί το σωστό event
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // ΑΡΧΙΚΟΣ ΧΙΛΙΟΜΕΤΡΗΤΗΣ
-                OutlinedTextField(
-                    value = state.initialOdometer,
-                    onValueChange = { viewModel.onEvent(VehicleFormEvent.InitialOdometerChanged(it)) },
-                    label = { Text("Αρχικός Χιλιομετρητής") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    isError = validationErrors.initialOdometerError != null,
-                    supportingText = { if (validationErrors.initialOdometerError != null) Text(validationErrors.initialOdometerError) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-
-
-                // ΚΟΥΜΠΙ ΑΠΟΘΗΚΕΥΣΗΣ
-                Button(
-                    onClick = { viewModel.onEvent(VehicleFormEvent.SaveVehicle) },
-                    enabled = isReady, // Το κουμπί ενεργοποιείται όταν η φόρμα είναι έτοιμη
-                    modifier = Modifier.fillMaxWidth().height(56.dp)
-                ) {
+                if (state.isLoading) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
+                } else {
                     Text(if (state.isEditMode) "ΑΠΟΘΗΚΕΥΣΗ ΑΛΛΑΓΩΝ" else "ΠΡΟΣΘΗΚΗ ΟΧΗΜΑΤΟΣ")
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+            }
+            Spacer(modifier = Modifier.height(8.dp))
 
-                // Μήνυμα Λάθους (generalError)
-                if (validationErrors.generalError != null) {
-                    Text(
-                        text = "Σφάλμα: ${validationErrors.generalError}",
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(8.dp)
-                    )
-                    // TODO: Εδώ θα μπορούσε να υπάρχει και ένα κουμπί για DismissGeneralError
-                }
-
-                // Paywall (αν υπάρχει)
-                if (state.showPaywall) {
-                    Card(modifier = Modifier.fillMaxWidth().padding(top = 16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
-                        Text("Η δωρεάν έκδοση υποστηρίζει μόνο ένα όχημα. Απαιτείται αναβάθμιση.", modifier = Modifier.padding(16.dp))
-                        Button(onClick = { /* TODO: Navigate to Paywall screen */ }, modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 16.dp)) {
+            // Paywall (αν υπάρχει)
+            if (state.showPaywall) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Έχετε φτάσει το όριο των οχημάτων.", style = MaterialTheme.typography.titleMedium)
+                        Text("Η δωρεάν έκδοση υποστηρίζει μόνο ένα όχημα. Απαιτείται αναβάθμιση.", style = MaterialTheme.typography.bodyMedium)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = { /* TODO: Navigate to Paywall screen */ },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
                             Text("Αναβάθμιση σε PRO")
                         }
                     }

@@ -2,7 +2,6 @@ package com.vehicleman.data.repository
 
 import com.vehicleman.data.dao.VehicleDao
 import com.vehicleman.data.entities.VehicleEntity
-// Υποθέτουμε ότι υπάρχουν οι απαραίτητες συναρτήσεις επέκτασης (mappers)
 import com.vehicleman.data.mappers.toDomain
 import com.vehicleman.data.mappers.toEntity
 import com.vehicleman.domain.repositories.VehicleRepository
