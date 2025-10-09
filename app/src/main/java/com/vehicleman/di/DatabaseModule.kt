@@ -1,46 +1,41 @@
+// app/src/main/java/com/vehicleman/di/DatabaseModule.kt
 package com.vehicleman.di
 
-import android.content.Context
+import android.app.Application
 import androidx.room.Room
 import com.vehicleman.data.VehicleDatabase
+import com.vehicleman.data.dao.MaintenanceRecordDao
 import com.vehicleman.data.dao.VehicleDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
-/**
- * Hilt Module για την παροχή (provision) της βάσης δεδομένων Room
- * και του VehicleDao σε όλη την εφαρμογή.
- */
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
 
-    /**
-     * Παρέχει την κεντρική βάση δεδομένων Room.
-     * @param context Το Context της εφαρμογής, παρέχεται από το Hilt.
-     */
     @Provides
     @Singleton
-    fun provideDatabase(@ApplicationContext context: Context): VehicleDatabase {
+    fun provideVehicleDatabase(app: Application): VehicleDatabase {
         return Room.databaseBuilder(
-            context,
+            app,
             VehicleDatabase::class.java,
             VehicleDatabase.DATABASE_NAME
-        )
-            .fallbackToDestructiveMigration() // Χρήσιμο για αρχική ανάπτυξη
-            .build()
+        ).build()
     }
 
-    /**
-     * Παρέχει το Data Access Object (DAO) για τα Οχήματα.
-     * @param database Η VehicleDatabase που μόλις δημιουργήθηκε.
-     */
     @Provides
-    fun provideVehicleDao(database: VehicleDatabase): VehicleDao {
-        return database.vehicleDao()
+    @Singleton
+    fun provideVehicleDao(db: VehicleDatabase): VehicleDao {
+        return db.vehicleDao()
+    }
+
+    // ΠΑΡΟΧΗ: MaintenanceRecordDao
+    @Provides
+    @Singleton
+    fun provideMaintenanceRecordDao(db: VehicleDatabase): MaintenanceRecordDao {
+        return db.maintenanceRecordDao()
     }
 }

@@ -1,27 +1,36 @@
+// app/src/main/java/com/vehicleman/di/RepositoryModule.kt
 package com.vehicleman.di
 
-import com.vehicleman.data.repository.VehicleRepositoryImpl // ΣΩΣΤΟ PACKAGE (singular 'repository')
+import com.vehicleman.data.dao.MaintenanceRecordDao
+import com.vehicleman.data.dao.VehicleDao
+import com.vehicleman.data.repository.MaintenanceRecordRepositoryImpl
+import com.vehicleman.data.repository.VehicleRepositoryImpl
+import com.vehicleman.domain.repositories.MaintenanceRecordRepository
 import com.vehicleman.domain.repositories.VehicleRepository
-import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
-/**
- * Hilt Module για τη σύνδεση της διεπαφής VehicleRepository με την υλοποίησή της.
- *
- * Αυτό το Module λέει στο Hilt: "Όταν κάποιος ζητήσει ένα VehicleRepository, δώσε του
- * ένα VehicleRepositoryImpl".
- */
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class RepositoryModule {
+object RepositoryModule {
 
-    @Binds
+    @Provides
     @Singleton
-    abstract fun bindVehicleRepository(
-        // Η παράμετρος πρέπει να είναι η ΥΛΟΠΟΙΗΣΗ (Impl)
-        vehicleRepositoryImpl: VehicleRepositoryImpl
-    ): VehicleRepository // Ο τύπος επιστροφής πρέπει να είναι η ΔΙΕΠΑΦΗ
+    // VehicleRepositoryImpl: Χρειάζεται και τα δύο DAO για το cascading delete
+    fun provideVehicleRepository(
+        vehicleDao: VehicleDao,
+        maintenanceRecordDao: MaintenanceRecordDao
+    ): VehicleRepository {
+        return VehicleRepositoryImpl(vehicleDao, maintenanceRecordDao)
+    }
+
+    // ΠΑΡΟΧΗ: MaintenanceRecordRepository
+    @Provides
+    @Singleton
+    fun provideMaintenanceRecordRepository(dao: MaintenanceRecordDao): MaintenanceRecordRepository {
+        return MaintenanceRecordRepositoryImpl(dao)
+    }
 }

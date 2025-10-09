@@ -2,12 +2,9 @@ package com.vehicleman.data.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.util.Date
 
-/**
- * Αναπαριστά ένα όχημα στη βάση δεδομένων (Room Entity).
- * Περιλαμβάνει όλα τα απαραίτητα πεδία, συμπεριλαμβανομένης της ημερομηνίας εγγραφής.
- */
-@Entity(tableName = "vehicles")
+@Entity
 data class VehicleEntity(
     @PrimaryKey
     val id: String,
@@ -18,5 +15,7 @@ data class VehicleEntity(
     val licensePlate: String,
     val fuelType: String,
     val initialOdometer: Int,
-    val registrationDate: Long = System.currentTimeMillis()
+    val registrationDate: Date,
+    val oilChangeIntervalKm: Int,
+    val oilChangeIntervalDays: Int
 )

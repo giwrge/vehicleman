@@ -1,17 +1,20 @@
 package com.vehicleman.domain.model
 
-/**
- * Domain model representing a vehicle, used in the UI layer.
- * Note: This model should ideally be mapped from VehicleEntity.
- */
+import java.util.Date
+
 data class Vehicle(
     val id: String,
     val name: String,
     val make: String,
     val model: String,
-    val licensePlate: String,
     val year: Int,
+    val licensePlate: String,
     val fuelType: String,
     val initialOdometer: Int,
-    val registrationDate: Long
-)
+    val registrationDate: Date,
+    val oilChangeIntervalKm: Int = 10000,
+    val oilChangeIntervalDays: Int = 365
+) {
+    val isNew: Boolean
+        get() = id.isBlank() || id == "new"
+}

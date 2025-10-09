@@ -1,35 +1,30 @@
+// app/src/main/java/com/vehicleman/presentation/vehicles/VehicleFormState.kt
 package com.vehicleman.presentation.vehicles
 
-import com.vehicleman.domain.model.Vehicle
+import java.util.Date
 
-/**
- * State class that holds the data for the Add/Edit Vehicle form.
- *
- * @param isEditMode True if we are editing an existing vehicle, false for new.
- * @param isSavedSuccess True if the save operation was successful.
- * @param validationErrors Holds specific error messages for form fields.
- */
 data class VehicleFormState(
+    val vehicleId: String = "",
     val name: String = "",
     val make: String = "",
     val model: String = "",
+    val year: String = "",
     val licensePlate: String = "",
-    val year: String = "", // String for input field flexibility
-    val fuelType: String = "Βενζίνη",
-    val initialOdometer: String = "", // String for input field flexibility
-    val isEditMode: Boolean = false,
-    val isLoading: Boolean = false,
-    val isReady: Boolean = false, // True when data is loaded for edit, or immediately for new
-    val isSavedSuccess: Boolean = false,
-    val showPaywall: Boolean = false,
-    val validationErrors: VehicleFormErrorState = VehicleFormErrorState()
-)
+    val fuelType: String = "",
+    val initialOdometer: String = "",
+    val registrationDate: Date = Date(),
 
-/**
- * Data class to hold all potential validation errors for the form fields.
- */
-data class VehicleFormErrorState(
+    // ΝΕΑ ΠΕΔΙΑ: Διαστήματα Συντήρησης
+    val oilChangeIntervalKm: String = "10000",
+    val oilChangeIntervalDays: String = "365",
+
     val nameError: String? = null,
+    val makeError: String? = null,
+    val modelError: String? = null,
+    val yearError: String? = null,
     val initialOdometerError: String? = null,
-    val generalError: String? = null // For saving failures, paywall messages, etc.
+
+    val isLoading: Boolean = false,
+    val isSaved: Boolean = false,
+    val error: String? = null
 )

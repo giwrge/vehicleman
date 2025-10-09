@@ -26,8 +26,10 @@ interface VehicleRepository {
      * Αποθηκεύει (εισάγει ή ενημερώνει) ένα όχημα (Domain Model).
      * Επιστρέφει Unit, καθώς το Domain Layer δεν ενδιαφέρεται για το Row ID της βάσης.
      */
-    suspend fun insertVehicle(vehicle: Vehicle)
-    suspend fun updateVehicle(vehicle: Vehicle)
+    suspend fun saveEntry(vehicle: Vehicle)
+
+//    suspend fun insertVehicle(vehicle: Vehicle) βάλαμε το     suspend fun saveEntry(vehicle: Vehicle)
+  //  suspend fun updateVehicle(vehicle: Vehicle)
     /**
      * Διαγράφει ένα μόνο όχημα.
      */

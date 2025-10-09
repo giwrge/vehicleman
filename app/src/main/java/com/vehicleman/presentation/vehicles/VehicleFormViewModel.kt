@@ -1,3 +1,4 @@
+// app/src/main/java/com/vehicleman/presentation/vehicles/VehicleFormViewModel.kt
 package com.vehicleman.presentation.vehicles
 
 import androidx.lifecycle.SavedStateHandle
@@ -5,153 +6,129 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vehicleman.domain.model.Vehicle
 import com.vehicleman.domain.repositories.VehicleRepository
-import com.vehicleman.ui.navigation.NavDestinations // Υποθέτουμε ότι το NavDestinations είναι εδώ
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
 
-/**
- * ViewModel για την οθόνη προσθήκης/επεξεργασίας οχήματος.
- */
 @HiltViewModel
 class VehicleFormViewModel @Inject constructor(
     private val repository: VehicleRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(VehicleFormState())
+    private val vehicleId: String = checkNotNull(savedStateHandle["vehicleId"])
+
+    private val _state = MutableStateFlow(VehicleFormState(vehicleId = vehicleId))
     val state: StateFlow<VehicleFormState> = _state
 
-    private var currentVehicleId: String? = null
-
     init {
-        // Ελέγχει αν πρόκειται για Edit Mode
-        savedStateHandle.get<String>(NavDestinations.VEHICLE_ID_KEY)?.let { vehicleId ->
-            if (vehicleId != "new") {
-                currentVehicleId = vehicleId
-                loadVehicle(vehicleId)
-            } else {
-                _state.update { it.copy(isReady = true) }
-            }
-        } ?: run {
-            _state.update { it.copy(isReady = true) }
-        }
+        loadVehicle()
     }
 
-    private fun loadVehicle(vehicleId: String) {
-        _state.update { it.copy(isLoading = true) }
+    private fun loadVehicle() {
         viewModelScope.launch {
-            repository.getVehicleById(vehicleId)?.let { vehicle ->
-                _state.update {
-                    it.copy(
-                        name = vehicle.name,
-                        make = vehicle.make,
-                        model = vehicle.model,
-                        year = vehicle.year.toString(),
-                        licensePlate = vehicle.licensePlate,
-                        fuelType = vehicle.fuelType,
-                        initialOdometer = vehicle.initialOdometer.toString(),
-                        isEditMode = true,
-                        isLoading = false,
-                        isReady = true
-                    )
+            if (!vehicleId.isNewVehicle()) {
+                val vehicle = repository.getVehicleById(vehicleId)
+                vehicle?.let {
+                    _state.update { currentState ->
+                        currentState.copy(
+                            name = it.name,
+                            make = it.make,
+                            model = it.model,
+                            year = it.year.toString(),
+                            licensePlate = it.licensePlate,
+                            fuelType = it.fuelType,
+                            initialOdometer = it.initialOdometer.toString(),
+                            registrationDate = it.registrationDate,
+
+                            // ΦΟΡΤΩΣΗ: Νέα πεδία
+                            oilChangeIntervalKm = it.oilChangeIntervalKm.toString(),
+                            oilChangeIntervalDays = it.oilChangeIntervalDays.toString()
+                        )
+                    }
                 }
-            } ?: _state.update {
-                it.copy(
-                    isLoading = false,
-                    isReady = true,
-                    validationErrors = it.validationErrors.copy(generalError = "Το όχημα δεν βρέθηκε.")
-                )
             }
+            _state.update { it.copy(isLoading = false) }
         }
     }
 
-    /** Χειρίζεται τα Events από το UI. */
     fun onEvent(event: VehicleFormEvent) {
         when (event) {
-            is VehicleFormEvent.NameChanged -> _state.update { it.copy(name = event.name, validationErrors = it.validationErrors.copy(nameError = null, generalError = null)) }
-            is VehicleFormEvent.MakeChanged -> _state.update { it.copy(make = event.make) }
-            is VehicleFormEvent.ModelChanged -> _state.update { it.copy(model = event.model) }
-            is VehicleFormEvent.YearChanged -> _state.update { it.copy(year = event.year.filter { char -> char.isDigit() }.take(4)) }
-            is VehicleFormEvent.LicensePlateChanged -> _state.update { it.copy(licensePlate = event.licensePlate.uppercase().take(8)) }
-            is VehicleFormEvent.FuelTypeSelected -> _state.update { it.copy(fuelType = event.fuelType) }
-            is VehicleFormEvent.InitialOdometerChanged -> _state.update { it.copy(initialOdometer = event.odometer.filter { char -> char.isDigit() }, validationErrors = it.validationErrors.copy(initialOdometerError = null, generalError = null)) }
+            is VehicleFormEvent.OnNameChange -> _state.update { it.copy(name = event.value) }
+            is VehicleFormEvent.OnMakeChange -> _state.update { it.copy(make = event.value) }
+            is VehicleFormEvent.OnModelChange -> _state.update { it.copy(model = event.value) }
+            is VehicleFormEvent.OnYearChange -> {
+                if (event.value.isDigitsOnly() || event.value.isBlank()) {
+                    _state.update { it.copy(year = event.value) }
+                }
+            }
+            is VehicleFormEvent.OnLicensePlateChange -> _state.update { it.copy(licensePlate = event.value) }
+            is VehicleFormEvent.OnFuelTypeChange -> _state.update { it.copy(fuelType = event.value) }
+            is VehicleFormEvent.OnInitialOdometerChange -> {
+                if (event.value.isDigitsOnly() || event.value.isBlank()) {
+                    _state.update { it.copy(initialOdometer = event.value) }
+                }
+            }
+            is VehicleFormEvent.OnRegistrationDateChange -> _state.update { it.copy(registrationDate = event.value) }
 
-            VehicleFormEvent.SaveVehicle -> saveVehicle()
+            // ΧΕΙΡΙΣΜΟΣ ΝΕΩΝ EVENTS
+            is VehicleFormEvent.OnOilChangeKmChange -> {
+                if (event.value.isDigitsOnly() || event.value.isBlank()) {
+                    _state.update { it.copy(oilChangeIntervalKm = event.value) }
+                }
+            }
+            is VehicleFormEvent.OnOilChangeDaysChange -> {
+                if (event.value.isDigitsOnly() || event.value.isBlank()) {
+                    _state.update { it.copy(oilChangeIntervalDays = event.value) }
+                }
+            }
+
+            VehicleFormEvent.OnSaveVehicleClick -> saveVehicle()
+            VehicleFormEvent.NavigationDone -> _state.update { it.copy(isSaved = false) }
         }
     }
 
     private fun saveVehicle() {
-        val current = _state.value
-        // Επικύρωση
-        val isNameValid = current.name.isNotBlank()
-        val odometerInt = current.initialOdometer.toIntOrNull()
-        val isOdometerValid = odometerInt != null && odometerInt >= 0
+        // ... (Έλεγχοι επικύρωσης) ...
 
-        if (!isNameValid || !isOdometerValid) {
-            _state.update {
-                it.copy(
-                    validationErrors = it.validationErrors.copy(
-                        nameError = if (!isNameValid) "Το Όνομα είναι υποχρεωτικό." else null,
-                        initialOdometerError = if (!isOdometerValid) "Τα Χιλιόμετρα πρέπει να είναι αριθμός >= 0." else null,
-                        generalError = "Παρακαλώ συμπληρώστε τα υποχρεωτικά πεδία."
-                    )
-                )
-            }
+        if (state.value.name.isBlank() || state.value.make.isBlank() || state.value.model.isBlank()) {
+            _state.update { it.copy(error = "Παρακαλώ συμπληρώστε όλα τα βασικά πεδία.") }
             return
         }
 
+        val vehicle = Vehicle(
+            id = if (vehicleId.isNewVehicle()) UUID.randomUUID().toString() else vehicleId,
+            name = state.value.name.trim(),
+            make = state.value.make.trim(),
+            model = state.value.model.trim(),
+            year = state.value.year.toIntOrNull() ?: 0,
+            licensePlate = state.value.licensePlate.trim(),
+            fuelType = state.value.fuelType.trim(),
+            initialOdometer = state.value.initialOdometer.toIntOrNull() ?: 0,
+            registrationDate = state.value.registrationDate,
+
+            // ΑΠΟΘΗΚΕΥΣΗ: Νέα πεδία
+            oilChangeIntervalKm = state.value.oilChangeIntervalKm.toIntOrNull() ?: 10000,
+            oilChangeIntervalDays = state.value.oilChangeIntervalDays.toIntOrNull() ?: 365
+        )
+
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
-
-            // Έλεγχος Ορίου (μόνο για νέα οχήματα)
-            if (currentVehicleId == null) {
-                val currentCount = repository.getVehicleCount()
-                val maxFreeVehicles = 4
-                if (currentCount >= maxFreeVehicles) {
-                    _state.update {
-                        it.copy(
-                            showPaywall = true,
-                            isLoading = false,
-                            validationErrors = it.validationErrors.copy(generalError = "Έχετε φτάσει το όριο των $maxFreeVehicles οχημάτων (PRO Feature).")
-                        )
-                    }
-                    return@launch
-                }
-            }
-
-            // Δημιουργία/Ενημέρωση Domain Model
-            val vehicleToSave = Vehicle(
-                id = currentVehicleId ?: UUID.randomUUID().toString(),
-                name = current.name,
-                make = current.make,
-                model = current.model,
-                year = current.year.toIntOrNull() ?: 0,
-                licensePlate = current.licensePlate,
-                fuelType = current.fuelType,
-                initialOdometer = odometerInt ?: 0,
-                registrationDate = System.currentTimeMillis()
-            )
-
+            _state.update { it.copy(isLoading = true, error = null) }
             try {
-                if (currentVehicleId != null) {
-                    repository.updateVehicle(vehicleToSave)
-                } else {
-                    repository.insertVehicle(vehicleToSave)
-                }
-                _state.update { it.copy(isSavedSuccess = true, isLoading = false, validationErrors = VehicleFormErrorState()) }
+                repository.saveVehicle(vehicle)
+                _state.update { it.copy(isSaved = true, isLoading = false) }
             } catch (e: Exception) {
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        validationErrors = it.validationErrors.copy(generalError = "Αποτυχία αποθήκευσης: ${e.message}")
-                    )
-                }
+                _state.update { it.copy(error = "Αποτυχία αποθήκευσης: ${e.localizedMessage}", isLoading = false) }
             }
         }
     }
+
+    private fun String.isNewVehicle(): Boolean = this.isBlank() || this == "new"
+
+    private fun String.isDigitsOnly(): Boolean = this.matches(Regex("\\d*"))
 }

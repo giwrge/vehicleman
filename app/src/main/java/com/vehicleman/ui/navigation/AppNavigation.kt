@@ -6,13 +6,14 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.vehicleman.ui.screens.AddEditRecordScreen // ΝΕΟ
 import com.vehicleman.ui.screens.AddEditVehicleScreen
+import com.vehicleman.ui.screens.EntryListScreen // Θα μετονομαστεί σε RecordListScreen
 import com.vehicleman.ui.screens.HomeScreen
+import com.vehicleman.ui.screens.Splashscreen
 
 /**
  * The main Navigation Host for the application.
- *
- * @param navHostController The controller for navigation actions.
  */
 @Composable
 fun AppNavigation(
@@ -20,16 +21,28 @@ fun AppNavigation(
 ) {
     NavHost(
         navController = navHostController,
-        startDestination = NavDestinations.HOME_ROUTE
+        startDestination = "splash_route"
     ) {
+        // 0. SPLASH SCREEN
+        composable("splash_route") {
+            Splashscreen(
+                onTimeout = {
+                    navHostController.popBackStack()
+                    navHostController.navigate(NavDestinations.HOME_ROUTE)
+                }
+            )
+        }
+
+
         // 1. HOME SCREEN
         composable(NavDestinations.HOME_ROUTE) {
             HomeScreen(
-                // Πλοήγηση στη φόρμα για Προσθήκη ("new") ή Επεξεργασία (με ID)
                 onNavigateToVehicleForm = { vehicleId ->
                     navHostController.navigate(NavDestinations.addEditVehicleRoute(vehicleId))
+                },
+                onNavigateToEntryList = { vehicleId ->
+                    navHostController.navigate(NavDestinations.entryListRoute(vehicleId))
                 }
-                // *** ΣΗΜΕΙΩΣΗ ***: Δεν υπάρχει πλέον onNavigateToEntryForm.
             )
         }
 
@@ -38,30 +51,51 @@ fun AppNavigation(
             route = "${NavDestinations.ADD_EDIT_VEHICLE_ROUTE}/{${NavDestinations.VEHICLE_ID_KEY}}",
             arguments = listOf(
                 navArgument(NavDestinations.VEHICLE_ID_KEY) {
-                    type = NavType.StringType
-                    nullable = false
-                    defaultValue = "new" // Default for Add mode
+                    type = NavType.StringType; nullable = false; defaultValue = "new"
                 }
             )
         ) {
             AddEditVehicleScreen(
-                onNavigateBack = {
-                    navHostController.popBackStack()
+                onNavigateBack = { navHostController.popBackStack() }
+            )
+        }
+
+        // 3. ENTRY LIST SCREEN (Θα μετονομαστεί σε RecordListScreen)
+        composable(
+            route = "${NavDestinations.ENTRY_LIST_ROUTE}/{${NavDestinations.VEHICLE_ID_KEY}}",
+            arguments = listOf(
+                navArgument(NavDestinations.VEHICLE_ID_KEY) {
+                    type = NavType.StringType; nullable = false
+                }
+            )
+        ) { backStackEntry ->
+            val vehicleId = backStackEntry.arguments?.getString(NavDestinations.VEHICLE_ID_KEY) ?: ""
+
+            EntryListScreen( // Θα γίνει RecordListScreen
+                vehicleId = vehicleId,
+                onNavigateBack = { navHostController.popBackStack() },
+                onNavigateToEntryForm = { recordId -> // Χρησιμοποιεί το recordId
+                    // Πλοήγηση στην νέα διαδρομή ADD_EDIT_RECORD_ROUTE
+                    navHostController.navigate(NavDestinations.addEditRecordRoute(vehicleId, recordId))
                 }
             )
         }
 
-        // 3. ADD/EDIT ENTRY SCREEN (Placeholder for next step - Χρειάζεται για να περάσει το build)
+        // 4. ADD/EDIT RECORD SCREEN
         composable(
-            route = "${NavDestinations.ADD_EDIT_ENTRY_ROUTE}/{${NavDestinations.VEHICLE_ID_KEY}}",
+            route = "${NavDestinations.ADD_EDIT_RECORD_ROUTE}/{${NavDestinations.VEHICLE_ID_KEY}}/{recordId}", // ΝΕΑ ΔΙΑΔΡΟΜΗ
             arguments = listOf(
                 navArgument(NavDestinations.VEHICLE_ID_KEY) {
-                    type = NavType.StringType
-                    nullable = false
+                    type = NavType.StringType; nullable = false
+                },
+                navArgument("recordId") { // Χρησιμοποιεί recordId
+                    type = NavType.StringType; nullable = false; defaultValue = "new"
                 }
             )
         ) {
-            // Αυτό είναι κενό placeholder μέχρι να το υλοποιήσουμε
+            AddEditRecordScreen( // ΝΕΟ Component
+                onNavigateBack = { navHostController.popBackStack() }
+            )
         }
     }
 }

@@ -1,11 +1,12 @@
+// app/src/main/java/com/vehicleman/data/VehicleDatabase.kt
 package com.vehicleman.data
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverters // Χρειαζόμαστε converters για την Date
-import com.vehicleman.data.dao.EntryDao // ΝΕΟ
+import androidx.room.TypeConverters
+import com.vehicleman.data.dao.MaintenanceRecordDao
 import com.vehicleman.data.dao.VehicleDao
-import com.vehicleman.data.entities.EntryEntity // ΝΕΟ
+import com.vehicleman.data.entities.MaintenanceRecordEntity
 import com.vehicleman.data.entities.VehicleEntity
 
 /**
@@ -14,20 +15,17 @@ import com.vehicleman.data.entities.VehicleEntity
 @Database(
     entities = [
         VehicleEntity::class,
-        EntryEntity::class // Προσθέτουμε το EntryEntity
-        // Επίσης, πρέπει να προσθέσετε το ExpenseEntity αν είναι ξεχωριστό
+        MaintenanceRecordEntity::class // ΣΥΜΠΕΡΙΛΗΨΗ του νέου Entity
     ],
-    version = 1, // Ίσως χρειαστεί αύξηση αν είχατε παλιότερη δομή
+    version = 1,
     exportSchema = false
 )
-// Θα χρειαστείτε έναν Type Converter για να αποθηκεύσετε την java.util.Date
-@TypeConverters(DateConverter::class) // ΥΠΟΘΕΤΩ ΥΠΑΡΞΗ DateConverter
+@TypeConverters(DateConverter::class)
 abstract class VehicleDatabase : RoomDatabase() {
     abstract fun vehicleDao(): VehicleDao
-    abstract fun entryDao(): EntryDao // ΝΕΟ
-    // abstract fun expenseDao(): ExpenseDao
+    abstract fun maintenanceRecordDao(): MaintenanceRecordDao // ΠΡΟΣΘΗΚΗ του DAO
 
     companion object {
-        const val DATABASE_NAME = "vehicle_database"
+        const val DATABASE_NAME = "vehicle_man_db"
     }
 }
