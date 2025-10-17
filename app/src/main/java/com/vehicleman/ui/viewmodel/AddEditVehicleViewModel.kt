@@ -6,6 +6,8 @@ import com.vehicleman.domain.model.Vehicle
 import com.vehicleman.domain.repositories.VehicleRepository
 import com.vehicleman.presentation.vehicles.VehicleFormEvent
 import com.vehicleman.presentation.vehicles.VehicleFormState
+import com.vehicleman.presentation.vehicles.toVehicle
+import com.vehicleman.presentation.vehicles.toFormState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,9 +16,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * ViewModel UI επιπέδου για Add/Edit Vehicle.
- * - Συνδέει το presentation layer (VehicleFormViewModel) με το UI (Compose)
- * - Χειρίζεται αποθήκευση, φόρτωση και ενημέρωση.
+ * ViewModel για τη φόρμα Προσθήκης/Επεξεργασίας Οχήματος.
  */
 @HiltViewModel
 class AddEditVehicleViewModel @Inject constructor(
@@ -26,65 +26,60 @@ class AddEditVehicleViewModel @Inject constructor(
     private val _state = MutableStateFlow(VehicleFormState())
     val state: StateFlow<VehicleFormState> = _state
 
-    /** Επεξεργασία αλλαγών φόρμας **/
     fun onEvent(event: VehicleFormEvent) {
         when (event) {
             is VehicleFormEvent.FieldChanged -> {
-                _state.update { it.copyField(event.field, event.value) }
+                _state.update { it.copyField(event.fieldName, event.value) }
             }
 
-            is VehicleFormEvent.LoadVehicle -> loadVehicle(event.vehicleId)
-            is VehicleFormEvent.SaveVehicle -> saveVehicle(event.vehicle)
+            is VehicleFormEvent.LoadVehicle -> {
+                loadVehicle(event.vehicleId)
+            }
+
+            is VehicleFormEvent.SaveVehicle -> {
+                saveVehicle()
+            }
+
             is VehicleFormEvent.DeleteVehicle -> deleteVehicle(event.vehicleId)
+            else -> {}
+
+
+
         }
     }
 
-    /** Φόρτωση υπάρχοντος οχήματος **/
-    private fun loadVehicle(id: String) {
+    /** Φόρτωση υπάρχοντος οχήματος (edit mode) **/
+    private fun loadVehicle(vehicleId: String) {
         viewModelScope.launch {
-            vehicleRepository.getVehicleById(id)?.let { vehicle ->
-                _state.update {
-                    it.copy(
-                        brand = vehicle.brand,
-                        model = vehicle.model,
-                        plate = vehicle.plate,
-                        year = vehicle.year?.toString() ?: "",
-                        odometer = vehicle.odometer?.toString() ?: "",
-                        oilChangeTime = vehicle.oilChangeTime ?: "",
-                        oilChangeKm = vehicle.oilChangeKm?.toString() ?: "",
-                        tiresChangeTime = vehicle.tiresChangeTime ?: "",
-                        tiresChangeKm = vehicle.tiresChangeKm?.toString() ?: "",
-                        insuranceDate = vehicle.insurancePaymentDate ?: "",
-                        taxDate = vehicle.taxesPaymentDate ?: "",
-                        currentVehicle = vehicle
-                    )
+            _state.update { it.copy(isLoading = true) }
+            try {
+                val vehicle = vehicleRepository.getVehicleById(vehicleId)
+                if (vehicle != null) {
+                    _state.update { vehicle.toFormState().copy(isLoading = false) }
+                } else {
+                    _state.update { it.copy(isLoading = false, errorMessage = "Το όχημα δεν βρέθηκε") }
                 }
+            } catch (e: Exception) {
+                _state.update { it.copy(isLoading = false, errorMessage = e.localizedMessage ?: "Σφάλμα φόρτωσης οχήματος") }
             }
         }
     }
 
-    /** Αποθήκευση ή ενημέρωση **/
-    private fun saveVehicle(vehicle: Vehicle) {
+    /** Αποθήκευση (Εισαγωγή ή Ενημέρωση) Οχήματος **/
+    private fun saveVehicle() {
         viewModelScope.launch {
+            val vehicle = state.value.toVehicle()
+            _state.update { it.copy(isLoading = true) }
             try {
-                if (vehicle.id == null) vehicleRepository.insertVehicle(vehicle)
-                else vehicleRepository.updateVehicle(vehicle)
-
-                _state.update { it.copy(success = true) }
+                val existing = vehicleRepository.getVehicleById(vehicle.id)
+                if (existing == null) {
+                    vehicleRepository.insertVehicle(vehicle)
+                } else {
+                    vehicleRepository.updateVehicle(vehicle)
+                }
+                _state.update { it.copy(isLoading = false, success = true) }
             } catch (e: Exception) {
-                _state.update { it.copy(errorMessage = e.localizedMessage) }
-            }
-        }
-    }
-
-    /** Διαγραφή **/
-    private fun deleteVehicle(id: String) {
-        viewModelScope.launch {
-            try {
-                vehicleRepository.deleteVehicle(id)
-                _state.update { it.copy(success = true) }
-            } catch (e: Exception) {
-                _state.update { it.copy(errorMessage = e.localizedMessage) }
+                _state.update { it.copy(isLoading = false, errorMessage = e.localizedMessage ?: "Αποτυχία αποθήκευσης οχήματος") }
             }
         }
     }

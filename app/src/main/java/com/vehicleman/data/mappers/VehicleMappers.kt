@@ -3,7 +3,7 @@ package com.vehicleman.data.mappers
 import com.vehicleman.data.entities.VehicleEntity
 import com.vehicleman.domain.model.Vehicle
 
-fun VehicleEntity.toDomain() = Vehicle(
+fun VehicleEntity.toDomain(): Vehicle = Vehicle(
     id = id,
     brand = brand,
     model = model,
@@ -20,7 +20,7 @@ fun VehicleEntity.toDomain() = Vehicle(
     taxesPaymentDate = taxesPaymentDate
 )
 
-fun Vehicle.toEntity() = VehicleEntity(
+fun Vehicle.toEntity(): VehicleEntity = VehicleEntity(
     id = id,
     brand = brand,
     model = model,

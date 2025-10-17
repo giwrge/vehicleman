@@ -15,13 +15,18 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * ViewModel για τη HomeScreen — διαχειρίζεται τη λίστα οχημάτων.
+ */
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val vehicleRepository: VehicleRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(AddEditVehiclePanelState(isLoading = true))
+    private val _state = MutableStateFlow(AddEditVehiclePanelState())
     val state: StateFlow<AddEditVehiclePanelState> = _state
+
+    private var activeVehicleId: String? = null
 
     init {
         loadVehicles()
@@ -29,52 +34,71 @@ class HomeViewModel @Inject constructor(
 
     fun onEvent(event: AddEditVehiclePanelEvent) {
         when (event) {
-            is AddEditVehiclePanelEvent.DeleteVehicleById -> deleteVehicle(event.vehicleId)
+            is AddEditVehiclePanelEvent.DeleteVehicleById -> deleteVehicleById(event.vehicleId)
             is AddEditVehiclePanelEvent.RefreshVehicleList -> loadVehicles()
             is AddEditVehiclePanelEvent.ToggleAirflowCard -> toggleAirflowCard(event.vehicleId)
             else -> Unit
         }
     }
 
+    /** Φόρτωση όλων των οχημάτων **/
     private fun loadVehicles() {
         viewModelScope.launch {
+            _state.update { it.copy(isLoading = true, errorMessage = null) }
             try {
                 vehicleRepository.getAllVehicles().collectLatest { vehicles ->
-                    val uiList = vehicles.map { v ->
-                        VehicleDisplayItem(
-                            id = v.id,
-                            name = "${v.make} ${v.model}".trim(),
-                            makeModel = "${v.make} • ${v.model}",
-                            licensePlate = v.licensePlate,
-                            odometerText = "${v.initialOdometer} km",
-                            isActive = false
+                    val uiList = vehicles.map { it.toDisplayItem() }
+                    _state.update {
+                        it.copy(
+                            vehicles = uiList,
+                            isLoading = false,
+                            errorMessage = null
                         )
                     }
-                    _state.update { it.copy(vehicles = uiList, isLoading = false, error = null) }
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, error = e.localizedMessage ?: "Σφάλμα") }
+                _state.update {
+                    it.copy(isLoading = false, errorMessage = e.localizedMessage ?: "Σφάλμα φόρτωσης οχημάτων")
+                }
             }
         }
     }
 
-    private fun deleteVehicle(vehicleId: String) {
+    /** Διαγραφή οχήματος βάσει ID **/
+    private fun deleteVehicleById(vehicleId: String) {
         viewModelScope.launch {
             try {
-                vehicleRepository.deleteVehicleById(vehicleId)
+                val vehicle = vehicleRepository.getVehicleById(vehicleId)
+                vehicle?.let { vehicleRepository.deleteVehicle(it) }
             } catch (e: Exception) {
-                _state.update { it.copy(error = e.localizedMessage ?: "Αποτυχία διαγραφής") }
+                _state.update {
+                    it.copy(errorMessage = e.localizedMessage ?: "Αποτυχία διαγραφής οχήματος")
+                }
             }
         }
     }
 
+    /** Ενεργοποίηση ή απόκρυψη Airflow Card **/
     private fun toggleAirflowCard(vehicleId: String) {
+        activeVehicleId = if (activeVehicleId == vehicleId) null else vehicleId
         _state.update { current ->
             current.copy(
                 vehicles = current.vehicles.map {
-                    it.copy(isActive = it.id == vehicleId)
+                    it.copy(isActive = it.id == activeVehicleId)
                 }
             )
         }
+    }
+
+    /** Μετατροπή Vehicle → VehicleDisplayItem **/
+    private fun Vehicle.toDisplayItem(): VehicleDisplayItem {
+        return VehicleDisplayItem(
+            id = this.id,
+            name = "${this.brand} ${this.model}",
+            makeModel = "${this.brand} • ${this.model}",
+            licensePlate = this.plate,
+            odometerText = "${this.odometer} km",
+            isActive = false
+        )
     }
 }

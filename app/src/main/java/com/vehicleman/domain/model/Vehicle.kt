@@ -5,17 +5,15 @@ import java.util.UUID
 
 data class Vehicle(
     val id: String = UUID.randomUUID().toString(),
-    val brand: String = "",
+    val name: String = "",
+    val make: String = "",
     val model: String = "",
-    val plate: String = "",
     val year: Int = 0,
+    val licensePlate: String = "",
     val fuelType: String = "",
-    val odometer: Int = 0,
+    val initialOdometer: Int = 0,
     val registrationDate: Date = Date(),
-    val oilChangeTime: String = "",
-    val oilChangeKm: Int = 0,
-    val tiresChangeTime: String = "",
-    val tiresChangeKm: Int = 0,
-    val insurancePaymentDate: String = "",
-    val taxesPaymentDate: String = ""
+    val oilChangeIntervalKm: Int = 10000,
+    val oilChangeIntervalDays: Int = 180
 )
+

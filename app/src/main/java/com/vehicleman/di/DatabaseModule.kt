@@ -4,7 +4,7 @@ package com.vehicleman.di
 import android.app.Application
 import androidx.room.Room
 import com.vehicleman.data.VehicleDatabase
-import com.vehicleman.data.dao.MaintenanceRecordDao
+import com.vehicleman.data.dao.RecordDao
 import com.vehicleman.data.dao.VehicleDao
 import dagger.Module
 import dagger.Provides
@@ -35,7 +35,7 @@ object DatabaseModule {
     // ΠΑΡΟΧΗ: MaintenanceRecordDao
     @Provides
     @Singleton
-    fun provideMaintenanceRecordDao(db: VehicleDatabase): MaintenanceRecordDao {
-        return db.maintenanceRecordDao()
+    fun provideMaintenanceRecordDao(db: VehicleDatabase): RecordDao {
+        return db.RecordDao()
     }
 }
