@@ -5,28 +5,34 @@ import com.vehicleman.domain.model.Vehicle
 
 fun VehicleEntity.toDomain() = Vehicle(
     id = id,
-    name = name,
-    make = make,
+    brand = brand,
     model = model,
+    plate = plate,
     year = year,
-    licensePlate = licensePlate,
     fuelType = fuelType,
-    initialOdometer = initialOdometer,
+    odometer = odometer,
     registrationDate = registrationDate,
-    oilChangeIntervalKm = oilChangeIntervalKm,
-    oilChangeIntervalDays = oilChangeIntervalDays
+    oilChangeTime = oilChangeTime,
+    oilChangeKm = oilChangeKm,
+    tiresChangeTime = tiresChangeTime,
+    tiresChangeKm = tiresChangeKm,
+    insurancePaymentDate = insurancePaymentDate,
+    taxesPaymentDate = taxesPaymentDate
 )
 
 fun Vehicle.toEntity() = VehicleEntity(
     id = id,
-    name = name,
-    make = make,
+    brand = brand,
     model = model,
+    plate = plate,
     year = year,
-    licensePlate = licensePlate,
     fuelType = fuelType,
-    initialOdometer = initialOdometer,
+    odometer = odometer,
     registrationDate = registrationDate,
-    oilChangeIntervalKm = oilChangeIntervalKm,
-    oilChangeIntervalDays = oilChangeIntervalDays
+    oilChangeTime = oilChangeTime,
+    oilChangeKm = oilChangeKm,
+    tiresChangeTime = tiresChangeTime,
+    tiresChangeKm = tiresChangeKm,
+    insurancePaymentDate = insurancePaymentDate,
+    taxesPaymentDate = taxesPaymentDate
 )

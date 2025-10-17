@@ -4,80 +4,77 @@ import com.vehicleman.data.dao.VehicleDao
 import com.vehicleman.data.entities.VehicleEntity
 import com.vehicleman.data.mappers.toDomain
 import com.vehicleman.data.mappers.toEntity
-import com.vehicleman.domain.repositories.VehicleRepository
 import com.vehicleman.domain.model.Vehicle
+import com.vehicleman.domain.repositories.VehicleRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
- * Υλοποίηση του VehicleRepository, υπεύθυνη για την αλληλεπίδραση με το Data Layer (Room).
- * Χρησιμοποιεί τους mappers για τη μετατροπή μεταξύ Entity και Domain Model (Clean Architecture).
- *
- * @param vehicleDao Το Data Access Object για τη βάση δεδομένων.
+ * Υλοποίηση του VehicleRepository (Data Layer).
+ * Συνδέει τα DAO Entities με τα Domain Models.
  */
+@Singleton
 class VehicleRepositoryImpl @Inject constructor(
     private val vehicleDao: VehicleDao
 ) : VehicleRepository {
 
-    /**
-     * Επιστρέφει ένα Flow με όλα τα οχήματα.
-     */
     override fun getAllVehicles(): Flow<List<Vehicle>> {
-        // Μετατρέπει το Flow<List<Entity>> σε Flow<List<Domain Model>>
-        return vehicleDao.getAllVehicles().map { entities ->
-            entities.map(VehicleEntity::toDomain)
-        }
+        return vehicleDao.getAllVehicles().map { list -> list.map(VehicleEntity::toDomain) }
     }
 
-    /**
-     * Λαμβάνει ένα όχημα (Vehicle) με βάση το ID του.
-     */
     override suspend fun getVehicleById(id: String): Vehicle? {
         return vehicleDao.getVehicleById(id)?.toDomain()
     }
 
-    /* * ΔΙΑΓΡΑΦΗ: Η saveVehicle δεν υπάρχει πλέον στο VehicleRepository interface.
-     * Η λογική insert/update γίνεται από τα ViewModels.
-     * override suspend fun saveVehicle(vehicle: Vehicle) {
-        // ... παλιά λογική
+    /**
+     * Αποθήκευση (insert ή update).
+     * Αν υπάρχει ID → update, αλλιώς insert.
+     */
+    override suspend fun saveVehicle(vehicle: Vehicle) {
+        val existing = vehicleDao.getVehicleById(vehicle.id)
+        if (existing == null) {
+            vehicleDao.insertVehicle(vehicle.toEntity())
+        } else {
+            vehicleDao.updateVehicle(vehicle.toEntity())
+        }
     }
-    */
 
     /**
-     * Εισάγει ένα νέο όχημα (Χρησιμοποιείται όταν το ID είναι νέο).
+     * Εισαγωγή νέου οχήματος.
      */
     override suspend fun insertVehicle(vehicle: Vehicle) {
         vehicleDao.insertVehicle(vehicle.toEntity())
     }
 
     /**
-     * Ενημερώνει ένα υπάρχον όχημα (Χρησιμοποιείται όταν το ID υπάρχει ήδη).
+     * Ενημέρωση υπάρχοντος οχήματος.
      */
     override suspend fun updateVehicle(vehicle: Vehicle) {
         vehicleDao.updateVehicle(vehicle.toEntity())
     }
 
     /**
-     * Διαγράφει ένα μόνο όχημα.
+     * Διαγραφή με entity.
      */
     override suspend fun deleteVehicle(vehicle: Vehicle) {
-        // Μετατρέπει το Domain Model σε Entity πριν τη διαγραφή
         vehicleDao.deleteVehicle(vehicle.toEntity())
     }
 
     /**
-     * Διαγράφει μαζικά οχήματα με βάση ένα Set από IDs.
+     * Διαγραφή με ID (νέα μέθοδος).
      */
+    override suspend fun deleteVehicleById(vehicleId: String) {
+        vehicleDao.getVehicleById(vehicleId)?.let {
+            vehicleDao.deleteVehicle(it)
+        }
+    }
+
     override suspend fun deleteVehiclesByIds(vehicleIds: Set<String>) {
-        // Το DAO αναμένει List<String>, οπότε το μετατρέπουμε
         vehicleDao.deleteVehiclesByIds(vehicleIds.toList())
     }
 
-    /**
-     * Επιστρέφει τον συνολικό αριθμό των καταχωρημένων οχημάτων.
-     * Καλεί την αντίστοιχη συνάρτηση του DAO.
-     */
     override suspend fun getVehicleCount(): Int {
         return vehicleDao.getVehicleCount()
     }

@@ -1,29 +1,36 @@
-// app/src/main/java/com/vehicleman/data/VehicleDatabase.kt
 package com.vehicleman.data
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.vehicleman.data.dao.MaintenanceRecordDao
+import com.vehicleman.data.dao.RecordDao
 import com.vehicleman.data.dao.VehicleDao
-import com.vehicleman.data.entities.MaintenanceRecordEntity
+import com.vehicleman.data.entities.RecordEntity
 import com.vehicleman.data.entities.VehicleEntity
 
 /**
- * Main database class for the application.
+ * Κεντρική Room Database της εφαρμογής VehicleMan.
+ *
+ * Περιλαμβάνει:
+ *  - VehicleEntity → Πληροφορίες Οχημάτων
+ *  - RecordEntity → Συντηρήσεις / Καταγραφές
  */
 @Database(
     entities = [
         VehicleEntity::class,
-        MaintenanceRecordEntity::class // ΣΥΜΠΕΡΙΛΗΨΗ του νέου Entity
+        RecordEntity::class
     ],
     version = 1,
     exportSchema = false
 )
 @TypeConverters(DateConverter::class)
 abstract class VehicleDatabase : RoomDatabase() {
+
+    /** DAO για τα Οχήματα */
     abstract fun vehicleDao(): VehicleDao
-    abstract fun maintenanceRecordDao(): MaintenanceRecordDao // ΠΡΟΣΘΗΚΗ του DAO
+
+    /** DAO για τις Εγγραφές Συντήρησης */
+    abstract fun recordDao(): RecordDao
 
     companion object {
         const val DATABASE_NAME = "vehicle_man_db"

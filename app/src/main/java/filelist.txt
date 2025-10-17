@@ -3,10 +3,10 @@ C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\MainActivit
 C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\VehicleManApplication.kt
 C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\data\DateConverter.kt
 C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\data\VehicleDatabase.kt
-C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\data\dao\EntryDao.kt
+C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\data\dao\RecordDao.kt
 C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\data\dao\ExpenseDao.kt
 C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\data\dao\VehicleDao.kt
-C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\data\entities\EntryEntity.kt
+C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\data\entities\RecordEntity.kt
 C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\data\entities\ExpenseEntity.kt
 C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\data\entities\UserEntity.kt
 C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\data\entities\VehicleEntity.kt
@@ -17,7 +17,7 @@ C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\di\Reposito
 C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\domain\model\MaintenanceRecord.kt
 C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\domain\model\Vehicle.kt
 C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\domain\repositories\VehicleRepository.kt
-C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\presentation\entries\EntriesPanelEvent.kt
+C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\presentation\entries\AddEditVehiclePanelEvent.kt
 C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\presentation\entries\EntriesPanelViewModel.kt
 C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\presentation\records\AddEditRecordState.kt
 C:\Users\x\Desktop\Android Projects\app\src\main\java\com\vehicleman\presentation\records\AddEditRecordViewModel.kt

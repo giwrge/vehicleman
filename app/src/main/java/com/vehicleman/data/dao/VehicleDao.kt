@@ -41,8 +41,13 @@ interface VehicleDao {
 
     /**
      * ΝΕΑ ΛΕΙΤΟΥΡΓΙΑ: Διαγράφει πολλαπλά οχήματα με βάση τη λίστα των IDs τους.
-     * Χρησιμοποιεί την εντολή IN της SQL.
      */
     @Query("DELETE FROM vehicles WHERE id IN (:vehicleIds)")
     suspend fun deleteVehiclesByIds(vehicleIds: List<String>)
+
+    /**
+     * ✅ ΝΕΑ ΛΕΙΤΟΥΡΓΙΑ: Διαγραφή μεμονωμένου οχήματος βάσει ID.
+     */
+    @Query("DELETE FROM vehicles WHERE id = :vehicleId")
+    suspend fun deleteVehicleById(vehicleId: String)
 }

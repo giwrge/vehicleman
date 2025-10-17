@@ -8,7 +8,7 @@ import java.util.Date
  * Defines the structure for the 'entries' table (Expenses/Reminders) in the Room database.
  */
 @Entity(tableName = "entries")
-data class EntryEntity(
+data class RecordEntity(
     @PrimaryKey
     val id: String,
     val vehicleId: String, // Ξένο κλειδί για σύνδεση με το όχημα

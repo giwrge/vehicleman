@@ -1,252 +1,209 @@
 package com.vehicleman.ui.screens
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.vehicleman.R
+import com.vehicleman.domain.model.Vehicle
 import com.vehicleman.presentation.vehicles.VehicleFormEvent
 import com.vehicleman.presentation.vehicles.VehicleFormViewModel
-import java.text.SimpleDateFormat
-import java.util.*
 
+/**
+ * AddEditVehicleScreen
+ * Εισαγωγή ή επεξεργασία στοιχείων οχήματος.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditVehicleScreen(
-    vehicleId: String,
+    vehicleId: String = "new",
+    isFreeVersion: Boolean = true, // έλεγχος για free vs pro mode
+    currentVehicleCount: Int = 0,  // αριθμός οχημάτων στη βάση
     onNavigateBack: () -> Unit,
     viewModel: VehicleFormViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
 
-    // Εμφάνιση Snackbar για σφάλματα
-    LaunchedEffect(state.error) {
-        state.error?.let {
-            snackbarHostState.showSnackbar(
-                message = "Σφάλμα: $it",
-                actionLabel = "OK"
-            )
+    // Αν κάνουμε Edit, να φορτωθεί το όχημα
+    LaunchedEffect(vehicleId) {
+        if (vehicleId != "new") {
+            viewModel.onEvent(VehicleFormEvent.LoadVehicle(vehicleId))
         }
     }
 
-    // Πλοήγηση μετά την επιτυχή αποθήκευση
-    LaunchedEffect(state.isSaved) {
-        if (state.isSaved) {
-            viewModel.onEvent(VehicleFormEvent.NavigationDone)
-            onNavigateBack()
-        }
-    }
-
-    // State για τον χειρισμό του DatePicker
-    var showDatePicker by remember { mutableStateOf(false) }
-
+    val scrollState = rememberScrollState()
 
     Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(if (vehicleId.isBlank() || vehicleId == "new") "Προσθήκη Νέου Οχήματος" else "Επεξεργασία Οχήματος") },
+                title = { Text(if (vehicleId == "new") "Νέο Όχημα" else "Επεξεργασία Οχήματος") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Πίσω")
+                        Image(
+                            painter = painterResource(id = R.mipmap.ic_app_logo_main),
+                            contentDescription = "Λογότυπο",
+                            modifier = Modifier.size(36.dp)
+                        )
                     }
                 }
             )
         },
-        bottomBar = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Button(
-                    onClick = { viewModel.onEvent(VehicleFormEvent.OnSaveVehicleClick) },
-                    enabled = !state.isLoading
-                ) {
-                    Text(if (state.isLoading) "Αποθήκευση..." else "Αποθήκευση Οχήματος")
-                }
-            }
-        }
-    ) { paddingValues ->
-        if (state.isLoading && !state.isSaved && state.error == null) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(bottom = 80.dp)
-            ) {
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // --- ΒΑΣΙΚΑ ΣΤΟΙΧΕΙΑ ΟΧΗΜΑΤΟΣ ---
-                    Text(
-                        "Βασικά Στοιχεία",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-
-                    OutlinedTextField(
-                        value = state.name,
-                        onValueChange = { viewModel.onEvent(VehicleFormEvent.OnNameChange(it)) },
-                        label = { Text("Όνομα (Ψευδώνυμο)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = state.nameError != null,
-                        supportingText = { state.nameError?.let { Text(it) } }
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        OutlinedTextField(
-                            value = state.make,
-                            onValueChange = { viewModel.onEvent(VehicleFormEvent.OnMakeChange(it)) },
-                            label = { Text("Κατασκευαστής") },
-                            modifier = Modifier.weight(1f),
-                            isError = state.makeError != null,
-                            supportingText = { state.makeError?.let { Text(it) } }
-                        )
-                        OutlinedTextField(
-                            value = state.model,
-                            onValueChange = { viewModel.onEvent(VehicleFormEvent.OnModelChange(it)) },
-                            label = { Text("Μοντέλο") },
-                            modifier = Modifier.weight(1f),
-                            isError = state.modelError != null,
-                            supportingText = { state.modelError?.let { Text(it) } }
-                        )
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    // Έλεγχος free version
+                    if (isFreeVersion && vehicleId == "new" && currentVehicleCount >= 3) {
+                        viewModel.showLimitReachedMessage()
+                    } else {
+                        viewModel.onEvent(VehicleFormEvent.SaveVehicle(state.toVehicle(vehicleId)))
+                        onNavigateBack()
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    OutlinedTextField(
-                        value = state.year,
-                        onValueChange = { viewModel.onEvent(VehicleFormEvent.OnYearChange(it)) },
-                        label = { Text("Έτος Κατασκευής") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = state.yearError != null,
-                        supportingText = { state.yearError?.let { Text(it) } }
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    OutlinedTextField(
-                        value = state.licensePlate,
-                        onValueChange = { viewModel.onEvent(VehicleFormEvent.OnLicensePlateChange(it)) },
-                        label = { Text("Πινακίδα") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    OutlinedTextField(
-                        value = state.fuelType,
-                        onValueChange = { viewModel.onEvent(VehicleFormEvent.OnFuelTypeChange(it)) },
-                        label = { Text("Τύπος Καυσίμου") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    OutlinedTextField(
-                        value = state.initialOdometer,
-                        onValueChange = { viewModel.onEvent(VehicleFormEvent.OnInitialOdometerChange(it)) },
-                        label = { Text("Αρχική Ένδειξη Χιλιομετρητή (km)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = state.initialOdometerError != null,
-                        supportingText = { state.initialOdometerError?.let { Text(it) } }
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Date Picker Input
-                    OutlinedTextField(
-                        value = state.registrationDate.toLocalizedDateString(),
-                        onValueChange = { /* Read-only */ },
-                        label = { Text("Ημερομηνία Πρώτης Άδειας") },
-                        readOnly = true,
-                        trailingIcon = {
-                            IconButton(onClick = { showDatePicker = true }) {
-                                Icon(Icons.Default.CalendarToday, contentDescription = "Επιλογή Ημερομηνίας")
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    // --- ΡΥΘΜΙΣΕΙΣ ΣΥΝΤΗΡΗΣΗΣ (AIRFLOW) ---
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    Text(
-                        "Προσαρμοσμένα Διαστήματα Συντήρησης (Airflow)",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-
-                    OutlinedTextField(
-                        value = state.oilChangeIntervalKm,
-                        onValueChange = { viewModel.onEvent(VehicleFormEvent.OnOilChangeKmChange(it)) },
-                        label = { Text("Αλλαγή Λαδιών: Διάστημα σε km") },
-                        placeholder = { Text("Π.χ. 15000 (Προεπιλογή: 10000)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    OutlinedTextField(
-                        value = state.oilChangeIntervalDays,
-                        onValueChange = { viewModel.onEvent(VehicleFormEvent.OnOilChangeDaysChange(it)) },
-                        label = { Text("Αλλαγή Λαδιών: Διάστημα σε Ημέρες") },
-                        placeholder = { Text("Π.χ. 365 (Προεπιλογή: 365)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-                }
+                },
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Icon(Icons.Default.Save, contentDescription = "Αποθήκευση")
             }
         }
-    }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 24.dp)
+                .verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            VehicleTextField(
+                label = "Μάρκα",
+                value = state.brand,
+                onValueChange = { viewModel.onEvent(VehicleFormEvent.FieldChanged("brand", it)) }
+            )
+            VehicleTextField(
+                label = "Μοντέλο",
+                value = state.model,
+                onValueChange = { viewModel.onEvent(VehicleFormEvent.FieldChanged("model", it)) }
+            )
+            VehicleTextField(
+                label = "Πινακίδα",
+                value = state.plate,
+                onValueChange = { viewModel.onEvent(VehicleFormEvent.FieldChanged("plate", it)) }
+            )
+            VehicleTextField(
+                label = "Έτος Κατασκευής",
+                value = state.year,
+                onValueChange = { viewModel.onEvent(VehicleFormEvent.FieldChanged("year", it)) }
+            )
+            VehicleTextField(
+                label = "Διανυθέντα Χιλιόμετρα",
+                value = state.odometer,
+                onValueChange = { viewModel.onEvent(VehicleFormEvent.FieldChanged("odometer", it)) }
+            )
 
-    // Date Picker Dialog Logic (Χρειάζεται να υλοποιηθεί το Material3 Date Picker)
-    if (showDatePicker) {
-        // Placeholder για το DatePicker. Στην κανονική εφαρμογή θα χρησιμοποιούσατε
-        // το DatePickerDialog ή DateRangePicker του Material3.
-        AlertDialog(
-            onDismissRequest = { showDatePicker = false },
-            title = { Text("Επιλογή Ημερομηνίας Άδειας") },
-            text = { Text("Πατήστε OK για να ορίσετε τη σημερινή ημερομηνία (Placeholder)") },
-            confirmButton = {
-                Button(onClick = {
-                    viewModel.onEvent(VehicleFormEvent.OnRegistrationDateChange(Date()))
-                    showDatePicker = false
-                }) {
-                    Text("ΟΚ")
-                }
-            },
-            dismissButton = {
-                OutlinedButton(onClick = { showDatePicker = false }) {
-                    Text("Ακύρωση")
-                }
+            Divider()
+
+            Text("Airflow Settings", style = MaterialTheme.typography.titleMedium)
+
+            VehicleTextField(
+                label = "Αλλαγή Λαδιών (Χρόνος)",
+                value = state.oilChangeTime,
+                onValueChange = { viewModel.onEvent(VehicleFormEvent.FieldChanged("oilChangeTime", it)) }
+            )
+            VehicleTextField(
+                label = "Αλλαγή Λαδιών (Χλμ)",
+                value = state.oilChangeKm,
+                onValueChange = { viewModel.onEvent(VehicleFormEvent.FieldChanged("oilChangeKm", it)) }
+            )
+            VehicleTextField(
+                label = "Αλλαγή Ελαστικών (Χρόνος)",
+                value = state.tiresChangeTime,
+                onValueChange = { viewModel.onEvent(VehicleFormEvent.FieldChanged("tiresChangeTime", it)) }
+            )
+            VehicleTextField(
+                label = "Αλλαγή Ελαστικών (Χλμ)",
+                value = state.tiresChangeKm,
+                onValueChange = { viewModel.onEvent(VehicleFormEvent.FieldChanged("tiresChangeKm", it)) }
+            )
+            VehicleTextField(
+                label = "Πληρωμή Ασφαλίστρων (Ημερομηνία)",
+                value = state.insuranceDate,
+                onValueChange = { viewModel.onEvent(VehicleFormEvent.FieldChanged("insuranceDate", it)) }
+            )
+            VehicleTextField(
+                label = "Πληρωμή Φόρων / Τελών Κυκλοφορίας",
+                value = state.taxDate,
+                onValueChange = { viewModel.onEvent(VehicleFormEvent.FieldChanged("taxDate", it)) }
+            )
+
+            if (state.errorMessage != null) {
+                Text(
+                    text = state.errorMessage!!,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
             }
-        )
+
+            if (state.limitReached) {
+                Text(
+                    text = "Η δωρεάν έκδοση επιτρέπει έως 3 οχήματα.",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+            }
+        }
     }
 }
 
-// Helper extension function (πρέπει να υπάρχει στο project σας, π.χ. σε util)
-fun Date.toLocalizedDateString(): String {
-    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    return formatter.format(this)
+/**
+ * Επαναχρησιμοποιήσιμο TextField για φόρμα οχήματος
+ */
+@Composable
+private fun VehicleTextField(
+    label: String,
+    value: String,
+    onValueChange: (String) -> Unit
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+
+/**
+ * Μετατροπή state -> Vehicle
+ */
+private fun com.vehicleman.presentation.vehicles.VehicleFormState.toVehicle(vehicleId: String): Vehicle {
+    return Vehicle(
+        id = if (vehicleId == "new") null else vehicleId,
+        brand = brand,
+        model = model,
+        licensePlate = plate,
+        year = year.toIntOrNull(),
+        odometer = odometer.toIntOrNull(),
+        oilChangeTime = oilChangeTime,
+        oilChangeKm = oilChangeKm.toIntOrNull(),
+        tiresChangeTime = tiresChangeTime,
+        tiresChangeKm = tiresChangeKm.toIntOrNull(),
+        insurancePaymentDate = insuranceDate,
+        taxesPaymentDate = taxDate
+    )
+}
+
+/**
+ * Προσθήκη βοηθητικής συνάρτησης για Free version alert
+ */
+private fun VehicleFormViewModel.showLimitReachedMessage() {
+    _state.update {
+        it.copy(limitReached = true, errorMessage = null)
+    }
 }

@@ -1,20 +1,21 @@
 package com.vehicleman.domain.model
 
 import java.util.Date
+import java.util.UUID
 
 data class Vehicle(
-    val id: String,
-    val name: String,
-    val make: String,
-    val model: String,
-    val year: Int,
-    val licensePlate: String,
-    val fuelType: String,
-    val initialOdometer: Int,
-    val registrationDate: Date,
-    val oilChangeIntervalKm: Int = 10000,
-    val oilChangeIntervalDays: Int = 365
-) {
-    val isNew: Boolean
-        get() = id.isBlank() || id == "new"
-}
+    val id: String = UUID.randomUUID().toString(),
+    val brand: String = "",
+    val model: String = "",
+    val plate: String = "",
+    val year: Int = 0,
+    val fuelType: String = "",
+    val odometer: Int = 0,
+    val registrationDate: Date = Date(),
+    val oilChangeTime: String = "",
+    val oilChangeKm: Int = 0,
+    val tiresChangeTime: String = "",
+    val tiresChangeKm: Int = 0,
+    val insurancePaymentDate: String = "",
+    val taxesPaymentDate: String = ""
+)

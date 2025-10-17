@@ -20,7 +20,7 @@ import kotlin.math.roundToInt
 
 @HiltViewModel
 class AddEditRecordViewModel @Inject constructor(
-    private val maintenanceRecordRepository: MaintenanceRecordRepository,
+    private val maintenanceRecordRepository: RecordRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 

@@ -1,5 +1,5 @@
-// ΥΠΟΘΕΤΙΚΟ DateConverter
-// 📍 Path: app/src/main/java/com/vehicleman/data/DateConverter.kt
+package com.vehicleman.data
+
 import androidx.room.TypeConverter
 import java.util.Date
 

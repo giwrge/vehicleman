@@ -1,30 +1,46 @@
-// app/src/main/java/com/vehicleman/presentation/vehicles/VehicleFormState.kt
 package com.vehicleman.presentation.vehicles
 
-import java.util.Date
+import com.vehicleman.domain.model.Vehicle
 
+/**
+ * UI state για το Add/Edit Vehicle form.
+ * Τα πεδία εδώ αντιστοιχούν στα πεδία της φόρμας (όλα strings όπου ο χρήστης πληκτρολογεί).
+ */
 data class VehicleFormState(
-    val vehicleId: String = "",
-    val name: String = "",
-    val make: String = "",
+    val brand: String = "",
     val model: String = "",
+    val plate: String = "",
     val year: String = "",
-    val licensePlate: String = "",
+    val odometer: String = "",
+    val oilChangeTime: String = "",
+    val oilChangeKm: String = "",
+    val tiresChangeTime: String = "",
+    val tiresChangeKm: String = "",
+    val insuranceDate: String = "",
+    val taxDate: String = "",
     val fuelType: String = "",
-    val initialOdometer: String = "",
-    val registrationDate: Date = Date(),
-
-    // ΝΕΑ ΠΕΔΙΑ: Διαστήματα Συντήρησης
-    val oilChangeIntervalKm: String = "10000",
-    val oilChangeIntervalDays: String = "365",
-
-    val nameError: String? = null,
-    val makeError: String? = null,
-    val modelError: String? = null,
-    val yearError: String? = null,
-    val initialOdometerError: String? = null,
-
+    val currentVehicle: Vehicle? = null,
     val isLoading: Boolean = false,
-    val isSaved: Boolean = false,
-    val error: String? = null
-)
+    val success: Boolean = false,
+    val errorMessage: String? = null,
+    val limitReached: Boolean = false
+) {
+    /** Ενημέρωση πεδίου με όνομα (generic helper). */
+    fun copyField(field: String, value: String): VehicleFormState {
+        return when (field) {
+            "brand" -> copy(brand = value)
+            "model" -> copy(model = value)
+            "plate" -> copy(plate = value)
+            "year" -> copy(year = value)
+            "odometer" -> copy(odometer = value)
+            "oilChangeTime" -> copy(oilChangeTime = value)
+            "oilChangeKm" -> copy(oilChangeKm = value)
+            "tiresChangeTime" -> copy(tiresChangeTime = value)
+            "tiresChangeKm" -> copy(tiresChangeKm = value)
+            "insuranceDate" -> copy(insuranceDate = value)
+            "taxDate" -> copy(taxDate = value)
+            "fuelType" -> copy(fuelType = value)
+            else -> this
+        }
+    }
+}

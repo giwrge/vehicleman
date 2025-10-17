@@ -4,18 +4,20 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.util.Date
 
-@Entity
+@Entity(tableName = "vehicles")
 data class VehicleEntity(
-    @PrimaryKey
-    val id: String,
-    val name: String,
-    val make: String,
+    @PrimaryKey val id: String,
+    val brand: String,
     val model: String,
+    val plate: String,
     val year: Int,
-    val licensePlate: String,
     val fuelType: String,
-    val initialOdometer: Int,
+    val odometer: Int,
     val registrationDate: Date,
-    val oilChangeIntervalKm: Int,
-    val oilChangeIntervalDays: Int
+    val oilChangeTime: String,
+    val oilChangeKm: Int,
+    val tiresChangeTime: String,
+    val tiresChangeKm: Int,
+    val insurancePaymentDate: String,
+    val taxesPaymentDate: String
 )
