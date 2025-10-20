@@ -7,17 +7,17 @@ import java.util.Date
 @Entity(tableName = "vehicles")
 data class VehicleEntity(
     @PrimaryKey val id: String,
-    val brand: String,
+    val make: String,
     val model: String,
-    val plate: String,
+    val plateNumber: String,
     val year: Int,
     val fuelType: String,
-    val odometer: Int,
+    val currentOdometer: Int,
     val registrationDate: Date,
-    val oilChangeTime: String,
-    val oilChangeKm: Int,
-    val tiresChangeTime: String,
-    val tiresChangeKm: Int,
-    val insurancePaymentDate: String,
-    val taxesPaymentDate: String
+    val oilChangeDate: Long,
+    val oilChangeKm: Long,
+    val tiresChangeKm: Long,
+    val tiresChangeDate: Long,
+    val insuranceExpiryDate: Long,
+    val taxesExpiryDate: Long
 )

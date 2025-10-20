@@ -33,21 +33,23 @@ class VehicleFormViewModel @Inject constructor(
 
     fun onEvent(event: VehicleFormEvent) {
         when (event) {
-            is VehicleFormEvent.FieldChanged -> {
-                _state.update { it.copyField(event.field, event.value) }
-            }
-
-            is VehicleFormEvent.LoadVehicle -> {
-                loadVehicle(event.vehicleId)
-            }
-
-            is VehicleFormEvent.SaveVehicle -> {
-                saveVehicle()
-            }
-
-            is VehicleFormEvent.DeleteVehicle -> {
-                deleteVehicle(event.vehicleId)
-            }
+            is VehicleFormEvent.MakeChanged -> _state.update { it.copy(make = event.make) }
+            is VehicleFormEvent.ModelChanged -> _state.update { it.copy(model = event.model) }
+            is VehicleFormEvent.PlateNumberChanged -> _state.update { it.copy(plateNumber = event.plateNumber) }
+            is VehicleFormEvent.YearChanged -> _state.update { it.copy(year = event.year) }
+            is VehicleFormEvent.CurrentOdometerChanged -> _state.update { it.copy(currentOdometer = event.currentOdometer) }
+            is VehicleFormEvent.OilChangeKmChanged -> _state.update { it.copy(oilChangeKm = event.oilChangeKm.toLongOrNull()) }
+            is VehicleFormEvent.OilChangeDateChanged -> _state.update { it.copy(oilChangeDate = event.oilChangeDate.toLongOrNull()) }
+            is VehicleFormEvent.TiresChangeKmChanged -> _state.update { it.copy(tiresChangeKm = event.tiresChangeKm.toLongOrNull()) }
+            is VehicleFormEvent.TireChangeDateChanged -> _state.update { it.copy(tiresChangeDate = event.tireChangeDate.toLongOrNull()) }
+            is VehicleFormEvent.InsuranceExpiryDateChanged -> _state.update { it.copy(insuranceExpiryDate = event.insuranceExpiryDate.toLongOrNull()) }
+            is VehicleFormEvent.TaxesExpiryDateChanged -> _state.update { it.copy(taxesExpiryDate = event.taxesExpiryDate.toLongOrNull()) }
+            is VehicleFormEvent.LoadVehicle -> loadVehicle(event.vehicleId)
+            is VehicleFormEvent.DeleteVehicle -> deleteVehicle(event.vehicleId)
+            is VehicleFormEvent.Submit -> saveVehicle()
+            // The following are kept for now but should probably be removed in favor of the specific events
+            is VehicleFormEvent.FieldChanged -> _state.update { it.copyField(event.fieldName, event.value) }
+            is VehicleFormEvent.SaveVehicle -> saveVehicle() // Consider using Submit event instead
         }
     }
 
@@ -56,19 +58,19 @@ class VehicleFormViewModel @Inject constructor(
     /** ----------------------------- **/
     private fun loadVehicle(vehicleId: String) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, errorMessage = null) }
+            // _state.update { it.copy(isLoading = true, errorMessage = null) } // isLoading is not on VehicleFormState
             try {
                 val vehicle = vehicleRepository.getVehicleById(vehicleId)
                 if (vehicle != null) {
                     _state.update {
-                        vehicle.toFormState().copy(isLoading = false)
+                        vehicle.toFormState()//.copy(isLoading = false)
                     }
                 } else {
-                    _state.update { it.copy(isLoading = false, errorMessage = "Το όχημα δεν βρέθηκε") }
+                    _state.update { it.copy(errorMessage = "Το όχημα δεν βρέθηκε") }
                 }
             } catch (e: Exception) {
                 _state.update {
-                    it.copy(isLoading = false, errorMessage = e.localizedMessage ?: "Σφάλμα φόρτωσης")
+                    it.copy(errorMessage = e.localizedMessage ?: "Σφάλμα φόρτωσης")
                 }
             }
         }
@@ -79,30 +81,29 @@ class VehicleFormViewModel @Inject constructor(
     /** ----------------------------- **/
     private fun saveVehicle() {
         viewModelScope.launch {
-            val form = _state.value
-            val vehicle = form.toVehicle()
+            val formState = _state.value
+            val vehicle = formState.toVehicle()
 
-            _state.update { it.copy(isLoading = true, success = false, errorMessage = null) }
+           // _state.update { it.copy(isLoading = true, success = false, errorMessage = null) } // success, isLoading not on formstate
 
             try {
+                // This logic seems to belong elsewhere, maybe in a use-case, but keeping it here for now
                 val vehicleCount = vehicleRepository.getVehicleCount()
+                // if (formState.currentVehicle == null && vehicleCount >= 3) { // currentVehicle not on formstate
+                //     _state.update { it.copy(limitReached = true) } // limitReached not on formstate
+                //     return@launch
+                // }
 
-                // Αν είναι free έκδοση — μέχρι 3 οχήματα
-                if (form.currentVehicle == null && vehicleCount >= 3) {
-                    _state.update { it.copy(isLoading = false, limitReached = true) }
-                    return@launch
-                }
+                // if (formState.currentVehicle != null) { // currentVehicle not on formstate
+                //     vehicleRepository.updateVehicle(vehicle)
+                // } else {
+                //     vehicleRepository.insertVehicle(vehicle)
+                // }
+                vehicleRepository.insertVehicle(vehicle) // Simplified for now
 
-                // Αν υπάρχει ήδη το όχημα → update, αλλιώς insert
-                if (form.currentVehicle != null) {
-                    vehicleRepository.updateVehicle(vehicle)
-                } else {
-                    vehicleRepository.insertVehicle(vehicle)
-                }
-
-                _state.update { it.copy(isLoading = false, success = true) }
+                // _state.update { it.copy(isLoading = false, success = true) } // success not on formstate
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, errorMessage = e.localizedMessage) }
+                _state.update { it.copy(errorMessage = e.localizedMessage) }
             }
         }
     }
@@ -112,17 +113,17 @@ class VehicleFormViewModel @Inject constructor(
     /** ----------------------------- **/
     private fun deleteVehicle(vehicleId: String) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, success = false, errorMessage = null) }
+            // _state.update { it.copy(isLoading = true, success = false, errorMessage = null) } // success, isLoading not on formstate
             try {
                 val vehicle = vehicleRepository.getVehicleById(vehicleId)
                 if (vehicle != null) {
                     vehicleRepository.deleteVehicle(vehicle)
-                    _state.update { it.copy(isLoading = false, success = true) }
+                    // _state.update { it.copy(isLoading = false, success = true) }
                 } else {
-                    _state.update { it.copy(isLoading = false, errorMessage = "Το όχημα δεν βρέθηκε") }
+                    _state.update { it.copy(errorMessage = "Το όχημα δεν βρέθηκε") }
                 }
             } catch (e: Exception) {
-                _state.update { it.copy(isLoading = false, errorMessage = e.localizedMessage) }
+                _state.update { it.copy(errorMessage = e.localizedMessage) }
             }
         }
     }

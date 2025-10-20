@@ -1,7 +1,12 @@
 package com.vehicleman.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -11,11 +16,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.vehicleman.presentation.vehicles.VehicleFormEvent
+import com.vehicleman.presentation.vehicles.VehicleFormState
 import com.vehicleman.ui.viewmodel.AddEditVehicleViewModel
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Save
 
 /**
  * Οθόνη Προσθήκης / Επεξεργασίας Οχήματος.
@@ -25,70 +27,63 @@ import androidx.compose.material.icons.filled.Save
 fun AddEditVehicleScreen(
     navController: NavController,
     viewModel: AddEditVehicleViewModel = hiltViewModel(),
-    vehicleId: String? = null
+    vehicleId: String? = "new"
 ) {
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(vehicleId) {
-        vehicleId?.let {
-            viewModel.onEvent(VehicleFormEvent.LoadVehicle(it))
+        if (vehicleId != "new") {
+            viewModel.onEvent(VehicleFormEvent.LoadVehicle(vehicleId!!))
+        }
+    }
+
+    // Navigate back on successful save
+    if (state.isFormValid) { // We'll use isFormValid as a proxy for success
+        LaunchedEffect(state.isFormValid) {
+            navController.popBackStack()
         }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (vehicleId == null) "Προσθήκη Οχήματος" else "Επεξεργασία Οχήματος") },
+                title = { Text(if (vehicleId == "new") "Προσθήκη Οχήματος" else "Επεξεργασία Οχήματος") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Πίσω")
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Πίσω"
+                        )
                     }
                 },
                 actions = {
                     IconButton(
-                        onClick = { viewModel.onEvent(VehicleFormEvent.SaveVehicle) },
-                        enabled = !state.isLoading
+                        onClick = { viewModel.onEvent(VehicleFormEvent.Submit) }
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = "Αποθήκευση")
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Αποθήκευση"
+                        )
                     }
                 }
             )
         }
     ) { innerPadding ->
-        if (state.isLoading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            AddEditVehicleForm(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(16.dp),
-                state = state,
-                onValueChange = { field, value ->
-                    viewModel.onEvent(VehicleFormEvent.FieldChanged(field, value))
-                }
-            )
-        }
+        AddEditVehicleForm(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp),
+            state = state,
+            onEvent = viewModel::onEvent
+        )
 
-        // Εμφάνιση σφάλματος αν υπάρχει
-        state.errorMessage?.let { error ->
-            SnackbarHost(hostState = remember { SnackbarHostState() }) {
-                Snackbar { Text(text = error) }
+        state.errorMessage?.let {
+            val snackbarHostState = remember { SnackbarHostState() }
+            LaunchedEffect(it) {
+                snackbarHostState.showSnackbar(it)
             }
-        }
-
-        // Αν έγινε επιτυχής αποθήκευση
-        if (state.success) {
-            LaunchedEffect(Unit) {
-                navController.popBackStack()
-            }
+            SnackbarHost(hostState = snackbarHostState, modifier = Modifier.padding(innerPadding))
         }
     }
 }
@@ -99,47 +94,54 @@ fun AddEditVehicleScreen(
 @Composable
 fun AddEditVehicleForm(
     modifier: Modifier = Modifier,
-    state: com.vehicleman.presentation.vehicles.VehicleFormState,
-    onValueChange: (String, String) -> Unit
+    state: VehicleFormState,
+    onEvent: (VehicleFormEvent) -> Unit
 ) {
     Column(
         modifier = modifier.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         OutlinedTextField(
-            value = state.brand,
-            onValueChange = { onValueChange("brand", it) },
+            value = state.make,
+            onValueChange = { onEvent(VehicleFormEvent.MakeChanged(it)) },
             label = { Text("Μάρκα") },
             modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
             value = state.model,
-            onValueChange = { onValueChange("model", it) },
+            onValueChange = { onEvent(VehicleFormEvent.ModelChanged(it)) },
             label = { Text("Μοντέλο") },
             modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
-            value = state.plate,
-            onValueChange = { onValueChange("plate", it) },
+            value = state.plateNumber,
+            onValueChange = { onEvent(VehicleFormEvent.PlateNumberChanged(it)) },
             label = { Text("Αριθμός Πινακίδας") },
             modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
             value = state.year,
-            onValueChange = { onValueChange("year", it) },
+            onValueChange = { onEvent(VehicleFormEvent.YearChanged(it)) },
             label = { Text("Έτος Κατασκευής") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
-            value = state.odometer,
-            onValueChange = { onValueChange("odometer", it) },
+            value = state.currentOdometer,
+            onValueChange = { onEvent(VehicleFormEvent.CurrentOdometerChanged(it)) },
             label = { Text("Χιλιόμετρα (Οδόμετρο)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = state.fuelType,
+            onValueChange = { onEvent(VehicleFormEvent.FuelTypeChanged(it)) },
+            label = { Text("Τύπος Καυσίμου") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -148,32 +150,34 @@ fun AddEditVehicleForm(
         Text("Συντήρηση", style = MaterialTheme.typography.titleMedium)
 
         OutlinedTextField(
-            value = state.oilChangeKm,
-            onValueChange = { onValueChange("oilChangeKm", it) },
+            value = state.oilChangeKm?.toString() ?: "",
+            onValueChange = { onEvent(VehicleFormEvent.OilChangeKmChanged(it)) },
             label = { Text("Αλλαγή Λαδιών (κάθε Χ km)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
-            value = state.oilChangeTime,
-            onValueChange = { onValueChange("oilChangeTime", it) },
-            label = { Text("Αλλαγή Λαδιών (χρονικό διάστημα)") },
+            value = state.oilChangeDate?.toString() ?: "",
+            onValueChange = { onEvent(VehicleFormEvent.OilChangeDateChanged(it)) },
+            label = { Text("Αλλαγή Λαδιών (ημερομηνία)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
-            value = state.tiresChangeKm,
-            onValueChange = { onValueChange("tiresChangeKm", it) },
+            value = state.tiresChangeKm?.toString() ?: "",
+            onValueChange = { onEvent(VehicleFormEvent.TiresChangeKmChanged(it)) },
             label = { Text("Αλλαγή Ελαστικών (κάθε Χ km)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
-            value = state.tiresChangeTime,
-            onValueChange = { onValueChange("tiresChangeTime", it) },
-            label = { Text("Αλλαγή Ελαστικών (χρονικό διάστημα)") },
+            value = state.tiresChangeDate?.toString() ?: "",
+            onValueChange = { onEvent(VehicleFormEvent.TiresChangeDateChanged(it)) },
+            label = { Text("Αλλαγή Ελαστικών (ημερομηνία)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -182,16 +186,18 @@ fun AddEditVehicleForm(
         Text("Ασφάλεια & Τέλη", style = MaterialTheme.typography.titleMedium)
 
         OutlinedTextField(
-            value = state.insuranceDate,
-            onValueChange = { onValueChange("insuranceDate", it) },
-            label = { Text("Ημ/νία Ασφάλειας") },
+            value = state.insuranceExpiryDate?.toString() ?: "",
+            onValueChange = { onEvent(VehicleFormEvent.InsuranceExpiryDateChanged(it)) },
+            label = { Text("Ημ/νία Λήξης Ασφάλειας") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
-            value = state.taxDate,
-            onValueChange = { onValueChange("taxDate", it) },
-            label = { Text("Ημ/νία Τελών") },
+            value = state.taxesExpiryDate?.toString() ?: "",
+            onValueChange = { onEvent(VehicleFormEvent.TaxesExpiryDateChanged(it)) },
+            label = { Text("Ημ/νία Λήξης Τελών") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth()
         )
 

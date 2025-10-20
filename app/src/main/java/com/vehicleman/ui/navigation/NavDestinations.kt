@@ -5,6 +5,7 @@ package com.vehicleman.ui.navigation
  */
 object NavDestinations {
     // Basic Routes
+    const val SPLASH_SCREEN = "splash_screen"
     const val HOME_ROUTE = "home_route"
     const val ADD_EDIT_VEHICLE_ROUTE = "add_edit_vehicle_route"
     const val ENTRY_LIST_ROUTE = "entry_list_route" // ΝΕΑ ΔΙΑΔΡΟΜΗ

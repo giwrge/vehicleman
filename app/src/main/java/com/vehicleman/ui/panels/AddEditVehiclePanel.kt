@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -112,7 +113,7 @@ private fun VehicleList(
                 }
             }
             else -> {
-                items(state.vehicles, key = { it.id }) { vehicle ->
+                items(items = state.vehicles, key = { it.id }) { vehicle ->
                     VehicleCard(
                         vehicle = vehicle,
                         isAirflow = vehicle.id == airflowVehicleId,

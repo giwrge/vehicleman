@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vehicleman.domain.model.MaintenanceRecord
 import com.vehicleman.domain.model.MaintenanceRecordType
-import com.vehicleman.domain.repositories.MaintenanceRecordRepository // Σωστό Repository
+// import com.vehicleman.domain.repositories.MaintenanceRecordRepository // Σωστό Repository
 import com.vehicleman.ui.navigation.NavDestinations
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,7 +20,7 @@ import kotlin.math.roundToInt
 
 @HiltViewModel
 class AddEditRecordViewModel @Inject constructor(
-    private val maintenanceRecordRepository: RecordRepository,
+    // private val maintenanceRecordRepository: RecordRepository, // ΑΠΕΝΕΡΓΟΠΟΙΗΣΗ
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -31,21 +31,24 @@ class AddEditRecordViewModel @Inject constructor(
     val state: StateFlow<AddEditRecordState> = _state
 
     init {
-        loadRecord()
-        loadLatestOdometer()
+        // loadRecord() // ΑΠΕΝΕΡΓΟΠΟΙΗΣΗ
+        // loadLatestOdometer() // ΑΠΕΝΕΡΓΟΠΟΙΗΣΗ
     }
 
     // ... (Οι συναρτήσεις loadRecord και loadLatestOdometer χρησιμοποιούν το MaintenanceRecordRepository) ...
     private fun loadLatestOdometer() {
+        /* // ΑΠΕΝΕΡΓΟΠΟΙΗΣΗ
         viewModelScope.launch {
             val latestOdometer = maintenanceRecordRepository.getLatestOdometer(vehicleId)
             if (recordId == "new" && latestOdometer > 0) {
                 _state.update { it.copy(odometer = latestOdometer.toString()) }
             }
         }
+        */
     }
 
     private fun loadRecord() {
+        /* // ΑΠΕΝΕΡΓΟΠΟΙΗΣΗ
         if (recordId != "new") {
             viewModelScope.launch {
                 try {
@@ -73,6 +76,7 @@ class AddEditRecordViewModel @Inject constructor(
             }
         }
         _state.update { it.copy(suggestions = defaultSuggestions) }
+        */
     }
 
 
@@ -116,7 +120,7 @@ class AddEditRecordViewModel @Inject constructor(
     }
 
     private fun handleDateChange(newDate: Date) {
-        val isFuture = newDate.after(Date().startOfDay())
+        val isFuture = newDate.after(Date()/* .startOfDay() */)
 
         _state.update { currentState ->
             currentState.copy(
@@ -130,6 +134,7 @@ class AddEditRecordViewModel @Inject constructor(
     }
 
     private fun saveRecord() {
+        /* // ΑΠΕΝΕΡΓΟΠΟΙΗΣΗ
         _state.value.let { s ->
             // ... (Επικυρώσεις) ...
 
@@ -159,6 +164,7 @@ class AddEditRecordViewModel @Inject constructor(
                 }
             }
         }
+        */
     }
 
     // ... (Extensions) ...

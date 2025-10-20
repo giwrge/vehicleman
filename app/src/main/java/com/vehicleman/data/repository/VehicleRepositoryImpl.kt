@@ -2,8 +2,8 @@ package com.vehicleman.data.repository
 
 import com.vehicleman.data.dao.VehicleDao
 import com.vehicleman.data.entities.VehicleEntity
-import com.vehicleman.data.mappers.toDomain
-import com.vehicleman.data.mappers.toEntity
+import com.vehicleman.data.mappers.toVehicle
+import com.vehicleman.data.mappers.toVehicleEntity
 import com.vehicleman.domain.model.Vehicle
 import com.vehicleman.domain.repositories.VehicleRepository
 import kotlinx.coroutines.flow.Flow
@@ -21,11 +21,11 @@ class VehicleRepositoryImpl @Inject constructor(
 ) : VehicleRepository {
 
     override fun getAllVehicles(): Flow<List<Vehicle>> {
-        return vehicleDao.getAllVehicles().map { list -> list.map(VehicleEntity::toDomain) }
+        return vehicleDao.getAllVehicles().map { list -> list.map(VehicleEntity::toVehicle) }
     }
 
     override suspend fun getVehicleById(id: String): Vehicle? {
-        return vehicleDao.getVehicleById(id)?.toDomain()
+        return vehicleDao.getVehicleById(id)?.toVehicle()
     }
 
     /**
@@ -35,9 +35,9 @@ class VehicleRepositoryImpl @Inject constructor(
     override suspend fun saveVehicle(vehicle: Vehicle) {
         val existing = vehicleDao.getVehicleById(vehicle.id)
         if (existing == null) {
-            vehicleDao.insertVehicle(vehicle.toEntity())
+            vehicleDao.insertVehicle(vehicle.toVehicleEntity())
         } else {
-            vehicleDao.updateVehicle(vehicle.toEntity())
+            vehicleDao.updateVehicle(vehicle.toVehicleEntity())
         }
     }
 
@@ -45,21 +45,21 @@ class VehicleRepositoryImpl @Inject constructor(
      * Εισαγωγή νέου οχήματος.
      */
     override suspend fun insertVehicle(vehicle: Vehicle) {
-        vehicleDao.insertVehicle(vehicle.toEntity())
+        vehicleDao.insertVehicle(vehicle.toVehicleEntity())
     }
 
     /**
      * Ενημέρωση υπάρχοντος οχήματος.
      */
     override suspend fun updateVehicle(vehicle: Vehicle) {
-        vehicleDao.updateVehicle(vehicle.toEntity())
+        vehicleDao.updateVehicle(vehicle.toVehicleEntity())
     }
 
     /**
      * Διαγραφή με entity.
      */
     override suspend fun deleteVehicle(vehicle: Vehicle) {
-        vehicleDao.deleteVehicle(vehicle.toEntity())
+        vehicleDao.deleteVehicle(vehicle.toVehicleEntity())
     }
 
     /**

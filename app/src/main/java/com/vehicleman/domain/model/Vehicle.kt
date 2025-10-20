@@ -8,12 +8,17 @@ data class Vehicle(
     val name: String = "",
     val make: String = "",
     val model: String = "",
+    val plateNumber: String = "",
     val year: Int = 0,
-    val licensePlate: String = "",
     val fuelType: String = "",
-    val initialOdometer: Int = 0,
+    val currentOdometer: Int = 0,
     val registrationDate: Date = Date(),
-    val oilChangeIntervalKm: Int = 10000,
-    val oilChangeIntervalDays: Int = 180
+    val oilChangeKm: Long = 10000,
+    val oilChangeDate: Long = 364,
+    val tiresChangeKm: Long = 40000,
+    val tiresChangeDate: Long = 364,
+    val insuranceExpiryDate: Long = 364,
+    val taxesExpiryDate: Long = 364,
+
 )
 

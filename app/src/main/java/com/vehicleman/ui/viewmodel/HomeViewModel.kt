@@ -94,9 +94,9 @@ class HomeViewModel @Inject constructor(
     private fun Vehicle.toDisplayItem(): VehicleDisplayItem {
         return VehicleDisplayItem(
             id = this.id,
-            name = "${this.brand} ${this.model}",
-            makeModel = "${this.brand} • ${this.model}",
-            licensePlate = this.plate,
+            name = "${this.make} ${this.model}",
+            makeModel = "${this.make} • ${this.model}",
+            licensePlate = this.plateNumber,
             odometerText = "${this.odometer} km",
             isActive = false
         )
