@@ -21,22 +21,20 @@ object RepositoryModule {
     @Singleton
     // VehicleRepositoryImpl: Χρειάζεται και τα δύο DAO για το cascading delete
     fun provideVehicleRepository(
-        vehicleDao: VehicleDao
+        vehicleDao: VehicleDao,
+        //  maintenanceRecordDao: RecordDao
     ): VehicleRepository {
         return VehicleRepositoryImpl(
-            vehicleDao = vehicleDao
+            vehicleDao //, RecordDao)
         )
+    }
+}
+/*
+    // ΠΑΡΟΧΗ: MaintenanceRecordRepository
+   @Provides
+   @Singleton
+   fun provideMaintenanceRecordRepository(dao: RecordDao): RecordRepository {
+      return RecordRepositoryImpl(dao)
     }
 
-    /* // ΑΠΕΝΕΡΓΟΠΟΙΗΣΗ
-    @Provides
-    @Singleton
-    fun provideRecordRepository(
-        recordDao: RecordDao
-    ): RecordRepository {
-        return RecordRepositoryImpl(
-            recordDao = recordDao
-        )
-    }
-    */
-}
+ */

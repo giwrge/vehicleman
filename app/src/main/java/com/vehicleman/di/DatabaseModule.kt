@@ -32,12 +32,10 @@ object DatabaseModule {
         return db.vehicleDao()
     }
 
-    /* // ΑΠΕΝΕΡΓΟΠΟΙΗΣΗ
     // ΠΑΡΟΧΗ: MaintenanceRecordDao
     @Provides
     @Singleton
     fun provideMaintenanceRecordDao(db: VehicleDatabase): RecordDao {
         return db.RecordDao()
     }
-    */
 }
