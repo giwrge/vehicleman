@@ -1,4 +1,4 @@
-package com.vehicleman.data.dao
+/*package com.vehicleman.data.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -32,4 +32,4 @@ interface RecordDao {
     /** Deletes all entries associated with a vehicle. */
     @Query("DELETE FROM entries WHERE vehicleId = :vehicleId")
     suspend fun deleteEntriesByVehicleId(vehicleId: String)
-}
+}*/

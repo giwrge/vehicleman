@@ -1,4 +1,4 @@
-
+/*
 package com.vehicleman.data.entities
 
 import androidx.room.Entity
@@ -25,4 +25,4 @@ data class ExpenseEntity(
     val eventIconName: String, // π.χ. "fuel_pump", "wrench"
     val lineStyle: String, // π.χ. "Double_Solid", "Single_Dashed_Left"
     val displayOrder: Long = entryDate
-)
+)*/

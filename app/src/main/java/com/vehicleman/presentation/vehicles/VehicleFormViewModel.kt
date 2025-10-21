@@ -38,18 +38,16 @@ class VehicleFormViewModel @Inject constructor(
             is VehicleFormEvent.PlateNumberChanged -> _state.update { it.copy(plateNumber = event.plateNumber) }
             is VehicleFormEvent.YearChanged -> _state.update { it.copy(year = event.year) }
             is VehicleFormEvent.CurrentOdometerChanged -> _state.update { it.copy(currentOdometer = event.currentOdometer) }
+            is VehicleFormEvent.FuelTypeChanged -> _state.update { it.copy(fuelType = event.fuelType) }
             is VehicleFormEvent.OilChangeKmChanged -> _state.update { it.copy(oilChangeKm = event.oilChangeKm.toLongOrNull()) }
             is VehicleFormEvent.OilChangeDateChanged -> _state.update { it.copy(oilChangeDate = event.oilChangeDate.toLongOrNull()) }
             is VehicleFormEvent.TiresChangeKmChanged -> _state.update { it.copy(tiresChangeKm = event.tiresChangeKm.toLongOrNull()) }
-            is VehicleFormEvent.TireChangeDateChanged -> _state.update { it.copy(tiresChangeDate = event.tireChangeDate.toLongOrNull()) }
+            is VehicleFormEvent.TiresChangeDateChanged -> _state.update { it.copy(tiresChangeDate = event.tiresChangeDate.toLongOrNull()) }
             is VehicleFormEvent.InsuranceExpiryDateChanged -> _state.update { it.copy(insuranceExpiryDate = event.insuranceExpiryDate.toLongOrNull()) }
             is VehicleFormEvent.TaxesExpiryDateChanged -> _state.update { it.copy(taxesExpiryDate = event.taxesExpiryDate.toLongOrNull()) }
             is VehicleFormEvent.LoadVehicle -> loadVehicle(event.vehicleId)
             is VehicleFormEvent.DeleteVehicle -> deleteVehicle(event.vehicleId)
             is VehicleFormEvent.Submit -> saveVehicle()
-            // The following are kept for now but should probably be removed in favor of the specific events
-            is VehicleFormEvent.FieldChanged -> _state.update { it.copyField(event.fieldName, event.value) }
-            is VehicleFormEvent.SaveVehicle -> saveVehicle() // Consider using Submit event instead
         }
     }
 
@@ -57,14 +55,15 @@ class VehicleFormViewModel @Inject constructor(
     /** Φόρτωση οχήματος για Edit Mode **/
     /** ----------------------------- **/
     private fun loadVehicle(vehicleId: String) {
+        if (vehicleId == "new") {
+            _state.update { VehicleFormState() } // Reset for new vehicle
+            return
+        }
         viewModelScope.launch {
-            // _state.update { it.copy(isLoading = true, errorMessage = null) } // isLoading is not on VehicleFormState
             try {
                 val vehicle = vehicleRepository.getVehicleById(vehicleId)
                 if (vehicle != null) {
-                    _state.update {
-                        vehicle.toFormState()//.copy(isLoading = false)
-                    }
+                    _state.update { vehicle.toFormState() }
                 } else {
                     _state.update { it.copy(errorMessage = "Το όχημα δεν βρέθηκε") }
                 }
@@ -82,26 +81,16 @@ class VehicleFormViewModel @Inject constructor(
     private fun saveVehicle() {
         viewModelScope.launch {
             val formState = _state.value
+            if (formState.make.isBlank() || formState.model.isBlank() || formState.plateNumber.isBlank()) {
+                _state.update { it.copy(errorMessage = "Τα πεδία Μάρκα, Μοντέλο και Πινακίδα είναι υποχρεωτικά.") }
+                return@launch
+            }
+
             val vehicle = formState.toVehicle()
 
-           // _state.update { it.copy(isLoading = true, success = false, errorMessage = null) } // success, isLoading not on formstate
-
             try {
-                // This logic seems to belong elsewhere, maybe in a use-case, but keeping it here for now
-                val vehicleCount = vehicleRepository.getVehicleCount()
-                // if (formState.currentVehicle == null && vehicleCount >= 3) { // currentVehicle not on formstate
-                //     _state.update { it.copy(limitReached = true) } // limitReached not on formstate
-                //     return@launch
-                // }
-
-                // if (formState.currentVehicle != null) { // currentVehicle not on formstate
-                //     vehicleRepository.updateVehicle(vehicle)
-                // } else {
-                //     vehicleRepository.insertVehicle(vehicle)
-                // }
-                vehicleRepository.insertVehicle(vehicle) // Simplified for now
-
-                // _state.update { it.copy(isLoading = false, success = true) } // success not on formstate
+                vehicleRepository.saveVehicle(vehicle)
+                _state.update { it.copy(isFormValid = true, errorMessage = null) } // Navigate back on success
             } catch (e: Exception) {
                 _state.update { it.copy(errorMessage = e.localizedMessage) }
             }
@@ -113,15 +102,9 @@ class VehicleFormViewModel @Inject constructor(
     /** ----------------------------- **/
     private fun deleteVehicle(vehicleId: String) {
         viewModelScope.launch {
-            // _state.update { it.copy(isLoading = true, success = false, errorMessage = null) } // success, isLoading not on formstate
             try {
-                val vehicle = vehicleRepository.getVehicleById(vehicleId)
-                if (vehicle != null) {
-                    vehicleRepository.deleteVehicle(vehicle)
-                    // _state.update { it.copy(isLoading = false, success = true) }
-                } else {
-                    _state.update { it.copy(errorMessage = "Το όχημα δεν βρέθηκε") }
-                }
+                vehicleRepository.deleteVehicleById(vehicleId)
+                _state.update { it.copy(isFormValid = true, errorMessage = null) } // Navigate back on success
             } catch (e: Exception) {
                 _state.update { it.copy(errorMessage = e.localizedMessage) }
             }

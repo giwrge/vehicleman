@@ -1,4 +1,4 @@
-package com.vehicleman.domain.model
+/*package com.vehicleman.domain.model
 
 import java.util.Date
 
@@ -31,4 +31,4 @@ enum class MaintenanceRecordType {
     EXPENSE, // Κανονική Δαπάνη (π.χ. σέρβις, λάστιχα)
     REMINDER, // Απλή Υπενθύμιση (π.χ. ΚΤΕΟ, Ασφάλεια)
     FUEL_UP // Ειδικός τύπος για Ανεφοδιασμό (με λεπτομέρειες ποσότητας/τιμής)
-}
+}*/

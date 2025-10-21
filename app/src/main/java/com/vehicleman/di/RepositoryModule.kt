@@ -1,7 +1,7 @@
 // app/src/main/java/com/vehicleman/di/RepositoryModule.kt
 package com.vehicleman.di
 
-import com.vehicleman.data.dao.RecordDao
+//import com.vehicleman.data.dao.RecordDao
 import com.vehicleman.data.dao.VehicleDao
 //import com.vehicleman.data.repository.RecordRepositoryImpl
 import com.vehicleman.data.repository.VehicleRepositoryImpl
@@ -22,7 +22,7 @@ object RepositoryModule {
     // VehicleRepositoryImpl: Χρειάζεται και τα δύο DAO για το cascading delete
     fun provideVehicleRepository(
         vehicleDao: VehicleDao,
-        //  maintenanceRecordDao: RecordDao
+        //  RecordDao: RecordDao
     ): VehicleRepository {
         return VehicleRepositoryImpl(
             vehicleDao //, RecordDao)
@@ -30,10 +30,10 @@ object RepositoryModule {
     }
 }
 /*
-    // ΠΑΡΟΧΗ: MaintenanceRecordRepository
+    // ΠΑΡΟΧΗ: RecordRepository
    @Provides
    @Singleton
-   fun provideMaintenanceRecordRepository(dao: RecordDao): RecordRepository {
+   fun provideRecordRepository(dao: RecordDao): RecordRepository {
       return RecordRepositoryImpl(dao)
     }
 

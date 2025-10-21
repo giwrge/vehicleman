@@ -1,12 +1,15 @@
 package com.vehicleman.ui.screens
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -16,259 +19,188 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.vehicleman.R
 import com.vehicleman.presentation.addeditvehicle.AddEditVehiclePanelEvent
 import com.vehicleman.presentation.addeditvehicle.VehicleDisplayItem
 import com.vehicleman.ui.viewmodel.HomeViewModel
 import kotlin.math.abs
 
-/**
- * 🏠 HomeScreen
- * - Προβολή λίστας οχημάτων
- * - Swipe navigation: Preferences ↔ Home ↔ Statistics
- * - Tap → RecordScreen
- * - Double Tap → AddEditRecordScreen
- * - Long Tap → εμφάνιση μενού Edit/Delete
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    navController: NavController,
+    homeViewModel: HomeViewModel,
+    onNavigateToAddEditVehicle: (String?) -> Unit,
     onNavigateToRecord: (String) -> Unit,
-    onNavigateToAddEditRecord: (String) -> Unit,
-    onNavigateToAddEditVehicle: (String) -> Unit,
-    onNavigateToPreferences: () -> Unit,
     onNavigateToStatistics: () -> Unit,
-    viewModel: HomeViewModel = hiltViewModel()
+    onNavigateToPreferences: () -> Unit
 ) {
-    val state by viewModel.state.collectAsState()
+    val vehicles by homeViewModel.vehicles.collectAsState()
+    var selectedVehicleId by remember { mutableStateOf<String?>(null) }
+    var showDeleteDialog by remember { mutableStateOf<String?>(null) }
 
-    var selectedVehicle by remember { mutableStateOf<VehicleDisplayItem?>(null) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
-
-    // swipe detection
     var offsetX by remember { mutableStateOf(0f) }
     val swipeThreshold = 150f
 
-    Scaffold(
-        topBar = {
-            HomeTopAppBar(
-                onLogoClick = onNavigateToStatistics,
-                onPreferencesClick = onNavigateToPreferences
-            )
-        },
-        floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { onNavigateToAddEditVehicle("new") },
-                icon = {
-                    Icon(
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(id = R.mipmap.img_home_background),
+            contentDescription = "Background",
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                HomeTopAppBar(
+                    onLogoClick = onNavigateToStatistics,
+                    onPreferencesClick = onNavigateToPreferences
+                )
+            },
+            floatingActionButton = {
+                FloatingActionButton(
+                    onClick = { onNavigateToAddEditVehicle(null) },
+                    shape = CircleShape,
+                    modifier = Modifier.size(72.dp)
+                ) {
+                    Image(
                         painter = painterResource(id = R.mipmap.ic_fab_add_vehicle),
-                        contentDescription = "Προσθήκη Οχήματος"
-                    )
-                },
-                text = { Text("ΠΡΟΣΘΗΚΗ") },
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            )
-        }
-    ) { padding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = {
-                            when {
-                                offsetX > swipeThreshold -> onNavigateToPreferences()
-                                offsetX < -swipeThreshold -> onNavigateToStatistics()
-                            }
-                            offsetX = 0f
-                        },
-                        onHorizontalDrag = { _, dragAmount ->
-                            offsetX += dragAmount
-                        }
+                        contentDescription = "Προσθήκη Οχήματος",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
-        ) {
-            Image(
-                painter = painterResource(id = R.mipmap.img_home_background),
-                contentDescription = "Background",
-                contentScale = ContentScale.FillWidth,
+            }
+        ) { padding ->
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter)
-            )
-
-            when {
-                state.isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) { CircularProgressIndicator() }
-                }
-
-                state.error != null -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) { Text("Σφάλμα: ${state.error}") }
-                }
-
-                else -> {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(state.vehicles) { vehicle ->
-                            VehicleCard(
-                                vehicle = vehicle,
-                                onTap = { onNavigateToRecord(vehicle.id) },
-                                onDoubleTap = { onNavigateToAddEditRecord(vehicle.id) },
-                                onLongTap = { selectedVehicle = vehicle },
-                                isDimmed = selectedVehicle != null && selectedVehicle != vehicle
-                            )
-                        }
+                    .fillMaxSize()
+                    .padding(padding)
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures(
+                            onDragEnd = {
+                                when {
+                                    offsetX > swipeThreshold -> onNavigateToPreferences()
+                                    offsetX < -swipeThreshold -> onNavigateToStatistics()
+                                }
+                                offsetX = 0f
+                            },
+                            onHorizontalDrag = { _, dragAmount ->
+                                offsetX += dragAmount
+                            }
+                        )
+                    }
+            ) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(vehicles, key = { it.id }) { vehicle ->
+                        VehicleCard(
+                            vehicle = vehicle,
+                            isSelected = vehicle.id == selectedVehicleId,
+                            onTap = {
+                                if (selectedVehicleId == vehicle.id) {
+                                    selectedVehicleId = null
+                                } else {
+                                    onNavigateToRecord(vehicle.id)
+                                }
+                            },
+                            onLongTap = { selectedVehicleId = vehicle.id },
+                            onEdit = { onNavigateToAddEditVehicle(vehicle.id) },
+                            onDelete = { showDeleteDialog = vehicle.id }
+                        )
                     }
                 }
             }
-
-            // Long-tap menu
-            selectedVehicle?.let { vehicle ->
-                VehicleActionMenu(
-                    vehicle = vehicle,
-                    onEdit = {
-                        selectedVehicle = null
-                        onNavigateToAddEditVehicle(vehicle.id)
-                    },
-                    onDelete = { showDeleteDialog = true },
-                    onDismiss = { selectedVehicle = null }
-                )
-            }
-
-            if (showDeleteDialog && selectedVehicle != null) {
-                AlertDialog(
-                    onDismissRequest = { showDeleteDialog = false },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            viewModel.onEvent(
-                                AddEditVehiclePanelEvent.DeleteVehicleById(selectedVehicle!!.id)
-                            )
-                            showDeleteDialog = false
-                            selectedVehicle = null
-                        }) { Text("Διαγραφή") }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showDeleteDialog = false }) { Text("Ακύρωση") }
-                    },
-                    title = { Text("Επιβεβαίωση Διαγραφής") },
-                    text = { Text("Να διαγραφεί το όχημα ${selectedVehicle?.name};") }
-                )
-            }
         }
+    }
+
+    showDeleteDialog?.let { vehicleId ->
+        val vehicleToDelete = vehicles.find { it.id == vehicleId }
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = null },
+            confirmButton = {
+                TextButton(onClick = {
+                    homeViewModel.onEvent(AddEditVehiclePanelEvent.DeleteVehicleById(vehicleId))
+                    showDeleteDialog = null
+                    selectedVehicleId = null
+                }) { Text("Διαγραφή") }
+            },
+            dismissButton = { TextButton(onClick = { showDeleteDialog = null }) { Text("Ακύρωση") } },
+            title = { Text("Επιβεβαίωση Διαγραφής") },
+            text = { Text("Να διαγραφεί το όχημα ${vehicleToDelete?.name ?: ""};") }
+        )
     }
 }
 
-/**
- * VehicleCard - Single vehicle item
- */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun VehicleCard(
     vehicle: VehicleDisplayItem,
+    isSelected: Boolean,
     onTap: () -> Unit,
-    onDoubleTap: () -> Unit,
     onLongTap: () -> Unit,
-    isDimmed: Boolean
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
 ) {
-    var lastClickTime by remember { mutableStateOf(0L) }
-    val doubleClickThreshold = 300L
     val backgroundColor by animateColorAsState(
-        if (isDimmed) Color.LightGray.copy(alpha = 0.4f)
+        if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
         else MaterialTheme.colorScheme.surface,
-        label = ""
+        label = "background-color"
     )
 
     Card(
-        onClick = {
-            val current = System.currentTimeMillis()
-            if (current - lastClickTime < doubleClickThreshold) onDoubleTap()
-            else onTap()
-            lastClickTime = current
-        },
         modifier = Modifier
             .fillMaxWidth()
-            .height(120.dp)
-            .background(backgroundColor, RoundedCornerShape(16.dp))
-            .padding(12.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+            .height(120.dp),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(
-            Modifier
+        Box(
+            modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures { _, dragAmount ->
-                        if (abs(dragAmount) < 5f) onLongTap()
-                    }
-                }
+                .background(backgroundColor)
+                .combinedClickable(
+                    onClick = onTap,
+                    onLongClick = onLongTap
+                )
+                .padding(12.dp)
         ) {
-            Text(vehicle.name, style = MaterialTheme.typography.titleMedium)
-            Text("Πινακίδα: ${vehicle.licensePlate}")
-            Text(vehicle.odometerText, style = MaterialTheme.typography.bodySmall)
-        }
-    }
-}
+            Column(modifier = Modifier.align(Alignment.CenterStart)) {
+                Text(vehicle.name, style = MaterialTheme.typography.titleMedium)
+                Text("Πινακίδα: ${vehicle.licensePlate}", style = MaterialTheme.typography.bodyMedium)
+                Text(vehicle.odometerText, style = MaterialTheme.typography.bodySmall)
+            }
 
-/**
- * Μενού ενεργειών για Long Tap
- */
-@Composable
-fun VehicleActionMenu(
-    vehicle: VehicleDisplayItem,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.4f))
-            .padding(64.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Card(
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth(0.7f)
-        ) {
-            Column(
-                modifier = Modifier.padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text("Επιλογές Οχήματος", style = MaterialTheme.typography.titleLarge)
-                Row(horizontalArrangement = Arrangement.spacedBy(32.dp)) {
-                    IconButton(onClick = onEdit) {
+            if (isSelected) {
+                Row(
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
                         Icon(Icons.Default.Edit, contentDescription = "Επεξεργασία")
                     }
-                    IconButton(onClick = onDelete) {
+                    IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
                         Icon(Icons.Default.Delete, contentDescription = "Διαγραφή", tint = Color.Red)
                     }
                 }
-                TextButton(onClick = onDismiss) { Text("Άκυρο") }
             }
         }
     }
 }
 
-/**
- * TopAppBar (Λογότυπο + Ρυθμίσεις)
- */
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HomeTopAppBar(

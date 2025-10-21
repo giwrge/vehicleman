@@ -1,4 +1,4 @@
-
+/*
 package com.vehicleman.data.entities
 
 import androidx.room.Entity
@@ -11,4 +11,4 @@ data class UserEntity(
     val name: String,
     val relationship: String, // π.χ. "Ιδιοκτήτης", "Συνεργάτης"
     val createdAt: Long = System.currentTimeMillis()
-)
+)*/

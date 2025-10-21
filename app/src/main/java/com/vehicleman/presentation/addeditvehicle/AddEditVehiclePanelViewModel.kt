@@ -20,7 +20,18 @@ class AddEditVehiclePanelViewModel @Inject constructor(
 
     fun onEvent(event: AddEditVehiclePanelEvent) {
         when (event) {
-            is AddEditVehiclePanelEvent.DeleteVehicleById -> deleteVehicle(event.vehicleId)
+            is AddEditVehiclePanelEvent.DeleteVehicleById -> {
+                // This is now handled via ConfirmDelete
+                _state.update { it.copy(vehicleToDelete = it.vehicles.find { v -> v.id == event.vehicleId }) }
+            }
+            is AddEditVehiclePanelEvent.ConfirmDelete -> {
+                _state.value.vehicleToDelete?.let { vehicle ->
+                    deleteVehicle(vehicle.id)
+                }
+            }
+            is AddEditVehiclePanelEvent.CancelDelete -> {
+                _state.update { it.copy(vehicleToDelete = null) }
+            }
             is AddEditVehiclePanelEvent.RefreshVehicleList -> loadVehicles()
             is AddEditVehiclePanelEvent.ToggleAirflowCard -> toggleAirflowCard(event.vehicleId)
         }
@@ -36,11 +47,11 @@ class AddEditVehiclePanelViewModel @Inject constructor(
                             id = vehicle.id,
                             name = vehicle.name,
                             makeModel = "${vehicle.make} ${vehicle.model}",
-                            licensePlate = vehicle.licensePlate,
-                            odometerText = "${vehicle.initialOdometer} km"
+                            licensePlate = vehicle.plateNumber, // Fix: Use plateNumber
+                            odometerText = "${vehicle.currentOdometer} km" // Fix: Use currentOdometer
                         )
                     }
-                    _state.update { it.copy(vehicles = uiItems, isLoading = false) }
+                    _state.update { it.copy(vehicles = uiItems, isLoading = false, vehicleToDelete = null) }
                 }
             } catch (e: Exception) {
                 _state.update { it.copy(error = e.localizedMessage ?: "Σφάλμα φόρτωσης") }
@@ -51,9 +62,8 @@ class AddEditVehiclePanelViewModel @Inject constructor(
     private fun deleteVehicle(vehicleId: String) {
         viewModelScope.launch {
             try {
-                val vehicle = repository.getVehicleById(vehicleId)
-                vehicle?.let { repository.deleteVehicle(it) }
-                loadVehicles()
+                repository.deleteVehicleById(vehicleId)
+                loadVehicles() // Refresh the list after deletion
             } catch (e: Exception) {
                 _state.update { it.copy(error = e.localizedMessage ?: "Αποτυχία διαγραφής") }
             }
@@ -62,11 +72,8 @@ class AddEditVehiclePanelViewModel @Inject constructor(
 
     private fun toggleAirflowCard(vehicleId: String) {
         _state.update {
-            it.copy(
-                vehicles = it.vehicles.map { v ->
-                    v.copy(isActive = v.id == vehicleId)
-                }
-            )
+            val activeId = if (it.activeVehicleId == vehicleId) null else vehicleId
+            it.copy(activeVehicleId = activeId)
         }
     }
 }

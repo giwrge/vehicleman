@@ -1,4 +1,4 @@
-package com.vehicleman.ui.panels // ΔΙΟΡΘΩΘΗΚΕ: σε .panels
+/*package com.vehicleman.ui.panels // ΔΙΟΡΘΩΘΗΚΕ: σε .panels
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,4 +28,4 @@ fun StatisticsPanel(modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.titleLarge
         )
     }
-}
+}*/

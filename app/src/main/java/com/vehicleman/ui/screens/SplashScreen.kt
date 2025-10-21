@@ -19,11 +19,11 @@ import kotlinx.coroutines.delay
  * Splash Screen που εμφανίζεται στην εκκίνηση της εφαρμογής.
  */
 @Composable
-fun Splashscreen(onTimeout: () -> Unit) {
+fun SplashScreen(onNavigateToHome: () -> Unit) { // ΔΙΟΡΘΩΣΗ: onTimeout -> onNavigateToHome
     // 2 δευτερόλεπτα καθυστέρησης
     LaunchedEffect(Unit) {
         delay(2000)
-        onTimeout()
+        onNavigateToHome() // ΔΙΟΡΘΩΣΗ
     }
 
     Box(

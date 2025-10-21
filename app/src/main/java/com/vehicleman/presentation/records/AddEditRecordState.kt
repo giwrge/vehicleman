@@ -1,4 +1,4 @@
-package com.vehicleman.presentation.records
+/*package com.vehicleman.presentation.records
 
 import com.vehicleman.domain.model.MaintenanceRecordType
 import java.util.Date
@@ -55,4 +55,4 @@ sealed interface AddEditRecordEvent {
     // Actions
     data object OnSaveClicked : AddEditRecordEvent
     data object OnTwoTapActivated : AddEditRecordEvent
-}
+}*/

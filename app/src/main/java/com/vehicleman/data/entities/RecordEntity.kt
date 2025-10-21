@@ -1,4 +1,4 @@
-package com.vehicleman.data.entities
+/*package com.vehicleman.data.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -28,4 +28,4 @@ data class RecordEntity(
     val reminderDate: Date?,
     val reminderOdometer: Int?,
     val isCompleted: Boolean = false // Για υπενθυμίσεις
-)
+)*/

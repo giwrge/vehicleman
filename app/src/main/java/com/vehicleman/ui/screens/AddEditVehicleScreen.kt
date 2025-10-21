@@ -1,5 +1,6 @@
 package com.vehicleman.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -11,10 +12,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.vehicleman.R
 import com.vehicleman.presentation.vehicles.VehicleFormEvent
 import com.vehicleman.presentation.vehicles.VehicleFormState
 import com.vehicleman.ui.viewmodel.AddEditVehicleViewModel
@@ -26,64 +30,68 @@ import com.vehicleman.ui.viewmodel.AddEditVehicleViewModel
 @Composable
 fun AddEditVehicleScreen(
     navController: NavController,
-    viewModel: AddEditVehicleViewModel = hiltViewModel(),
-    vehicleId: String? = "new"
+    addEditVehicleViewModel: AddEditVehicleViewModel
 ) {
-    val state by viewModel.state.collectAsState()
+    val state by addEditVehicleViewModel.state.collectAsState()
 
-    LaunchedEffect(vehicleId) {
-        if (vehicleId != "new") {
-            viewModel.onEvent(VehicleFormEvent.LoadVehicle(vehicleId!!))
-        }
-    }
-
-    // Navigate back on successful save
-    if (state.isFormValid) { // We'll use isFormValid as a proxy for success
-        LaunchedEffect(state.isFormValid) {
+    // Αυτόματη επιστροφή στην προηγούμενη οθόνη μετά από επιτυχή αποθήκευση
+    LaunchedEffect(state.isFormValid) {
+        if (state.isFormValid) {
+            addEditVehicleViewModel.resetState() // Reset the form state
             navController.popBackStack()
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (vehicleId == "new") "Προσθήκη Οχήματος" else "Επεξεργασία Οχήματος") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Πίσω"
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(
-                        onClick = { viewModel.onEvent(VehicleFormEvent.Submit) }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = "Αποθήκευση"
-                        )
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
-        AddEditVehicleForm(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp),
-            state = state,
-            onEvent = viewModel::onEvent
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(id = R.mipmap.img_home_background),
+            contentDescription = "Background",
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier.fillMaxSize()
         )
 
-        state.errorMessage?.let {
-            val snackbarHostState = remember { SnackbarHostState() }
-            LaunchedEffect(it) {
-                snackbarHostState.showSnackbar(it)
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = { Text(if (state.id == null) "Προσθήκη Οχήματος" else "Επεξεργασία Οχήματος") },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Πίσω"
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = { addEditVehicleViewModel.onEvent(VehicleFormEvent.Submit) }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Αποθήκευση"
+                            )
+                        }
+                    }
+                )
             }
-            SnackbarHost(hostState = snackbarHostState, modifier = Modifier.padding(innerPadding))
+        ) { innerPadding ->
+            AddEditVehicleForm(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(16.dp),
+                state = state,
+                onEvent = addEditVehicleViewModel::onEvent
+            )
+
+            state.errorMessage?.let {
+                val snackbarHostState = remember { SnackbarHostState() }
+                LaunchedEffect(it) {
+                    snackbarHostState.showSnackbar(it)
+                }
+                SnackbarHost(hostState = snackbarHostState, modifier = Modifier.padding(innerPadding))
+            }
         }
     }
 }
@@ -99,7 +107,7 @@ fun AddEditVehicleForm(
 ) {
     Column(
         modifier = modifier.verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         OutlinedTextField(
             value = state.make,
@@ -161,7 +169,7 @@ fun AddEditVehicleForm(
             value = state.oilChangeDate?.toString() ?: "",
             onValueChange = { onEvent(VehicleFormEvent.OilChangeDateChanged(it)) },
             label = { Text("Αλλαγή Λαδιών (ημερομηνία)") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -177,7 +185,7 @@ fun AddEditVehicleForm(
             value = state.tiresChangeDate?.toString() ?: "",
             onValueChange = { onEvent(VehicleFormEvent.TiresChangeDateChanged(it)) },
             label = { Text("Αλλαγή Ελαστικών (ημερομηνία)") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -189,7 +197,7 @@ fun AddEditVehicleForm(
             value = state.insuranceExpiryDate?.toString() ?: "",
             onValueChange = { onEvent(VehicleFormEvent.InsuranceExpiryDateChanged(it)) },
             label = { Text("Ημ/νία Λήξης Ασφάλειας") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -197,7 +205,7 @@ fun AddEditVehicleForm(
             value = state.taxesExpiryDate?.toString() ?: "",
             onValueChange = { onEvent(VehicleFormEvent.TaxesExpiryDateChanged(it)) },
             label = { Text("Ημ/νία Λήξης Τελών") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
             modifier = Modifier.fillMaxWidth()
         )
 

@@ -1,102 +1,60 @@
+// ui/navigation/AppNavigation.kt
+
 package com.vehicleman.ui.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
-// import com.vehicleman.ui.screens.AddEditRecordScreen // Commented out as it is a new component under development
+import androidx.navigation.compose.rememberNavController
 import com.vehicleman.ui.screens.AddEditVehicleScreen
 import com.vehicleman.ui.screens.HomeScreen
-import com.vehicleman.ui.screens.Splashscreen
+import com.vehicleman.ui.screens.SplashScreen
+import com.vehicleman.ui.viewmodel.AddEditVehicleViewModel
+import com.vehicleman.ui.viewmodel.HomeViewModel
 
-/**
- * The main Navigation Host for the application.
- */
 @Composable
 fun AppNavigation(
-    navHostController: NavHostController
+    navController: NavHostController = rememberNavController(),
+    homeViewModel: HomeViewModel = hiltViewModel(),
+    addEditVehicleViewModel: AddEditVehicleViewModel = hiltViewModel()
 ) {
     NavHost(
-        navController = navHostController,
-        startDestination = "splash_route"
+        navController = navController,
+        startDestination = NavDestinations.SPLASH_SCREEN
     ) {
-        // 0. SPLASH SCREEN
-        composable("splash_route") {
-            Splashscreen(
-                onTimeout = {
-                    navHostController.popBackStack()
-                    navHostController.navigate(NavDestinations.HOME_ROUTE)
+        composable(NavDestinations.SPLASH_SCREEN) {
+            SplashScreen(onNavigateToHome = {
+                navController.navigate(NavDestinations.HOME_ROUTE) {
+                    popUpTo(NavDestinations.SPLASH_SCREEN) { inclusive = true }
                 }
-            )
+            })
         }
 
-
-        // 1. HOME SCREEN
         composable(NavDestinations.HOME_ROUTE) {
             HomeScreen(
-                onNavigateToVehicleForm = { vehicleId ->
-                    navHostController.navigate(NavDestinations.addEditVehicleRoute(vehicleId))
+                navController = navController,
+                homeViewModel = homeViewModel,
+                onNavigateToAddEditVehicle = { vehicleId ->
+                    val route = if (vehicleId != null) {
+                        "${NavDestinations.ADD_EDIT_VEHICLE_ROUTE}/$vehicleId"
+                    } else {
+                        "${NavDestinations.ADD_EDIT_VEHICLE_ROUTE}/new"
+                    }
+                    navController.navigate(route)
                 },
-                onNavigateToEntryList = { _ ->
-                    // Navigation to EntryList disabled for now
-                }
+                onNavigateToRecord = { /* TODO: Implement */ },
+                onNavigateToStatistics = { /* TODO: Implement */ },
+                onNavigateToPreferences = { /* TODO: Implement */ }
             )
         }
 
-        // 2. ADD/EDIT VEHICLE SCREEN
-        composable(
-            route = "${NavDestinations.ADD_EDIT_VEHICLE_ROUTE}/{${NavDestinations.VEHICLE_ID_KEY}}",
-            arguments = listOf(
-                navArgument(NavDestinations.VEHICLE_ID_KEY) {
-                    type = NavType.StringType; nullable = false; defaultValue = "new"
-                }
-            )
-        ) {
+        composable("${NavDestinations.ADD_EDIT_VEHICLE_ROUTE}/{vehicleId}") { _ ->
             AddEditVehicleScreen(
-                onNavigateBack = { navHostController.popBackStack() }
+                navController = navController,
+                addEditVehicleViewModel = addEditVehicleViewModel
             )
         }
-
-        
-        // 3. ENTRY LIST SCREEN (Θα μετονομαστεί σε RecordListScreen)
-        composable(
-            route = "${NavDestinations.ENTRY_LIST_ROUTE}/{${NavDestinations.VEHICLE_ID_KEY}}",
-            arguments = listOf(
-                navArgument(NavDestinations.VEHICLE_ID_KEY) {
-                    type = NavType.StringType; nullable = false
-                }
-            )
-        ) { backStackEntry ->
-            val vehicleId = backStackEntry.arguments?.getString(NavDestinations.VEHICLE_ID_KEY) ?: ""
-
-            EntryListScreen( // Θα γίνει RecordListScreen
-                vehicleId = vehicleId,
-                onNavigateBack = { navHostController.popBackStack() },
-                onNavigateToEntryForm = { recordId -> // Χρησιμοποιεί το recordId
-                    // Πλοήγηση στην νέα διαδρομή ADD_EDIT_RECORD_ROUTE
-                    navHostController.navigate(NavDestinations.addEditRecordRoute(vehicleId, recordId))
-                }
-            )
-        }
-
-        // 4. ADD/EDIT RECORD SCREEN
-        composable(
-            route = "${NavDestinations.ADD_EDIT_RECORD_ROUTE}/{${NavDestinations.VEHICLE_ID_KEY}}/{recordId}", // ΝΕΑ ΔΙΑΔΡΟΜΗ
-            arguments = listOf(
-                navArgument(NavDestinations.VEHICLE_ID_KEY) {
-                    type = NavType.StringType; nullable = false
-                },
-                navArgument("recordId") { // Χρησιμοποιεί recordId
-                    type = NavType.StringType; nullable = false; defaultValue = "new"
-                }
-            )
-        ) {
-            AddEditRecordScreen( // ΝΕΟ Component
-                onNavigateBack = { navHostController.popBackStack() }
-            )
-        }
-        
     }
 }

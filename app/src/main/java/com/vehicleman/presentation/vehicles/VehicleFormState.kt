@@ -9,11 +9,11 @@ import com.vehicleman.domain.model.Vehicle
 // presentation/vehicles/VehicleFormState.kt
 
 data class VehicleFormState(
-    // ΠΡΙΝ: val brand: String = "",
-    val make: String = "", // ΔΙΟΡΘΩΣΗ
+    val id: String? = null, // ΠΡΟΣΘΗΚΗ: Για να ξέρουμε αν επεξεργαζόμαστε υπάρχον όχημα
+    val make: String = "",
     val model: String = "",
     val fuelType: String = "",
-    val plateNumber: String = "", // ΔΙΟΡΘΩΣΗ
+    val plateNumber: String = "",
     val year: String = "",
     val currentOdometer: String = "",
     val oilChangeKm: Long? = null,
@@ -21,25 +21,25 @@ data class VehicleFormState(
     val tiresChangeKm: Long? = null,
     val tiresChangeDate: Long? = null,
     val insuranceExpiryDate: Long? = null,
-    val taxesExpiryDate: Long? = null, // ΔΙΟΡΘΩΣΗ
+    val taxesExpiryDate: Long? = null,
     val isFormValid: Boolean = false,
     val errorMessage: String? = null
-
 ) {
     /** Ενημέρωση πεδίου με όνομα (generic helper). */
     fun copyField(field: String, value: String): VehicleFormState {
         return when (field) {
-            "brand" -> copy(make = value)
+            "brand" -> copy(make = value) // Το "brand" χρησιμοποιείται ακόμα από παλιά UI components
+            "make" -> copy(make = value)
             "model" -> copy(model = value)
-            "plate" -> copy(plateNumber = value)
+            "plateNumber" -> copy(plateNumber = value)
             "year" -> copy(year = value)
-            "odometer" -> copy(currentOdometer = value)
-            "oilChangeTime" -> copy(oilChangeDate = value.toLongOrNull())
+            "currentOdometer" -> copy(currentOdometer = value)
+            "oilChangeDate" -> copy(oilChangeDate = value.toLongOrNull())
             "oilChangeKm" -> copy(oilChangeKm = value.toLongOrNull())
-            "tiresChangeTime" -> copy(tiresChangeDate = value.toLongOrNull())
+            "tiresChangeDate" -> copy(tiresChangeDate = value.toLongOrNull())
             "tiresChangeKm" -> copy(tiresChangeKm = value.toLongOrNull())
-            "insuranceDate" -> copy(insuranceExpiryDate = value.toLongOrNull())
-            "taxDate" -> copy(taxesExpiryDate = value.toLongOrNull())
+            "insuranceExpiryDate" -> copy(insuranceExpiryDate = value.toLongOrNull())
+            "taxesExpiryDate" -> copy(taxesExpiryDate = value.toLongOrNull())
             "fuelType" -> copy(fuelType = value)
             else -> this
         }

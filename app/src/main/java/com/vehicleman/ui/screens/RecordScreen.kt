@@ -1,4 +1,4 @@
-package com.vehicleman.ui.screens
+/*package com.vehicleman.ui.screens
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
@@ -233,3 +233,4 @@ fun DrawScope.drawRoadLine(width: Float, y: Float, type: String) {
         }
     }
 }
+*/

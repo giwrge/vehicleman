@@ -1,6 +1,6 @@
 // app/src/main/java/com/vehicleman/data/local/dao/ExpenseDao.kt
 
-package com.vehicleman.data.dao
+/*package com.vehicleman.data.dao
 
 import androidx.room.*
 import com.vehicleman.data.entities.ExpenseEntity
@@ -40,4 +40,4 @@ interface ExpenseDao {
 
     @Query("SELECT * FROM users ORDER BY name ASC")
     fun getAllUsers(): Flow<List<UserEntity>>
-}
+}*/
