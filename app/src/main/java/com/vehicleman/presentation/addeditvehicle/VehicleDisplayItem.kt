@@ -6,5 +6,6 @@ data class VehicleDisplayItem(
     val makeModel: String,
     val licensePlate: String,
     val odometerText: String,
+    val fuelType: String,
     val isActive: Boolean = false
 )

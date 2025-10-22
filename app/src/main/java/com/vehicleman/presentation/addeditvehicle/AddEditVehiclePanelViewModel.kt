@@ -48,7 +48,8 @@ class AddEditVehiclePanelViewModel @Inject constructor(
                             name = vehicle.name,
                             makeModel = "${vehicle.make} ${vehicle.model}",
                             licensePlate = vehicle.plateNumber, // Fix: Use plateNumber
-                            odometerText = "${vehicle.currentOdometer} km" // Fix: Use currentOdometer
+                            odometerText = "${vehicle.currentOdometer} km", // Fix: Use currentOdometer
+                            fuelType = vehicle.fuelType
                         )
                     }
                     _state.update { it.copy(vehicles = uiItems, isLoading = false, vehicleToDelete = null) }

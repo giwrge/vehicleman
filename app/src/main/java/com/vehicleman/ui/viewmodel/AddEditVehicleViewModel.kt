@@ -15,25 +15,14 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-/**
- * ViewModel για τη φόρμα Προσθήκης/Επεξεργασίας Οχήματος.
- */
 @HiltViewModel
 class AddEditVehicleViewModel @Inject constructor(
     private val vehicleRepository: VehicleRepository,
-    savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(VehicleFormState())
     val state: StateFlow<VehicleFormState> = _state
-
-    private val vehicleId: String? = savedStateHandle["vehicleId"]
-
-    init {
-        if (vehicleId != null && vehicleId != "new") {
-            onEvent(VehicleFormEvent.LoadVehicle(vehicleId))
-        }
-    }
 
     fun onEvent(event: VehicleFormEvent) {
         when (event) {
@@ -83,8 +72,8 @@ class AddEditVehicleViewModel @Inject constructor(
             val formState = _state.value
             val vehicle = formState.toVehicle()
             try {
-                vehicleRepository.saveVehicle(vehicle) // saveVehicle handles both insert and update
-                _state.update { it.copy(isFormValid = true) } // Use isFormValid to signal success
+                vehicleRepository.saveVehicle(vehicle)
+                _state.update { it.copy(isFormValid = true) }
             } catch (e: Exception) {
                 _state.update { it.copy(errorMessage = e.localizedMessage ?: "Αποτυχία αποθήκευσης οχήματος") }
             }
@@ -95,7 +84,7 @@ class AddEditVehicleViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 vehicleRepository.deleteVehicleById(vehicleId)
-                 _state.update { it.copy(isFormValid = true) } // Use isFormValid to signal success
+                _state.update { it.copy(isFormValid = true) }
             } catch (e: Exception) {
                 _state.update { it.copy(errorMessage = e.localizedMessage ?: "Αποτυχία διαγραφής") }
             }

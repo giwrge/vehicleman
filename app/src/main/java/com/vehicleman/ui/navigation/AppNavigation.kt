@@ -17,8 +17,7 @@ import com.vehicleman.ui.viewmodel.HomeViewModel
 @Composable
 fun AppNavigation(
     navController: NavHostController = rememberNavController(),
-    homeViewModel: HomeViewModel = hiltViewModel(),
-    addEditVehicleViewModel: AddEditVehicleViewModel = hiltViewModel()
+    homeViewModel: HomeViewModel = hiltViewModel()
 ) {
     NavHost(
         navController = navController,
@@ -44,16 +43,15 @@ fun AppNavigation(
                     }
                     navController.navigate(route)
                 },
-                onNavigateToRecord = { /* TODO: Implement */ },
-                onNavigateToStatistics = { /* TODO: Implement */ },
-                onNavigateToPreferences = { /* TODO: Implement */ }
+                onNavigateToRecord = { /* TODO: Implement */ }
             )
         }
 
-        composable("${NavDestinations.ADD_EDIT_VEHICLE_ROUTE}/{vehicleId}") { _ ->
+        composable("${NavDestinations.ADD_EDIT_VEHICLE_ROUTE}/{vehicleId}") { backStackEntry ->
+            val vehicleId = backStackEntry.arguments?.getString("vehicleId")
             AddEditVehicleScreen(
                 navController = navController,
-                addEditVehicleViewModel = addEditVehicleViewModel
+                vehicleId = vehicleId,
             )
         }
     }
