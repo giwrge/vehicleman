@@ -15,7 +15,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -54,11 +53,10 @@ fun HomeScreen(
                 Surface(
                     onClick = { onNavigateToAddEditVehicle(null) },
                     shape = RoundedCornerShape(16.dp),
-                    color = Color.White,
+                    color = Color.Transparent,
                     modifier = Modifier
-                        .width(80.dp)
-                        .height(60.dp)
-                        .alpha(0.8f) // Apply 80% transparency to the entire FAB
+                        .width(90.dp)
+                        .height(70.dp)
                 ) {
                     Image(
                         painter = painterResource(id = R.mipmap.ic_fab_add_vehicle),
@@ -128,12 +126,12 @@ fun VehicleListItem(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Image(
-                    painter = painterResource(id = R.mipmap.ic_edit_tools_v2),
+                    painter = painterResource(id = R.mipmap.ic_wrench_edit),
                     contentDescription = "Επεξεργασία",
                     modifier = Modifier.size(40.dp).clickable(onClick = onEdit)
                 )
                 Image(
-                    painter = painterResource(id = R.mipmap.ic_delete_bin_v2),
+                    painter = painterResource(id = R.mipmap.ic_delete),
                     contentDescription = "Διαγραφή",
                     modifier = Modifier.size(40.dp).clickable(onClick = onDelete)
                 )
@@ -197,6 +195,13 @@ fun VehicleCard(
 private fun HomeTopAppBar() {
     TopAppBar(
         title = { Text("") },
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+        actions = {
+            Image(
+                painter = painterResource(id = R.mipmap.ic_settings),
+                contentDescription = "Settings",
+                modifier = Modifier.size(40.dp).padding(end = 8.dp)
+            )
+        }
     )
 }

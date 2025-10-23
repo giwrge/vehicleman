@@ -7,8 +7,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,6 +23,7 @@ import com.vehicleman.R
 import com.vehicleman.presentation.vehicles.VehicleFormEvent
 import com.vehicleman.presentation.vehicles.VehicleFormState
 import com.vehicleman.ui.viewmodel.AddEditVehicleViewModel
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -66,15 +65,15 @@ fun AddEditVehicleScreen(
             topBar = {
                 TopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                    title = { Text(if (state.id == null) "Προσθήκη Οχήματος" else "Επεξεργασία Οχήματος", color = Color.Black) },
+                    title = { Text(if (state.id == null) "Προσθήκη Οχήματος" else "Επεξεργασία Οχήματος", color = Color.Black, modifier = Modifier.padding(start = 16.dp)) },
                     navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Πίσω", tint = Color.Black)
+                        IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(40.dp)) {
+                            Image(painter = painterResource(id = R.mipmap.ic_backarrow), contentDescription = "Πίσω")
                         }
                     },
                     actions = {
                         IconButton(onClick = { addEditVehicleViewModel.onEvent(VehicleFormEvent.Submit) }) {
-                            Icon(imageVector = Icons.Default.Check, contentDescription = "Αποθήκευση", tint = Color.Black)
+                            Image(painter = painterResource(id = R.mipmap.ic_save), contentDescription = "Αποθήκευση")
                         }
                     }
                 )
@@ -120,13 +119,20 @@ fun AddEditVehicleForm(
 
     Column(
         modifier = modifier.verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         OutlinedTextField(value = state.make, onValueChange = { onEvent(VehicleFormEvent.MakeChanged(it)) }, label = { Text("Μάρκα") }, modifier = Modifier.fillMaxWidth(), colors = textFieldColors)
         OutlinedTextField(value = state.model, onValueChange = { onEvent(VehicleFormEvent.ModelChanged(it)) }, label = { Text("Μοντέλο") }, modifier = Modifier.fillMaxWidth(), colors = textFieldColors)
         OutlinedTextField(value = state.plateNumber, onValueChange = { onEvent(VehicleFormEvent.PlateNumberChanged(it)) }, label = { Text("Αριθμός Πινακίδας") }, modifier = Modifier.fillMaxWidth(), colors = textFieldColors)
         OutlinedTextField(value = state.year, onValueChange = { onEvent(VehicleFormEvent.YearChanged(it)) }, label = { Text("Έτος Κατασκευής") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), colors = textFieldColors)
-        OutlinedTextField(value = state.currentOdometer, onValueChange = { onEvent(VehicleFormEvent.CurrentOdometerChanged(it)) }, label = { Text("Χιλιόμετρα (Οδόμετρο)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), colors = textFieldColors)
+        OutlinedTextField(
+            value = state.currentOdometer.let { if (it.isNotEmpty()) NumberFormat.getNumberInstance(Locale.GERMANY).format(it.toLong()) else "" },
+            onValueChange = { onEvent(VehicleFormEvent.CurrentOdometerChanged(it)) },
+            label = { Text("Χιλιόμετρα (Οδόμετρο)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth(),
+            colors = textFieldColors
+        )
 
         FuelTypeSelector(selectedFuelTypes = state.fuelType, onFuelTypeChanged = { onEvent(VehicleFormEvent.FuelTypeChanged(it)) })
 
@@ -134,9 +140,23 @@ fun AddEditVehicleForm(
 
         Text("Συντήρηση", style = MaterialTheme.typography.titleMedium, color = Color.Black)
 
-        OutlinedTextField(value = state.oilChangeKm?.toString() ?: "", onValueChange = { onEvent(VehicleFormEvent.OilChangeKmChanged(it)) }, label = { Text("Αλλαγή Λαδιών (κάθε Χ km)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), colors = textFieldColors)
+        OutlinedTextField(
+            value = state.oilChangeKm?.let { NumberFormat.getNumberInstance(Locale.GERMANY).format(it) } ?: "",
+            onValueChange = { onEvent(VehicleFormEvent.OilChangeKmChanged(it.toString())) },
+            label = { Text("Αλλαγή Λαδιών (κάθε Χ km)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth(),
+            colors = textFieldColors
+        )
         DatePickerField(label = "Αλλαγή Λαδιών (ημερομηνία)", value = state.oilChangeDate, onValueChange = { onEvent(VehicleFormEvent.OilChangeDateChanged(it)) }, colors = textFieldColors)
-        OutlinedTextField(value = state.tiresChangeKm?.toString() ?: "", onValueChange = { onEvent(VehicleFormEvent.TiresChangeKmChanged(it)) }, label = { Text("Αλλαγή Ελαστικών (κάθε Χ km)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), colors = textFieldColors)
+        OutlinedTextField(
+            value = state.tiresChangeKm?.let { NumberFormat.getNumberInstance(Locale.GERMANY).format(it) } ?: "",
+            onValueChange = { onEvent(VehicleFormEvent.TiresChangeKmChanged(it.toString())) },
+            label = { Text("Αλλαγή Ελαστικών (κάθε Χ km)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth(),
+            colors = textFieldColors
+        )
         DatePickerField(label = "Αλλαγή Ελαστικών (ημερομηνία)", value = state.tiresChangeDate, onValueChange = { onEvent(VehicleFormEvent.TiresChangeDateChanged(it)) }, colors = textFieldColors)
 
         Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Black)
