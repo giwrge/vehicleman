@@ -18,12 +18,12 @@ fun VehicleFormState.toVehicle(): Vehicle {
         fuelType = this.fuelType,
         currentOdometer = this.currentOdometer.toIntOrNull() ?: 0,
         registrationDate = Date(), // New vehicles get current date, existing ones should preserve it (handled in repository)
-        oilChangeKm = this.oilChangeKm ?: 10000L,
-        oilChangeDate = this.oilChangeDate ?: 365L,
-        tiresChangeKm = this.tiresChangeKm ?: 40000L,
-        tiresChangeDate = this.tiresChangeDate ?: (365L * 2),
-        insuranceExpiryDate = this.insuranceExpiryDate ?: 365L,
-        taxesExpiryDate = this.taxesExpiryDate ?: 365L
+        oilChangeKm = this.oilChangeKm.toLongOrNull() ?: 10000L,
+        oilChangeDate = this.oilChangeDate.toLongOrNull() ?: 365L,
+        tiresChangeKm = this.tiresChangeKm.toLongOrNull() ?: 40000L,
+        tiresChangeDate = this.tiresChangeDate.toLongOrNull() ?: (365L * 2),
+        insuranceExpiryDate = this.insuranceExpiryDate.toLongOrNull() ?: 365L,
+        taxesExpiryDate = this.taxesExpiryDate.toLongOrNull() ?: 365L
     )
 }
 
@@ -37,12 +37,12 @@ fun Vehicle.toFormState(): VehicleFormState {
         year = this.year.toString(),
         currentOdometer = this.currentOdometer.toString(),
         fuelType = this.fuelType,
-        oilChangeKm = this.oilChangeKm,
-        oilChangeDate = this.oilChangeDate,
-        tiresChangeKm = this.tiresChangeKm,
-        tiresChangeDate = this.tiresChangeDate,
-        insuranceExpiryDate = this.insuranceExpiryDate,
-        taxesExpiryDate = this.taxesExpiryDate,
+        oilChangeKm = this.oilChangeKm.toString(),
+        oilChangeDate = this.oilChangeDate.toString(),
+        tiresChangeKm = this.tiresChangeKm.toString(),
+        tiresChangeDate = this.tiresChangeDate.toString(),
+        insuranceExpiryDate = this.insuranceExpiryDate.toString(),
+        taxesExpiryDate = this.taxesExpiryDate.toString(),
         isFormValid = false, // Reset form validity
         errorMessage = null // Clear any previous errors
     )

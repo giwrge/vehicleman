@@ -1,12 +1,14 @@
-// app/src/main/java/com/vehicleman/di/RepositoryModule.kt
 package com.vehicleman.di
 
-//import com.vehicleman.data.dao.RecordDao
+import com.vehicleman.data.dao.RecordDao
 import com.vehicleman.data.dao.VehicleDao
-//import com.vehicleman.data.repository.RecordRepositoryImpl
+import com.vehicleman.data.repository.RecordRepositoryImpl
+import com.vehicleman.data.repository.UserPreferencesRepositoryImpl
 import com.vehicleman.data.repository.VehicleRepositoryImpl
-//import com.vehicleman.domain.repositories.RecordRepository
+import com.vehicleman.domain.repositories.RecordRepository
+import com.vehicleman.domain.repositories.UserPreferencesRepository
 import com.vehicleman.domain.repositories.VehicleRepository
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -15,26 +17,17 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object RepositoryModule {
+abstract class RepositoryModule {
 
-    @Provides
+    @Binds
     @Singleton
-    // VehicleRepositoryImpl: Χρειάζεται και τα δύο DAO για το cascading delete
-    fun provideVehicleRepository(
-        vehicleDao: VehicleDao,
-        //  RecordDao: RecordDao
-    ): VehicleRepository {
-        return VehicleRepositoryImpl(
-            vehicleDao //, RecordDao)
-        )
-    }
-}
-/*
-    // ΠΑΡΟΧΗ: RecordRepository
-   @Provides
-   @Singleton
-   fun provideRecordRepository(dao: RecordDao): RecordRepository {
-      return RecordRepositoryImpl(dao)
-    }
+    abstract fun bindVehicleRepository(impl: VehicleRepositoryImpl): VehicleRepository
 
- */
+    @Binds
+    @Singleton
+    abstract fun bindRecordRepository(impl: RecordRepositoryImpl): RecordRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindUserPreferencesRepository(impl: UserPreferencesRepositoryImpl): UserPreferencesRepository
+}

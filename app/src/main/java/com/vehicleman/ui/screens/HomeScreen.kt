@@ -6,6 +6,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,23 +25,47 @@ import androidx.navigation.NavController
 import com.vehicleman.R
 import com.vehicleman.presentation.addeditvehicle.AddEditVehiclePanelEvent
 import com.vehicleman.presentation.addeditvehicle.VehicleDisplayItem
+import com.vehicleman.ui.navigation.NavDestinations
 import com.vehicleman.ui.viewmodel.HomeViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     navController: NavController,
     homeViewModel: HomeViewModel,
     onNavigateToAddEditVehicle: (String?) -> Unit,
-    onNavigateToRecord: (String) -> Unit
+    onNavigateToRecord: (String) -> Unit,
+    onNavigateToStatistics: () -> Unit,
+    onNavigateToPreferences: () -> Unit,
+    isNightMode: Boolean
 ) {
     val vehicles by homeViewModel.vehicles.collectAsState()
     var selectedVehicleId by remember { mutableStateOf<String?>(null) }
     var showDeleteDialog by remember { mutableStateOf<String?>(null) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    var totalDragAmount by remember { mutableStateOf(0f) }
+
+    Box(modifier = Modifier
+        .fillMaxSize()
+        .pointerInput(Unit) {
+            detectHorizontalDragGestures(
+                onDragStart = { totalDragAmount = 0f },
+                onHorizontalDrag = { change, dragAmount ->
+                    change.consume()
+                    totalDragAmount += dragAmount
+                },
+                onDragEnd = {
+                    if (totalDragAmount < -30) { // Swipe Left
+                        onNavigateToStatistics()
+                    } else if (totalDragAmount > 30) { // Swipe Right
+                        onNavigateToPreferences()
+                    }
+                }
+            )
+        }
+    ) {
         Image(
-            painter = painterResource(id = R.mipmap.img_home_background),
+            painter = if (isNightMode) painterResource(id = R.mipmap.img_home_background_night) else painterResource(id = R.mipmap.img_home_background),
             contentDescription = "Background",
             contentScale = ContentScale.FillBounds,
             modifier = Modifier.fillMaxSize()
@@ -48,7 +73,7 @@ fun HomeScreen(
 
         Scaffold(
             containerColor = Color.Transparent,
-            topBar = { HomeTopAppBar() },
+            topBar = { HomeTopAppBar(onNavigateToPreferences) },
             floatingActionButton = {
                 Surface(
                     onClick = { onNavigateToAddEditVehicle(null) },
@@ -66,7 +91,6 @@ fun HomeScreen(
                 }
             }
         ) { padding ->
-            // Apply the tap gesture for deselection here
             Box(modifier = Modifier.fillMaxSize().padding(padding).pointerInput(selectedVehicleId) {
                 if (selectedVehicleId != null) {
                     detectTapGestures(onTap = { selectedVehicleId = null })
@@ -82,6 +106,7 @@ fun HomeScreen(
                             vehicle = vehicle,
                             isSelected = vehicle.id == selectedVehicleId,
                             onTap = { onNavigateToRecord(vehicle.id) },
+                            onDoubleTap = { navController.navigate(NavDestinations.addEditEntryRoute(vehicle.id, null)) },
                             onLongTap = { selectedVehicleId = vehicle.id },
                             onEdit = { onNavigateToAddEditVehicle(vehicle.id) },
                             onDelete = { showDeleteDialog = vehicle.id }
@@ -115,6 +140,7 @@ fun VehicleListItem(
     vehicle: VehicleDisplayItem,
     isSelected: Boolean,
     onTap: () -> Unit,
+    onDoubleTap: () -> Unit,
     onLongTap: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
@@ -141,6 +167,7 @@ fun VehicleListItem(
             vehicle = vehicle,
             isSelected = isSelected,
             onTap = onTap,
+            onDoubleTap = onDoubleTap,
             onLongTap = onLongTap,
         )
     }
@@ -152,11 +179,11 @@ fun VehicleCard(
     vehicle: VehicleDisplayItem,
     isSelected: Boolean,
     onTap: () -> Unit,
+    onDoubleTap: () -> Unit,
     onLongTap: () -> Unit,
 ) {
     val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
-        else MaterialTheme.colorScheme.surface.copy(alpha = 0.65f),
+        targetValue = if (isSelected) Color(0xFFC8E6C9).copy(alpha = 0.65f) else Color.White.copy(alpha = 0.65f),
         label = "background-color"
     )
 
@@ -172,7 +199,7 @@ fun VehicleCard(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .combinedClickable(onClick = onTap, onLongClick = onLongTap)
+                .combinedClickable(onClick = onTap, onLongClick = onLongTap, onDoubleClick = onDoubleTap)
                 .padding(12.dp)
         ) {
             Column(
@@ -192,7 +219,7 @@ fun VehicleCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HomeTopAppBar() {
+private fun HomeTopAppBar(onNavigateToPreferences: () -> Unit) {
     TopAppBar(
         title = { Text("") },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
@@ -200,7 +227,7 @@ private fun HomeTopAppBar() {
             Image(
                 painter = painterResource(id = R.mipmap.ic_settings),
                 contentDescription = "Settings",
-                modifier = Modifier.size(40.dp).padding(end = 8.dp)
+                modifier = Modifier.size(40.dp).padding(end = 8.dp).clickable(onClick = onNavigateToPreferences)
             )
         }
     )

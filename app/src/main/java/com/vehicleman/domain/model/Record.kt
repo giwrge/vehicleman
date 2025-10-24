@@ -1,34 +1,15 @@
-/*package com.vehicleman.domain.model
+package com.vehicleman.domain.model
 
-import java.util.Date
+import java.util.UUID
 
-/**
- * Domain Model for a Vehicle Maintenance Record (Expense or Reminder).
- * Αυτό αντικαθιστά τα παλιά δοκιμαστικά ExpenseEntity.
- */
-data class MaintenanceRecord(
-    val id: String,
+data class Record(
+    val id: String = UUID.randomUUID().toString(),
     val vehicleId: String,
-    val recordType: MaintenanceRecordType,
+    val date: Long,
+    val odometer: Int,
+    val isExpense: Boolean,
     val title: String,
     val description: String?,
-    val date: Date, // Date of expense or reminder activation
-    val odometer: Int,
-
-    // Expense fields
-    val cost: Double?,
-    val quantity: Double?,
-    val pricePerUnit: Double?,
-
-    // Reminder fields
-    val isReminder: Boolean,
-    val reminderDate: Date?,
-    val reminderOdometer: Int?,
-    val isCompleted: Boolean = false
+    val amount: Double?,
+    val reminderDate: Long?
 )
-
-enum class MaintenanceRecordType {
-    EXPENSE, // Κανονική Δαπάνη (π.χ. σέρβις, λάστιχα)
-    REMINDER, // Απλή Υπενθύμιση (π.χ. ΚΤΕΟ, Ασφάλεια)
-    FUEL_UP // Ειδικός τύπος για Ανεφοδιασμό (με λεπτομέρειες ποσότητας/τιμής)
-}*/

@@ -1,31 +1,28 @@
-/*package com.vehicleman.data.entities
+package com.vehicleman.data.entities
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
-import java.util.Date
 
-/**
- * Defines the structure for the 'entries' table (Expenses/Reminders) in the Room database.
- */
-@Entity(tableName = "entries")
+@Entity(
+    tableName = "records",
+    foreignKeys = [
+        ForeignKey(
+            entity = VehicleEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["vehicleId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ]
+)
 data class RecordEntity(
-    @PrimaryKey
-    val id: String,
-    val vehicleId: String, // Ξένο κλειδί για σύνδεση με το όχημα
-    val entryType: String, // 'EXPENSE' ή 'REMINDER'
-    val title: String, // Περιγραφή ή τίτλος υπενθύμισης
+    @PrimaryKey val id: String,
+    val vehicleId: String,
+    val date: Long,
+    val odometer: Int,
+    val isExpense: Boolean, // True for expense, false for reminder
+    val title: String,
     val description: String?,
-    val date: Date, // Ημερομηνία συμβάντος/δαπάνης
-    val odometer: Int, // Χιλιόμετρα
-
-    // Πεδία Δαπανών
-    val cost: Double?,
-    val quantity: Double?, // π.χ., λίτρα βενζίνης
-    val pricePerUnit: Double?, // π.χ., τιμή λίτρου
-
-    // Πεδία Υπενθυμίσεων
-    val isReminder: Boolean,
-    val reminderDate: Date?,
-    val reminderOdometer: Int?,
-    val isCompleted: Boolean = false // Για υπενθυμίσεις
-)*/
+    val amount: Double?,
+    val reminderDate: Long?
+)

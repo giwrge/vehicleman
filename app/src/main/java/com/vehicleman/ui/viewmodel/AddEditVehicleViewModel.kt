@@ -32,12 +32,12 @@ class AddEditVehicleViewModel @Inject constructor(
             is VehicleFormEvent.YearChanged -> _state.update { it.copy(year = event.year) }
             is VehicleFormEvent.FuelTypeChanged -> _state.update { it.copy(fuelType = event.fuelType) }
             is VehicleFormEvent.CurrentOdometerChanged -> _state.update { it.copy(currentOdometer = event.currentOdometer) }
-            is VehicleFormEvent.OilChangeKmChanged -> _state.update { it.copy(oilChangeKm = event.oilChangeKm.toLongOrNull()) }
-            is VehicleFormEvent.OilChangeDateChanged -> _state.update { it.copy(oilChangeDate = event.oilChangeDate.toLongOrNull()) }
-            is VehicleFormEvent.TiresChangeKmChanged -> _state.update { it.copy(tiresChangeKm = event.tiresChangeKm.toLongOrNull()) }
-            is VehicleFormEvent.TiresChangeDateChanged -> _state.update { it.copy(tiresChangeDate = event.tiresChangeDate.toLongOrNull()) }
-            is VehicleFormEvent.InsuranceExpiryDateChanged -> _state.update { it.copy(insuranceExpiryDate = event.insuranceExpiryDate.toLongOrNull()) }
-            is VehicleFormEvent.TaxesExpiryDateChanged -> _state.update { it.copy(taxesExpiryDate = event.taxesExpiryDate.toLongOrNull()) }
+            is VehicleFormEvent.OilChangeKmChanged -> _state.update { it.copy(oilChangeKm = event.oilChangeKm) }
+            is VehicleFormEvent.OilChangeDateChanged -> _state.update { it.copy(oilChangeDate = event.oilChangeDate) }
+            is VehicleFormEvent.TiresChangeKmChanged -> _state.update { it.copy(tiresChangeKm = event.tiresChangeKm) }
+            is VehicleFormEvent.TiresChangeDateChanged -> _state.update { it.copy(tiresChangeDate = event.tiresChangeDate) }
+            is VehicleFormEvent.InsuranceExpiryDateChanged -> _state.update { it.copy(insuranceExpiryDate = event.insuranceExpiryDate) }
+            is VehicleFormEvent.TaxesExpiryDateChanged -> _state.update { it.copy(taxesExpiryDate = event.taxesExpiryDate) }
             is VehicleFormEvent.LoadVehicle -> loadVehicle(event.vehicleId)
             is VehicleFormEvent.DeleteVehicle -> deleteVehicle(event.vehicleId)
             is VehicleFormEvent.Submit -> saveVehicle()
@@ -57,7 +57,7 @@ class AddEditVehicleViewModel @Inject constructor(
             try {
                 val vehicle = vehicleRepository.getVehicleById(vehicleId)
                 if (vehicle != null) {
-                    _state.update { vehicle.toFormState() }
+                    _state.value = vehicle.toFormState()
                 } else {
                     _state.update { it.copy(errorMessage = "Το όχημα δεν βρέθηκε") }
                 }

@@ -8,8 +8,11 @@ object NavDestinations {
     const val SPLASH_SCREEN = "splash_screen"
     const val HOME_ROUTE = "home_route"
     const val ADD_EDIT_VEHICLE_ROUTE = "add_edit_vehicle_route"
-    const val ENTRY_LIST_ROUTE = "entry_list_route" // ΝΕΑ ΔΙΑΔΡΟΜΗ
+    const val ENTRY_LIST_ROUTE = "entry_list_route"
     const val ADD_EDIT_ENTRY_ROUTE = "add_edit_entry_route"
+    const val STATISTICS_ROUTE = "statistics_route"
+    const val STATISTIC_VEHICLE_ROUTE = "statistic_vehicle_route"
+    const val PREFERENCE_ROUTE = "preference_route"
 
     // Argument Key
     const val VEHICLE_ID_KEY = "vehicleId"
@@ -30,4 +33,9 @@ object NavDestinations {
     fun addEditEntryRoute(vehicleId: String, entryId: String? = null) =
         if (entryId != null) "$ADD_EDIT_ENTRY_ROUTE/$vehicleId/$entryId"
         else "$ADD_EDIT_ENTRY_ROUTE/$vehicleId/new"
+
+    /**
+     * Helper function to build the route for the Statistic Vehicle Screen.
+     */
+    fun statisticVehicleRoute(vehicleId: String) = "$STATISTIC_VEHICLE_ROUTE/$vehicleId"
 }

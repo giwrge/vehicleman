@@ -2,6 +2,7 @@ package com.vehicleman.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -23,7 +24,6 @@ import com.vehicleman.R
 import com.vehicleman.presentation.vehicles.VehicleFormEvent
 import com.vehicleman.presentation.vehicles.VehicleFormState
 import com.vehicleman.ui.viewmodel.AddEditVehicleViewModel
-import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -33,7 +33,8 @@ import java.util.Locale
 fun AddEditVehicleScreen(
     navController: NavController,
     vehicleId: String?,
-    addEditVehicleViewModel: AddEditVehicleViewModel = hiltViewModel()
+    addEditVehicleViewModel: AddEditVehicleViewModel = hiltViewModel(),
+    isNightMode: Boolean
 ) {
     val state by addEditVehicleViewModel.state.collectAsState()
 
@@ -54,7 +55,7 @@ fun AddEditVehicleScreen(
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
-            painter = painterResource(id = R.mipmap.img_home_background),
+            painter = if (isNightMode) painterResource(id = R.mipmap.img_home_background_night) else painterResource(id = R.mipmap.img_home_background),
             contentDescription = "Background",
             contentScale = ContentScale.FillBounds,
             modifier = Modifier.fillMaxSize()
@@ -126,7 +127,7 @@ fun AddEditVehicleForm(
         OutlinedTextField(value = state.plateNumber, onValueChange = { onEvent(VehicleFormEvent.PlateNumberChanged(it)) }, label = { Text("Αριθμός Πινακίδας") }, modifier = Modifier.fillMaxWidth(), colors = textFieldColors)
         OutlinedTextField(value = state.year, onValueChange = { onEvent(VehicleFormEvent.YearChanged(it)) }, label = { Text("Έτος Κατασκευής") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), colors = textFieldColors)
         OutlinedTextField(
-            value = state.currentOdometer.let { if (it.isNotEmpty()) NumberFormat.getNumberInstance(Locale.GERMANY).format(it.toLong()) else "" },
+            value = state.currentOdometer,
             onValueChange = { onEvent(VehicleFormEvent.CurrentOdometerChanged(it)) },
             label = { Text("Χιλιόμετρα (Οδόμετρο)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -141,8 +142,8 @@ fun AddEditVehicleForm(
         Text("Συντήρηση", style = MaterialTheme.typography.titleMedium, color = Color.Black)
 
         OutlinedTextField(
-            value = state.oilChangeKm?.let { NumberFormat.getNumberInstance(Locale.GERMANY).format(it) } ?: "",
-            onValueChange = { onEvent(VehicleFormEvent.OilChangeKmChanged(it.toString())) },
+            value = state.oilChangeKm,
+            onValueChange = { onEvent(VehicleFormEvent.OilChangeKmChanged(it)) },
             label = { Text("Αλλαγή Λαδιών (κάθε Χ km)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
@@ -150,8 +151,8 @@ fun AddEditVehicleForm(
         )
         DatePickerField(label = "Αλλαγή Λαδιών (ημερομηνία)", value = state.oilChangeDate, onValueChange = { onEvent(VehicleFormEvent.OilChangeDateChanged(it)) }, colors = textFieldColors)
         OutlinedTextField(
-            value = state.tiresChangeKm?.let { NumberFormat.getNumberInstance(Locale.GERMANY).format(it) } ?: "",
-            onValueChange = { onEvent(VehicleFormEvent.TiresChangeKmChanged(it.toString())) },
+            value = state.tiresChangeKm,
+            onValueChange = { onEvent(VehicleFormEvent.TiresChangeKmChanged(it)) },
             label = { Text("Αλλαγή Ελαστικών (κάθε Χ km)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
@@ -229,7 +230,7 @@ fun FuelTypeSelector(selectedFuelTypes: String, onFuelTypeChanged: (String) -> U
 @Composable
 fun DatePickerField(
     label: String,
-    value: Long?,
+    value: String,
     onValueChange: (String) -> Unit,
     colors: TextFieldColors
 ) {
@@ -246,7 +247,7 @@ fun DatePickerField(
 
     Box(modifier = Modifier.clickable { showDatePicker = true }) {
         OutlinedTextField(
-            value = value?.let { dateFormatter.format(Date(it)) } ?: "",
+            value = value.toLongOrNull()?.let { dateFormatter.format(Date(it)) } ?: "",
             onValueChange = { },
             readOnly = true,
             label = { Text(label) },
@@ -261,7 +262,7 @@ fun DatePickerField(
 
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = value ?: System.currentTimeMillis()
+            initialSelectedDateMillis = value.toLongOrNull() ?: System.currentTimeMillis()
         )
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },

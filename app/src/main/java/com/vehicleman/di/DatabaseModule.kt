@@ -1,10 +1,9 @@
-// app/src/main/java/com/vehicleman/di/DatabaseModule.kt
 package com.vehicleman.di
 
 import android.app.Application
 import androidx.room.Room
 import com.vehicleman.data.VehicleDatabase
-//import com.vehicleman.data.dao.RecordDao
+import com.vehicleman.data.dao.RecordDao
 import com.vehicleman.data.dao.VehicleDao
 import dagger.Module
 import dagger.Provides
@@ -23,7 +22,7 @@ object DatabaseModule {
             app,
             VehicleDatabase::class.java,
             VehicleDatabase.DATABASE_NAME
-        ).build()
+        ).fallbackToDestructiveMigration().build()
     }
 
     @Provides
@@ -32,10 +31,9 @@ object DatabaseModule {
         return db.vehicleDao()
     }
 
-    // ΠΑΡΟΧΗ: RecordDao
-  /*  @Provides
+    @Provides
     @Singleton
     fun provideRecordDao(db: VehicleDatabase): RecordDao {
-        return db.RecordDao()
-    }*/
+        return db.recordDao()
+    }
 }
