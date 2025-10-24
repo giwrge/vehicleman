@@ -37,6 +37,8 @@ fun HomeScreen(
     onNavigateToRecord: (String) -> Unit,
     onNavigateToStatistics: () -> Unit,
     onNavigateToPreferences: () -> Unit,
+    onNavigateToProMode: () -> Unit,
+    onNavigateToSignUp: () -> Unit,
     isNightMode: Boolean
 ) {
     val vehicles by homeViewModel.vehicles.collectAsState()
@@ -73,7 +75,7 @@ fun HomeScreen(
 
         Scaffold(
             containerColor = Color.Transparent,
-            topBar = { HomeTopAppBar(onNavigateToPreferences) },
+            topBar = { HomeTopAppBar(onNavigateToPreferences, onNavigateToProMode, onNavigateToSignUp) },
             floatingActionButton = {
                 Surface(
                     onClick = { onNavigateToAddEditVehicle(null) },
@@ -219,11 +221,25 @@ fun VehicleCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HomeTopAppBar(onNavigateToPreferences: () -> Unit) {
+private fun HomeTopAppBar(
+    onNavigateToPreferences: () -> Unit,
+    onNavigateToProMode: () -> Unit,
+    onNavigateToSignUp: () -> Unit
+) {
     TopAppBar(
         title = { Text("") },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
         actions = {
+            Image(
+                painter = painterResource(id = R.mipmap.ic_sing_up),
+                contentDescription = "Sign Up",
+                modifier = Modifier.size(40.dp).padding(end = 8.dp).clickable(onClick = onNavigateToSignUp)
+            )
+            Image(
+                painter = painterResource(id = R.mipmap.ic_promode_vip),
+                contentDescription = "Pro Mode",
+                modifier = Modifier.size(40.dp).padding(end = 8.dp).clickable(onClick = onNavigateToProMode)
+            )
             Image(
                 painter = painterResource(id = R.mipmap.ic_settings),
                 contentDescription = "Settings",

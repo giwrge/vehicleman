@@ -55,6 +55,12 @@ fun AppNavigation(
                 onNavigateToPreferences = {
                     navController.navigate(NavDestinations.PREFERENCE_ROUTE)
                 },
+                onNavigateToProMode = {
+                    navController.navigate(NavDestinations.PRO_MODE_ROUTE)
+                },
+                onNavigateToSignUp = {
+                    navController.navigate(NavDestinations.SIGN_UP_ROUTE)
+                },
                 isNightMode = isNightMode
             )
         }
@@ -99,6 +105,14 @@ fun AppNavigation(
 
         composable(NavDestinations.PREFERENCE_ROUTE) {
             PreferenceScreen(navController = navController)
+        }
+
+        composable(NavDestinations.PRO_MODE_ROUTE) {
+            // TODO: Create ProModeScreen
+        }
+
+        composable(NavDestinations.SIGN_UP_ROUTE) {
+            // TODO: Create SignUpScreen
         }
     }
 }

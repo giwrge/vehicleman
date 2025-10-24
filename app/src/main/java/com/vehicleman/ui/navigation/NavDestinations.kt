@@ -13,6 +13,8 @@ object NavDestinations {
     const val STATISTICS_ROUTE = "statistics_route"
     const val STATISTIC_VEHICLE_ROUTE = "statistic_vehicle_route"
     const val PREFERENCE_ROUTE = "preference_route"
+    const val PRO_MODE_ROUTE = "pro_mode_route"
+    const val SIGN_UP_ROUTE = "sign_up_route"
 
     // Argument Key
     const val VEHICLE_ID_KEY = "vehicleId"
