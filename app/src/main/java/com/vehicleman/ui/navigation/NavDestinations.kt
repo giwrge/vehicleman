@@ -15,9 +15,18 @@ object NavDestinations {
     const val PREFERENCE_ROUTE = "preference_route"
     const val PRO_MODE_ROUTE = "pro_mode_route"
     const val SIGN_UP_ROUTE = "sign_up_route"
+    const val USERS_ROUTE = "users_route"
+    const val CUSTOM_SORT_ROUTE = "custom_sort_route"
+    const val DRIVERS_ROUTE = "drivers_route"
+    const val TWIN_APP_SETUP_ROUTE = "twin_app_setup_route"
+    const val SUB_DRIVER_PERMISSIONS_ROUTE = "sub_driver_permissions_route"
+    const val BACKUP_ROUTE = "backup_route"
+    const val RESTORE_ROUTE = "restore_route"
+    const val IMPORT_WIZARD_ROUTE = "import_wizard_route"
 
-    // Argument Key
+    // Argument Keys
     const val VEHICLE_ID_KEY = "vehicleId"
+    const val SUB_DRIVER_ID_KEY = "subDriverId"
 
     /**
      * Helper function to build the route for the Add/Edit Vehicle Form.

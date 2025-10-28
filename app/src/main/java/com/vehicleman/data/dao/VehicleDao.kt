@@ -26,6 +26,12 @@ interface VehicleDao {
 
     @Query("SELECT * FROM vehicles ORDER BY registrationDate DESC")
     fun getAllVehicles(): Flow<List<VehicleEntity>>
+    
+    @Query("SELECT * FROM vehicles")
+    suspend fun getAllVehiclesList(): List<VehicleEntity>
+    
+    @Query("DELETE FROM vehicles")
+    suspend fun deleteAllVehicles()
 
     /**
      * Λαμβάνει ένα όχημα με βάση το ID του.

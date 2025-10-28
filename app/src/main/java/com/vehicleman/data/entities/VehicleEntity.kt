@@ -20,5 +20,8 @@ data class VehicleEntity(
     val tiresChangeKm: Long,
     val tiresChangeDate: Long,
     val insuranceExpiryDate: Long,
-    val taxesExpiryDate: Long
+    val taxesExpiryDate: Long,
+    val dateAdded: Long,
+    val lastModified: Long,
+    val recordCount: Int
 )

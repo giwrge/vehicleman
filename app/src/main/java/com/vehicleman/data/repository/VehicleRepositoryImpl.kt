@@ -28,10 +28,6 @@ class VehicleRepositoryImpl @Inject constructor(
         return vehicleDao.getVehicleById(id)?.toVehicle()
     }
 
-    /**
-     * Αποθήκευση (insert ή update).
-     * Αν υπάρχει ID → update, αλλιώς insert.
-     */
     override suspend fun saveVehicle(vehicle: Vehicle) {
         val existing = vehicleDao.getVehicleById(vehicle.id)
         if (existing == null) {
@@ -41,30 +37,18 @@ class VehicleRepositoryImpl @Inject constructor(
         }
     }
 
-    /**
-     * Εισαγωγή νέου οχήματος.
-     */
     override suspend fun insertVehicle(vehicle: Vehicle) {
         vehicleDao.insertVehicle(vehicle.toVehicleEntity())
     }
 
-    /**
-     * Ενημέρωση υπάρχοντος οχήματος.
-     */
     override suspend fun updateVehicle(vehicle: Vehicle) {
         vehicleDao.updateVehicle(vehicle.toVehicleEntity())
     }
 
-    /**
-     * Διαγραφή με entity.
-     */
     override suspend fun deleteVehicle(vehicle: Vehicle) {
         vehicleDao.deleteVehicle(vehicle.toVehicleEntity())
     }
 
-    /**
-     * Διαγραφή με ID (νέα μέθοδος).
-     */
     override suspend fun deleteVehicleById(vehicleId: String) {
         vehicleDao.getVehicleById(vehicleId)?.let {
             vehicleDao.deleteVehicle(it)
@@ -77,5 +61,17 @@ class VehicleRepositoryImpl @Inject constructor(
 
     override suspend fun getVehicleCount(): Int {
         return vehicleDao.getVehicleCount()
+    }
+
+    override suspend fun getAllVehiclesList(): List<Vehicle> {
+        return vehicleDao.getAllVehiclesList().map { it.toVehicle() }
+    }
+
+    override suspend fun deleteAllVehicles() {
+        vehicleDao.deleteAllVehicles()
+    }
+
+    override suspend fun insertAllVehicles(vehicles: List<Vehicle>) {
+        vehicles.forEach { vehicleDao.insertVehicle(it.toVehicleEntity()) }
     }
 }

@@ -3,6 +3,10 @@ package com.vehicleman.ui.viewmodel
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vehicleman.domain.model.Vehicle
+import com.vehicleman.domain.repositories.ProLevel
+import com.vehicleman.domain.repositories.UserPreferencesRepository
+import com.vehicleman.domain.repositories.UserStatus
 import com.vehicleman.domain.repositories.VehicleRepository
 import com.vehicleman.presentation.vehicles.VehicleFormEvent
 import com.vehicleman.presentation.vehicles.VehicleFormState
@@ -11,6 +15,7 @@ import com.vehicleman.presentation.vehicles.toVehicle
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -18,6 +23,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AddEditVehicleViewModel @Inject constructor(
     private val vehicleRepository: VehicleRepository,
+    private val userPreferencesRepository: UserPreferencesRepository,
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -69,10 +75,32 @@ class AddEditVehicleViewModel @Inject constructor(
 
     private fun saveVehicle() {
         viewModelScope.launch {
+            val user = userPreferencesRepository.user.first()
+            val vehicleCount = vehicleRepository.getVehicleCount()
+
+            if (_state.value.id == null || _state.value.id == "new") { // Only check for new vehicles
+                val limit = when {
+                    user.proLevel == ProLevel.PRO_2 -> 10
+                    user.proLevel == ProLevel.PRO_1 -> 7
+                    user.status == UserStatus.SIGNED_UP -> 3
+                    else -> 3 // Free user
+                }
+                if (vehicleCount >= limit) {
+                    _state.update { it.copy(shouldNavigateToProMode = true) }
+                    return@launch
+                }
+            }
+            
             val formState = _state.value
             val vehicle = formState.toVehicle()
+            val finalVehicle = if (vehicle.id.isBlank() || vehicle.id == "new") {
+                vehicle.copy(dateAdded = System.currentTimeMillis(), lastModified = System.currentTimeMillis())
+            } else {
+                vehicle.copy(lastModified = System.currentTimeMillis())
+            }
+
             try {
-                vehicleRepository.saveVehicle(vehicle)
+                vehicleRepository.saveVehicle(finalVehicle)
                 _state.update { it.copy(isFormValid = true) }
             } catch (e: Exception) {
                 _state.update { it.copy(errorMessage = e.localizedMessage ?: "Αποτυχία αποθήκευσης οχήματος") }

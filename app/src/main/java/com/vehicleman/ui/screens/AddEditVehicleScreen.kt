@@ -23,6 +23,7 @@ import androidx.navigation.NavController
 import com.vehicleman.R
 import com.vehicleman.presentation.vehicles.VehicleFormEvent
 import com.vehicleman.presentation.vehicles.VehicleFormState
+import com.vehicleman.ui.navigation.NavDestinations
 import com.vehicleman.ui.viewmodel.AddEditVehicleViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -53,6 +54,12 @@ fun AddEditVehicleScreen(
         }
     }
 
+    LaunchedEffect(state.shouldNavigateToProMode) {
+        if (state.shouldNavigateToProMode) {
+            navController.navigate(NavDestinations.PRO_MODE_ROUTE)
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
             painter = if (isNightMode) painterResource(id = R.mipmap.img_home_background_night) else painterResource(id = R.mipmap.img_home_background),
@@ -64,19 +71,10 @@ fun AddEditVehicleScreen(
         Scaffold(
             containerColor = Color.Transparent,
             topBar = {
-                TopAppBar(
-                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-                    title = { Text(if (state.id == null) "Προσθήκη Οχήματος" else "Επεξεργασία Οχήματος", color = Color.Black, modifier = Modifier.padding(start = 16.dp)) },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(40.dp)) {
-                            Image(painter = painterResource(id = R.mipmap.ic_backarrow), contentDescription = "Πίσω")
-                        }
-                    },
-                    actions = {
-                        IconButton(onClick = { addEditVehicleViewModel.onEvent(VehicleFormEvent.Submit) }) {
-                            Image(painter = painterResource(id = R.mipmap.ic_save), contentDescription = "Αποθήκευση")
-                        }
-                    }
+                TopBar(
+                    state = state,
+                    navController = navController,
+                    onSave = { addEditVehicleViewModel.onEvent(VehicleFormEvent.Submit) }
                 )
             }
         ) { innerPadding ->
@@ -98,6 +96,29 @@ fun AddEditVehicleScreen(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TopBar(
+    state: VehicleFormState,
+    navController: NavController,
+    onSave: () -> Unit
+) {
+    TopAppBar(
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+        title = { Text(if (state.id == null) "Προσθήκη Οχήματος" else "Επεξεργασία Οχήματος", color = Color.Black, modifier = Modifier.padding(start = 16.dp)) },
+        navigationIcon = {
+            IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(40.dp)) {
+                Image(painter = painterResource(id = R.mipmap.ic_backarrow), contentDescription = "Πίσω")
+            }
+        },
+        actions = {
+            IconButton(onClick = onSave) {
+                Image(painter = painterResource(id = R.mipmap.ic_save), contentDescription = "Αποθήκευση")
+            }
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -234,7 +255,7 @@ fun DatePickerField(
     onValueChange: (String) -> Unit,
     colors: TextFieldColors
 ) {
-    var showDatePicker by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOF(false) }
     val locale = Locale("el")
     val dateFormatter = SimpleDateFormat("EEEE, dd/MM/yyyy", locale)
 

@@ -5,12 +5,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vehicleman.domain.model.Record
 import com.vehicleman.domain.model.RecordType
+import com.vehicleman.domain.repositories.ProLevel
 import com.vehicleman.domain.repositories.RecordRepository
+import com.vehicleman.domain.repositories.UserPreferencesRepository
+import com.vehicleman.domain.repositories.UserStatus
 import com.vehicleman.domain.repositories.VehicleRepository
 import com.vehicleman.ui.navigation.NavDestinations
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -26,6 +30,7 @@ private val defaultSuggestions = listOf("Service", "Oil Change", "Tires", "Fuel"
 class AddEditRecordViewModel @Inject constructor(
     private val recordRepository: RecordRepository,
     private val vehicleRepository: VehicleRepository, // Injected VehicleRepository
+    private val userPreferencesRepository: UserPreferencesRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -189,40 +194,56 @@ class AddEditRecordViewModel @Inject constructor(
     }
 
     private fun saveRecord() {
-        _state.value.let { s ->
-            if (s.odometer.isBlank()) {
-                _state.update { it.copy(error = "Τα χιλιόμετρα είναι υποχρεωτικά") }
-                return
+        viewModelScope.launch {
+            val user = userPreferencesRepository.user.first()
+            val recordCount = userPreferencesRepository.recordCreationCount.first()
+
+            if (user.status == UserStatus.FREE && recordCount >= 30) {
+                _state.update { it.copy(shouldNavigateToSignup = true) }
+                return@launch
             }
 
-            val recordToSave = Record(
-                id = if (s.recordId == "new") UUID.randomUUID().toString() else s.recordId,
-                vehicleId = s.vehicleId,
-                recordType = s.recordType,
-                title = s.description.take(50),
-                description = s.description,
-                date = s.date,
-                odometer = s.odometer.toInt(),
-                cost = if (s.recordType != RecordType.REMINDER) s.cost.toDoubleOrNull() else null,
-                quantity = if (s.recordType == RecordType.FUEL_UP) s.quantity.toDoubleOrNull() else null,
-                pricePerUnit = if (s.recordType == RecordType.FUEL_UP) s.pricePerUnit.toDoubleOrNull() else null,
-                fuelType = if (s.recordType == RecordType.FUEL_UP) s.selectedFuelType else null,
-                isReminder = s.isReminder,
-                reminderDate = if (s.isReminder) s.reminderDate else null,
-                reminderOdometer = if (s.isReminder) s.reminderOdometer.toIntOrNull() else null,
-                isCompleted = false
-            )
+            if (user.status == UserStatus.SIGNED_UP && user.proLevel == ProLevel.NONE && recordCount >= 150) {
+                _state.update { it.copy(shouldNavigateToProMode = true) }
+                return@launch
+            }
 
-            viewModelScope.launch {
+            _state.value.let { s ->
+                if (s.odometer.isBlank()) {
+                    _state.update { it.copy(error = "Τα χιλιόμετρα είναι υποχρεωτικά") }
+                    return@let
+                }
+
+                val recordToSave = Record(
+                    id = if (s.recordId == "new") UUID.randomUUID().toString() else s.recordId,
+                    vehicleId = s.vehicleId,
+                    recordType = s.recordType,
+                    title = s.description.take(50),
+                    description = s.description,
+                    date = s.date,
+                    odometer = s.odometer.toInt(),
+                    cost = if (s.recordType != RecordType.REMINDER) s.cost.toDoubleOrNull() else null,
+                    quantity = if (s.recordType == RecordType.FUEL_UP) s.quantity.toDoubleOrNull() else null,
+                    pricePerUnit = if (s.recordType == RecordType.FUEL_UP) s.pricePerUnit.toDoubleOrNull() else null,
+                    fuelType = if (s.recordType == RecordType.FUEL_UP) s.selectedFuelType else null,
+                    isReminder = s.isReminder,
+                    reminderDate = if (s.isReminder) s.reminderDate else null,
+                    reminderOdometer = if (s.isReminder) s.reminderOdometer.toIntOrNull() else null,
+                    isCompleted = false
+                )
+
                 try {
                     recordRepository.saveRecord(recordToSave)
+                    if (s.recordId == "new") {
+                        userPreferencesRepository.incrementRecordCreationCount()
+                    }
                     _state.update { it.copy(error = null, isSaveSuccess = true) } // <-- ΣΗΜΑΝΤΙΚΗ ΑΛΛΑΓΗ: Ενημέρωσε το isSaveSuccess
                 } catch (e: Exception) {
                     _state.update { it.copy(error = "Αποτυχία αποθήκευσης: ${e.message}") }
                 }
-                }
             }
         }
+    }
 
 
     private fun Date.startOfDay(): Date {

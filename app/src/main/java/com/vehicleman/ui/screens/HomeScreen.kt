@@ -23,6 +23,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.vehicleman.R
+import com.vehicleman.domain.repositories.SubDriverType
+import com.vehicleman.domain.repositories.TwinAppRole
 import com.vehicleman.presentation.addeditvehicle.AddEditVehiclePanelEvent
 import com.vehicleman.presentation.addeditvehicle.VehicleDisplayItem
 import com.vehicleman.ui.navigation.NavDestinations
@@ -42,8 +44,11 @@ fun HomeScreen(
     isNightMode: Boolean
 ) {
     val vehicles by homeViewModel.vehicles.collectAsState()
+    val user by homeViewModel.user.collectAsState()
     var selectedVehicleId by remember { mutableStateOf<String?>(null) }
     var showDeleteDialog by remember { mutableStateOf<String?>(null) }
+
+    val isSingleSubDriver = user.twinAppRole == TwinAppRole.SUB_DRIVER && user.subDriverType == SubDriverType.SINGLE
 
     var totalDragAmount by remember { mutableStateOf(0f) }
 
@@ -77,19 +82,21 @@ fun HomeScreen(
             containerColor = Color.Transparent,
             topBar = { HomeTopAppBar(onNavigateToPreferences, onNavigateToProMode, onNavigateToSignUp) },
             floatingActionButton = {
-                Surface(
-                    onClick = { onNavigateToAddEditVehicle(null) },
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color.Transparent,
-                    modifier = Modifier
-                        .width(90.dp)
-                        .height(70.dp)
-                ) {
-                    Image(
-                        painter = painterResource(id = R.mipmap.ic_fab_add_vehicle),
-                        contentDescription = "Προσθήκη Οχήματος",
-                        modifier = Modifier.fillMaxSize()
-                    )
+                if (!isSingleSubDriver) { // Hide FAB for SingleSubDrivers
+                    Surface(
+                        onClick = { onNavigateToAddEditVehicle(null) },
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.Transparent,
+                        modifier = Modifier
+                            .width(90.dp)
+                            .height(70.dp)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.mipmap.ic_fab_add_vehicle),
+                            contentDescription = "Προσθήκη Οχήματος",
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 }
             }
         ) { padding ->
@@ -110,8 +117,13 @@ fun HomeScreen(
                             onTap = { onNavigateToRecord(vehicle.id) },
                             onDoubleTap = { navController.navigate(NavDestinations.addEditEntryRoute(vehicle.id, null)) },
                             onLongTap = { selectedVehicleId = vehicle.id },
-                            onEdit = { onNavigateToAddEditVehicle(vehicle.id) },
-                            onDelete = { showDeleteDialog = vehicle.id }
+                            onEdit = { 
+                                if (!isSingleSubDriver) { // Prevent editing for SingleSubDrivers
+                                    onNavigateToAddEditVehicle(vehicle.id) 
+                                }
+                            },
+                            onDelete = { showDeleteDialog = vehicle.id },
+                            isSingleSubDriver = isSingleSubDriver
                         )
                     }
                 }
@@ -145,10 +157,11 @@ fun VehicleListItem(
     onDoubleTap: () -> Unit,
     onLongTap: () -> Unit,
     onEdit: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    isSingleSubDriver: Boolean
 ) {
     Column(horizontalAlignment = Alignment.Start) {
-        if (isSelected) {
+        if (isSelected && !isSingleSubDriver) { // Hide edit/delete for SingleSubDrivers
             Row(
                 modifier = Modifier.padding(start = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -170,7 +183,7 @@ fun VehicleListItem(
             isSelected = isSelected,
             onTap = onTap,
             onDoubleTap = onDoubleTap,
-            onLongTap = onLongTap,
+            onLongTap = if (isSingleSubDriver) {{}} else onLongTap, // Disable long tap for SingleSubDrivers
         )
     }
 }

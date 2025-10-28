@@ -14,4 +14,11 @@ interface RecordRepository {
     suspend fun deleteRecord(record: Record)
 
     suspend fun getLatestOdometer(vehicleId: String): Int?
+    
+    fun getAllRecords(): Flow<List<Record>>
+
+    // For Backup/Restore
+    suspend fun getAllRecordsList(): List<Record>
+    suspend fun deleteAllRecords()
+    suspend fun insertAllRecords(records: List<Record>)
 }

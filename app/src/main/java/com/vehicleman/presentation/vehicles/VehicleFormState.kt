@@ -22,5 +22,6 @@ data class VehicleFormState(
     val insuranceExpiryDate: String = "",
     val taxesExpiryDate: String = "",
     val isFormValid: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val shouldNavigateToProMode: Boolean = false
 )

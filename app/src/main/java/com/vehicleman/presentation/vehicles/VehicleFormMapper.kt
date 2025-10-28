@@ -49,6 +49,8 @@ import com.vehicleman.domain.model.Vehicle
             tiresChangeDate = this.tiresChangeDate.toLongOrNull() ?: 0,
             insuranceExpiryDate = this.insuranceExpiryDate.toLongOrNull() ?: 0,
             taxesExpiryDate = this.taxesExpiryDate.toLongOrNull() ?: 0,
-
+            dateAdded = 0, // Will be overwritten in ViewModel
+            lastModified = 0, // Will be overwritten in ViewModel
+            recordCount = 0 // Will be overwritten in ViewModel
         )
     }

@@ -19,6 +19,10 @@ class RecordRepositoryImpl @Inject constructor(
     override fun getRecordsForVehicle(vehicleId: String): Flow<List<Record>> {
         return recordDao.getRecordsForVehicle(vehicleId).map { list -> list.map(RecordEntity::toRecord) }
     }
+    
+    override fun getAllRecords(): Flow<List<Record>> {
+        return recordDao.getAllRecords().map { list -> list.map(RecordEntity::toRecord) }
+    }
 
     override suspend fun getRecordById(id: String): Record? {
         return recordDao.getRecordById(id)?.toRecord()
@@ -34,5 +38,17 @@ class RecordRepositoryImpl @Inject constructor(
 
     override suspend fun getLatestOdometer(vehicleId: String): Int? {
         return recordDao.getLatestOdometer(vehicleId)
+    }
+
+    override suspend fun getAllRecordsList(): List<Record> {
+        return recordDao.getAllRecordsList().map { it.toRecord() }
+    }
+
+    override suspend fun deleteAllRecords() {
+        recordDao.deleteAllRecords()
+    }
+
+    override suspend fun insertAllRecords(records: List<Record>) {
+        records.forEach { recordDao.upsertRecord(it.toRecordEntity()) }
     }
 }

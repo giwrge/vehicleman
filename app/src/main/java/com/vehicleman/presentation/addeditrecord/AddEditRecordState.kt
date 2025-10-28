@@ -42,6 +42,8 @@ data class AddEditRecordState(
     val suggestions: List<String> = emptyList(),
     val showCostDetails: Boolean = false,
 
-    val isSaveSuccess: Boolean = false
+    val isSaveSuccess: Boolean = false,
+    val shouldNavigateToSignup: Boolean = false,
+    val shouldNavigateToProMode: Boolean = false
 
 )

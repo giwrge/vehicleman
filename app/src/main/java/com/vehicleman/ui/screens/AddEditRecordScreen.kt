@@ -40,9 +40,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.vehicleman.domain.model.RecordType
 import com.vehicleman.presentation.addeditrecord.AddEditRecordEvent
 import com.vehicleman.presentation.addeditrecord.AddEditRecordViewModel
+import com.vehicleman.ui.navigation.NavDestinations
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -55,19 +57,29 @@ import androidx.compose.runtime.LaunchedEffect // Προσθήκη αυτού τ
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditRecordScreen(
-    // ΑΛΛΑΓΗ 1: Η οθόνη δέχεται δύο "οδηγίες" αντί για μία.
-    onRecordSaved: () -> Unit,      // Τι να κάνει ΜΕΤΑ την επιτυχή αποθήκευση.
-    onNavigateBack: () -> Unit,      // Τι να κάνει σε απλή επιστροφή/ακύρωση.
+    navController: NavController,
+    onRecordSaved: () -> Unit,
+    onNavigateBack: () -> Unit,
     viewModel: AddEditRecordViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
     val scrollState = rememberScrollState()
 
-    // ΑΛΛΑΓΗ 2: Προσθέτουμε έναν "κατάσκοπο" (LaunchedEffect).
-    // Αυτός ο κώδικας θα τρέξει ΜΟΝΟ όταν η τιμή του state.isSaveSuccess αλλάξει από false σε true.
     LaunchedEffect(state.isSaveSuccess) {
         if (state.isSaveSuccess) {
-            onRecordSaved() // Εκτελούμε την οδηγία για επιτυχή αποθήκευση.
+            onRecordSaved()
+        }
+    }
+
+    LaunchedEffect(state.shouldNavigateToSignup) {
+        if (state.shouldNavigateToSignup) {
+            navController.navigate(NavDestinations.SIGN_UP_ROUTE)
+        }
+    }
+
+    LaunchedEffect(state.shouldNavigateToProMode) {
+        if (state.shouldNavigateToProMode) {
+            navController.navigate(NavDestinations.PRO_MODE_ROUTE)
         }
     }
 
@@ -76,7 +88,6 @@ fun AddEditRecordScreen(
             TopAppBar(
                 title = { Text(if (state.recordId == "new") "Νέα Καταχώρηση" else "Επεξεργασία") },
                 navigationIcon = {
-                    // ΑΛΛΑΓΗ 3: Το βέλος "πίσω" καλεί ΠΑΝΤΑ την απλή οδηγία επιστροφής.
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Πίσω")
                     }

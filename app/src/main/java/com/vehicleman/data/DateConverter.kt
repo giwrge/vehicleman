@@ -1,4 +1,4 @@
-package com.vehicleman.data
+/*package com.vehicleman.data
 
 import androidx.room.TypeConverter
 import java.util.Date
@@ -10,3 +10,4 @@ class DateConverter {
     @TypeConverter
     fun dateToTimestamp(date: Date?): Long? = date?.time
 }
+*/

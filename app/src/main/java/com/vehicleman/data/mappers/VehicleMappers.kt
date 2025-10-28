@@ -19,7 +19,10 @@ fun VehicleEntity.toVehicle(): Vehicle {
         tiresChangeKm = tiresChangeKm,
         tiresChangeDate = tiresChangeDate,
         insuranceExpiryDate = insuranceExpiryDate,
-        taxesExpiryDate = taxesExpiryDate
+        taxesExpiryDate = taxesExpiryDate,
+        dateAdded = dateAdded,
+        lastModified = lastModified,
+        recordCount = recordCount
     )
 }
 
@@ -39,6 +42,9 @@ fun Vehicle.toVehicleEntity(): VehicleEntity {
         tiresChangeKm = tiresChangeKm,
         tiresChangeDate = tiresChangeDate,
         insuranceExpiryDate = insuranceExpiryDate,
-        taxesExpiryDate = taxesExpiryDate
+        taxesExpiryDate = taxesExpiryDate,
+        dateAdded = dateAdded,
+        lastModified = lastModified,
+        recordCount = recordCount
     )
 }

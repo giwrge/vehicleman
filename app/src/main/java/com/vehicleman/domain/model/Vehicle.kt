@@ -19,6 +19,7 @@ data class Vehicle(
     val tiresChangeDate: Long = 364,
     val insuranceExpiryDate: Long = 364,
     val taxesExpiryDate: Long = 364,
-
+    val dateAdded: Long = System.currentTimeMillis(),
+    val lastModified: Long = System.currentTimeMillis(),
+    val recordCount: Int = 0
 )
-
