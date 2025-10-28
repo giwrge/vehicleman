@@ -213,7 +213,7 @@ fun VehicleCard(
                 Text(vehicle.name, style = MaterialTheme.typography.titleMedium, color = Color.Black)
                 Text("Πινακίδα: ${vehicle.licensePlate}", style = MaterialTheme.typography.bodyMedium, color = Color.Black)
                 Text(vehicle.odometerText, style = MaterialTheme.typography.bodySmall, color = Color.Black)
-                Text("Καύσιμο: ${vehicle.fuelType}", style = MaterialTheme.typography.bodySmall, color = Color.Black)
+                Text("Καύσιμο: ${vehicle.fuelTypes}", style = MaterialTheme.typography.bodySmall, color = Color.Black) // Corrected
             }
         }
     }

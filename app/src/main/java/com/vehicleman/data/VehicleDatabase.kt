@@ -13,10 +13,10 @@ import com.vehicleman.data.entities.VehicleEntity
  */
 @Database(
     entities = [VehicleEntity::class, RecordEntity::class],
-    version = 2,
+    version = 4, // Incremented version due to schema change in RecordEntity
     exportSchema = false
 )
-@TypeConverters(DateConverter::class)
+@TypeConverters(Converters::class)
 abstract class VehicleDatabase : RoomDatabase() {
 
     abstract fun vehicleDao(): VehicleDao

@@ -30,7 +30,7 @@ class HomeViewModel @Inject constructor(
                     makeModel = "${it.make} • ${it.model}",
                     licensePlate = it.plateNumber,
                     odometerText = "${it.currentOdometer} km",
-                    fuelType = it.fuelType,
+                    fuelTypes = it.fuelTypes,
                     isActive = false // This can be updated based on user interaction
                 )
             }

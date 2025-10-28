@@ -135,7 +135,7 @@ fun AddEditVehicleForm(
             colors = textFieldColors
         )
 
-        FuelTypeSelector(selectedFuelTypes = state.fuelType, onFuelTypeChanged = { onEvent(VehicleFormEvent.FuelTypeChanged(it)) })
+        FuelTypeSelector(selectedFuelTypes = state.fuelTypes, onFuelTypeChanged = { onEvent(VehicleFormEvent.FuelTypeChanged(it)) })
 
         Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Black)
 

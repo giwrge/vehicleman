@@ -12,7 +12,7 @@ sealed class VehicleFormEvent {
     data class ModelChanged(val model: String) : VehicleFormEvent()
     data class PlateNumberChanged(val plateNumber: String) : VehicleFormEvent()
     data class YearChanged(val year: String) : VehicleFormEvent()
-    data class FuelTypeChanged(val fuelType: String) : VehicleFormEvent()
+    data class FuelTypeChanged(val fuelTypes: String) : VehicleFormEvent()
     data class CurrentOdometerChanged(val currentOdometer: String) : VehicleFormEvent()
     data class OilChangeKmChanged(val oilChangeKm: String) : VehicleFormEvent()
     data class OilChangeDateChanged(val oilChangeDate: String) : VehicleFormEvent()

@@ -13,7 +13,5 @@ interface RecordRepository {
 
     suspend fun deleteRecord(record: Record)
 
-    suspend fun deleteRecordsByVehicleId(vehicleId: String)
-    
     suspend fun getLatestOdometer(vehicleId: String): Int?
 }

@@ -2,7 +2,6 @@ package com.vehicleman.presentation.vehicles
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.vehicleman.domain.model.Vehicle
 import com.vehicleman.domain.repositories.VehicleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,12 +10,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-
-/**
- * ViewModel για τη φόρμα εισαγωγής/επεξεργασίας οχήματος.
- * - Συνδέει το UI (VehicleFormScreen) με το Repository.
- * - Υποστηρίζει δημιουργία, ενημέρωση, διαγραφή και φόρτωση οχημάτων.
- */
 @HiltViewModel
 class VehicleFormViewModel @Inject constructor(
     private val vehicleRepository: VehicleRepository
@@ -25,10 +18,6 @@ class VehicleFormViewModel @Inject constructor(
     private val _state = MutableStateFlow(VehicleFormState())
     val state: StateFlow<VehicleFormState> = _state
 
-    /** ----------------------------- **/
-    /**         Ενέργειες Φόρμας     **/
-    /** ----------------------------- **/
-
     fun onEvent(event: VehicleFormEvent) {
         when (event) {
             is VehicleFormEvent.MakeChanged -> _state.update { it.copy(make = event.make) }
@@ -36,7 +25,7 @@ class VehicleFormViewModel @Inject constructor(
             is VehicleFormEvent.PlateNumberChanged -> _state.update { it.copy(plateNumber = event.plateNumber) }
             is VehicleFormEvent.YearChanged -> _state.update { it.copy(year = event.year) }
             is VehicleFormEvent.CurrentOdometerChanged -> _state.update { it.copy(currentOdometer = event.currentOdometer) }
-            is VehicleFormEvent.FuelTypeChanged -> _state.update { it.copy(fuelType = event.fuelType) }
+            is VehicleFormEvent.FuelTypeChanged -> _state.update { it.copy(fuelTypes = event.fuelTypes) }
             is VehicleFormEvent.OilChangeKmChanged -> _state.update { it.copy(oilChangeKm = event.oilChangeKm) }
             is VehicleFormEvent.OilChangeDateChanged -> _state.update { it.copy(oilChangeDate = event.oilChangeDate) }
             is VehicleFormEvent.TiresChangeKmChanged -> _state.update { it.copy(tiresChangeKm = event.tiresChangeKm) }
@@ -49,9 +38,6 @@ class VehicleFormViewModel @Inject constructor(
         }
     }
 
-    /** ----------------------------- **/
-    /** Φόρτωση οχήματος για Edit Mode **/
-    /** ----------------------------- **/
     private fun loadVehicle(vehicleId: String) {
         if (vehicleId == "new") {
             _state.update { VehicleFormState() } // Reset for new vehicle
@@ -73,9 +59,6 @@ class VehicleFormViewModel @Inject constructor(
         }
     }
 
-    /** ----------------------------- **/
-    /**  Αποθήκευση / Ενημέρωση      **/
-    /** ----------------------------- **/
     private fun saveVehicle() {
         viewModelScope.launch {
             val formState = _state.value
@@ -95,9 +78,6 @@ class VehicleFormViewModel @Inject constructor(
         }
     }
 
-    /** ----------------------------- **/
-    /**         Διαγραφή Οχήματος    **/
-    /** ----------------------------- **/
     private fun deleteVehicle(vehicleId: String) {
         viewModelScope.launch {
             try {

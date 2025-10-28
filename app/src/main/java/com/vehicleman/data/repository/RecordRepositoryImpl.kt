@@ -17,23 +17,19 @@ class RecordRepositoryImpl @Inject constructor(
 ) : RecordRepository {
 
     override fun getRecordsForVehicle(vehicleId: String): Flow<List<Record>> {
-        return recordDao.getEntriesForVehicle(vehicleId).map { list -> list.map(RecordEntity::toRecord) }
+        return recordDao.getRecordsForVehicle(vehicleId).map { list -> list.map(RecordEntity::toRecord) }
     }
 
     override suspend fun getRecordById(id: String): Record? {
-        return recordDao.getEntryById(id)?.toRecord()
+        return recordDao.getRecordById(id)?.toRecord()
     }
 
     override suspend fun saveRecord(record: Record) {
-        recordDao.insertEntry(record.toRecordEntity())
+        recordDao.upsertRecord(record.toRecordEntity())
     }
 
     override suspend fun deleteRecord(record: Record) {
-        recordDao.deleteEntry(record.id)
-    }
-
-    override suspend fun deleteRecordsByVehicleId(vehicleId: String) {
-        recordDao.deleteEntriesByVehicleId(vehicleId)
+        recordDao.deleteRecordById(record.id)
     }
 
     override suspend fun getLatestOdometer(vehicleId: String): Int? {

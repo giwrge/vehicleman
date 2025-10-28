@@ -1,5 +1,3 @@
-// data/mappers/VehicleMappers.kt
-
 package com.vehicleman.data.mappers
 
 import com.vehicleman.data.entities.VehicleEntity
@@ -8,14 +6,14 @@ import com.vehicleman.domain.model.Vehicle
 fun VehicleEntity.toVehicle(): Vehicle {
     return Vehicle(
         id = id,
-        registrationDate = registrationDate,
-        make = make, // ΔΙΟΡΘΩΣΗ
+        name = name,
+        make = make,
         model = model,
-        plateNumber = plateNumber, // ΔΙΟΡΘΩΣΗ
+        plateNumber = plateNumber,
         year = year,
-        fuelType = fuelType,
-        currentOdometer = currentOdometer, // ΔΙΟΡΘΩΣΗ
-        //... διόρθωσε και τα υπόλοιπα:
+        fuelTypes = fuelTypes,
+        currentOdometer = currentOdometer,
+        registrationDate = registrationDate,
         oilChangeKm = oilChangeKm,
         oilChangeDate = oilChangeDate,
         tiresChangeKm = tiresChangeKm,
@@ -28,19 +26,19 @@ fun VehicleEntity.toVehicle(): Vehicle {
 fun Vehicle.toVehicleEntity(): VehicleEntity {
     return VehicleEntity(
         id = id,
-        registrationDate = registrationDate,
-        make = make, // ΔΙΟΡΘΩΣΗ
+        name = name,
+        make = make,
         model = model,
-        plateNumber = plateNumber, // ΔΙΟΡΘΩΣΗ
-        fuelType = fuelType,
+        plateNumber = plateNumber,
         year = year,
-        currentOdometer = currentOdometer, // ΔΙΟΡΘΩΣΗ
-        //... διόρθωσε και τα υπόλοιπα
+        fuelTypes = fuelTypes,
+        currentOdometer = currentOdometer,
+        registrationDate = registrationDate,
         oilChangeKm = oilChangeKm,
         oilChangeDate = oilChangeDate,
         tiresChangeKm = tiresChangeKm,
         tiresChangeDate = tiresChangeDate,
         insuranceExpiryDate = insuranceExpiryDate,
-        taxesExpiryDate = taxesExpiryDate,
+        taxesExpiryDate = taxesExpiryDate
     )
 }

@@ -30,7 +30,7 @@ class AddEditVehicleViewModel @Inject constructor(
             is VehicleFormEvent.ModelChanged -> _state.update { it.copy(model = event.model) }
             is VehicleFormEvent.PlateNumberChanged -> _state.update { it.copy(plateNumber = event.plateNumber) }
             is VehicleFormEvent.YearChanged -> _state.update { it.copy(year = event.year) }
-            is VehicleFormEvent.FuelTypeChanged -> _state.update { it.copy(fuelType = event.fuelType) }
+            is VehicleFormEvent.FuelTypeChanged -> _state.update { it.copy(fuelTypes = event.fuelTypes) } // Corrected
             is VehicleFormEvent.CurrentOdometerChanged -> _state.update { it.copy(currentOdometer = event.currentOdometer) }
             is VehicleFormEvent.OilChangeKmChanged -> _state.update { it.copy(oilChangeKm = event.oilChangeKm) }
             is VehicleFormEvent.OilChangeDateChanged -> _state.update { it.copy(oilChangeDate = event.oilChangeDate) }

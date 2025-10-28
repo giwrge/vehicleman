@@ -1,15 +1,31 @@
 package com.vehicleman.domain.model
 
-import java.util.UUID
+import java.util.Date
 
 data class Record(
-    val id: String = UUID.randomUUID().toString(),
+
+    val id: String,
     val vehicleId: String,
-    val date: Long,
-    val odometer: Int,
-    val isExpense: Boolean,
+    val recordType: RecordType,
     val title: String,
     val description: String?,
-    val amount: Double?,
-    val reminderDate: Long?
+    val date: Date, // Date of expense or reminder activation
+    val odometer: Int,
+
+    // Expense fields
+    val cost: Double?,
+    val quantity: Double?,
+    val pricePerUnit: Double?,
+    val fuelType: String? = null, // To store the specific fuel type for a FUEL_UP
+
+    // Reminder fields
+    val isReminder: Boolean,
+    val reminderDate: Date?,
+    val reminderOdometer: Int?,
+    val isCompleted: Boolean = false
 )
+enum class RecordType {
+    EXPENSE, // Κανονική Δαπάνη (π.χ. σέρβις, λάστιχα)
+    REMINDER, // Απλή Υπενθύμιση (π.χ. ΚΤΕΟ, Ασφάλεια)
+    FUEL_UP // Ειδικός τύπος για Ανεφοδιασμό (με λεπτομέρειες ποσότητας/τιμής)
+}

@@ -11,7 +11,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.vehicleman.domain.model.Record
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 @Composable
@@ -28,10 +27,10 @@ fun RecordItem(
         Column(modifier = Modifier.padding(16.dp)) {
             Text(text = record.title)
             Text(text = "Odometer: ${record.odometer} km")
-            record.amount?.let {
+            record.cost?.let {
                 Text(text = "Amount: $it")
             }
-            Text(text = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(record.date)))
+            Text(text = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(record.date))
         }
     }
 }
