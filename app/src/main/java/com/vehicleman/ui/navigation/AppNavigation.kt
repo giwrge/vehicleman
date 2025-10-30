@@ -89,30 +89,18 @@ fun AppNavigation(
         ) {
             RecordScreen(
                 navController = navController,
-                onNavigateToAddEditRecord = { vehicleId, recordId ->
-                    navController.navigate(NavDestinations.addEditEntryRoute(vehicleId, recordId))
+                onNavigateToAddEditRecord = { vId, recordId ->
+                    navController.navigate(NavDestinations.addEditEntryRoute(vId, recordId))
                 }
             )
         }
 
         composable( route = "${NavDestinations.ADD_EDIT_ENTRY_ROUTE}/{${NavDestinations.VEHICLE_ID_KEY}}/{recordId}",
         ) { backStackEntry ->
-            val recordId = backStackEntry.arguments?.getString("recordId")
-
             AddEditRecordScreen(
                 navController = navController,
                 onNavigateBack = { navController.popBackStack() },
-                onRecordSaved = {
-                    if (recordId == "new") {
-                        val vehicleId =
-                            backStackEntry.arguments?.getString(NavDestinations.VEHICLE_ID_KEY)!!
-                        navController.navigate(NavDestinations.entryListRoute(vehicleId)) {
-                            popUpTo(backStackEntry.destination.id) { inclusive = true }
-                        }
-                    } else {
-                        navController.popBackStack()
-                    }
-                }
+                onRecordSaved = { navController.popBackStack() }
             )
         }
 

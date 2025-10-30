@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -37,7 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.vehicleman.data.entities.VehicleEntity
+import com.vehicleman.domain.model.Vehicle
 import com.vehicleman.ui.viewmodel.DriversViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -51,7 +51,7 @@ fun DriversScreen(navController: NavController, viewModel: DriversViewModel = hi
                 title = { Text(text = "Manage Drivers") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -108,8 +108,8 @@ fun DriverCard(
     isExpanded: Boolean,
     onExpand: () -> Unit,
     onDelete: () -> Unit,
-    assignedVehicles: List<VehicleEntity>,
-    allVehicles: List<com.vehicleman.domain.model.Vehicle>,
+    assignedVehicles: List<Vehicle>,
+    allVehicles: List<Vehicle>,
     onVehicleCheckedChange: (String, Boolean) -> Unit
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {

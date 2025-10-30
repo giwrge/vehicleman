@@ -115,7 +115,7 @@ fun HomeScreen(
                             vehicle = vehicle,
                             isSelected = vehicle.id == selectedVehicleId,
                             onTap = { onNavigateToRecord(vehicle.id) },
-                            onDoubleTap = { navController.navigate(NavDestinations.addEditEntryRoute(vehicle.id, null)) },
+                            onDoubleTap = { navController.navigate(NavDestinations.addEditEntryRoute(vehicle.id, "new")) },
                             onLongTap = { selectedVehicleId = vehicle.id },
                             onEdit = { 
                                 if (!isSingleSubDriver) { // Prevent editing for SingleSubDrivers

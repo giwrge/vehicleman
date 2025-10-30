@@ -13,7 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -108,7 +108,7 @@ fun PreferenceScreen(
                 title = { Text(text = "Settings") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -141,7 +141,25 @@ fun PreferenceScreen(
                     })
                 }
             }
-            val isPro = user.proLevel != ProLevel.NONE
+            Card(modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "Test Mode", style = MaterialTheme.typography.bodyLarge)
+                        Text(text = "Bypass Pro restrictions", style = MaterialTheme.typography.bodySmall)
+                    }
+                    Switch(checked = user.isTestMode, onCheckedChange = { 
+                        viewModel.setTestMode(it)
+                    })
+                }
+            }
+            val isPro = user.proLevel != ProLevel.NONE || user.isTestMode
             Card(modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -203,7 +221,7 @@ fun PreferenceScreen(
                         }
                     }
                 }
-                val isPro1 = user.proLevel >= ProLevel.PRO_1
+                val isPro1 = user.proLevel >= ProLevel.PRO_1 || user.isTestMode
                 Card(modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
@@ -223,7 +241,7 @@ fun PreferenceScreen(
                         }
                     }
                 }
-                val isPro2 = user.proLevel >= ProLevel.PRO_2
+                val isPro2 = user.proLevel >= ProLevel.PRO_2 || user.isTestMode
                 Card(modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -330,7 +348,7 @@ fun PreferenceScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(text = "Contact Info", style = MaterialTheme.typography.bodyLarge)

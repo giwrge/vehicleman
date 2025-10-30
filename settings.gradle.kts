@@ -1,18 +1,20 @@
 pluginManagement {
     repositories {
-        gradlePluginPortal()
         google()
         mavenCentral()
+        gradlePluginPortal()
+        maven { url = uri("https://jitpack.io") } // ✅ πρόσθεσέ το
     }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
-        // Προστέθηκε το JitPack για τρίτες βιβλιοθήκες, όπως η sqlcipher
-        maven("https://jitpack.io")
+        maven { url = uri("https://jitpack.io") } // ✅ κι εδώ
     }
 }
+
 rootProject.name = "Vehicle Man"
 include(":app")

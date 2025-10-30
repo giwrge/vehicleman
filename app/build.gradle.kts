@@ -75,7 +75,6 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended") // For Icons like Add, Delete, etc.
     implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
-    implementation("com.github.g0dkar:qrcode-kotlin-compose:3.1.0")
     implementation("co.yml:ycharts:2.1.0")
 
     // DataStore

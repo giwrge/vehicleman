@@ -75,9 +75,9 @@ object VehicleStatisticsCalculator {
         
         // --- Costs by Category ---
         val totalFuelCost = expenseRecords.filter { it.recordType == RecordType.FUEL_UP }.sumOf { it.cost!! }
-        val totalServiceCost = expenseRecords.filter { it.description.contains("service", true) }.sumOf { it.cost!! }
-        val totalInsuranceCost = expenseRecords.filter { it.description.contains("insurance", true) || it.description.contains("ασφάλεια", true) }.sumOf { it.cost!! }
-        val totalTaxCost = expenseRecords.filter { it.description.contains("tax", true) || it.description.contains("τέλη", true) }.sumOf { it.cost!! }
+        val totalServiceCost = expenseRecords.filter { it.description?.contains("service", true) == true }.sumOf { it.cost!! }
+        val totalInsuranceCost = expenseRecords.filter { it.description?.contains("insurance", true) == true || it.description?.contains("ασφάλεια", true) == true }.sumOf { it.cost!! }
+        val totalTaxCost = expenseRecords.filter { it.description?.contains("tax", true) == true || it.description?.contains("τέλη", true) == true }.sumOf { it.cost!! }
         val otherCost = expenseRecords.sumOf { it.cost!! } - (totalServiceCost + totalInsuranceCost + totalTaxCost)
 
         // --- Stats per Fuel Type ---

@@ -46,6 +46,7 @@ data class User(
     val city: String = "",
     val country: String = "",
     val email: String = "",
+    val isTestMode: Boolean = false
 )
 
 interface UserPreferencesRepository {

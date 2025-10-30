@@ -78,7 +78,7 @@ class AddEditVehicleViewModel @Inject constructor(
             val user = userPreferencesRepository.user.first()
             val vehicleCount = vehicleRepository.getVehicleCount()
 
-            if (_state.value.id == null || _state.value.id == "new") { // Only check for new vehicles
+            if ((_state.value.id == null || _state.value.id == "new") && !user.isTestMode) { // Only check for new vehicles and not in test mode
                 val limit = when {
                     user.proLevel == ProLevel.PRO_2 -> 10
                     user.proLevel == ProLevel.PRO_1 -> 7

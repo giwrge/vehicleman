@@ -2,22 +2,28 @@ package com.vehicleman.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.vehicleman.data.entities.DriverWithVehicles
+import com.vehicleman.data.mappers.toDriver
+import com.vehicleman.data.mappers.toVehicle
+import com.vehicleman.domain.model.Driver
 import com.vehicleman.domain.model.Vehicle
 import com.vehicleman.domain.repositories.DriverRepository
 import com.vehicleman.domain.repositories.VehicleRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+// UI-specific model
+data class DriverWithVehiclesDisplay(
+    val driver: Driver,
+    val vehicles: List<Vehicle>
+)
+
 data class DriversScreenState(
-    val drivers: List<DriverWithVehicles> = emptyList(),
+    val drivers: List<DriverWithVehiclesDisplay> = emptyList(),
     val allVehicles: List<Vehicle> = emptyList(),
     val newDriverName: String = "",
     val expandedDriverId: String? = null
@@ -37,10 +43,17 @@ class DriversViewModel @Inject constructor(
             combine(
                 driverRepository.getDriversWithVehicles(),
                 vehicleRepository.getAllVehicles()
-            ) { drivers, vehicles ->
+            ) { driversWithEntities, allVehicles ->
+                val driversWithDomainModels = driversWithEntities.map { driverWithVehiclesEntity ->
+                    DriverWithVehiclesDisplay(
+                        driver = driverWithVehiclesEntity.driver.toDriver(),
+                        vehicles = driverWithVehiclesEntity.vehicles.map { it.toVehicle() }
+                    )
+                }
+
                 _uiState.value = _uiState.value.copy(
-                    drivers = drivers,
-                    allVehicles = vehicles
+                    drivers = driversWithDomainModels,
+                    allVehicles = allVehicles
                 )
             }.collect{}
         }

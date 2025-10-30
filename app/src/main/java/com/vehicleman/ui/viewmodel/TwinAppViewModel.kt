@@ -10,6 +10,7 @@ import com.vehicleman.domain.repositories.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -24,9 +25,10 @@ class TwinAppViewModel @Inject constructor(
 
     fun becomeMainDriver() {
         viewModelScope.launch {
-            if (user.value.proLevel >= ProLevel.PRO_1) { // Only Pro users can be Main Drivers
+            val currentUser = user.first()
+            if (currentUser.proLevel >= ProLevel.PRO_1 || currentUser.isTestMode) { // Only Pro users can be Main Drivers
                 userPreferencesRepository.saveUser(
-                    user.value.copy(twinAppRole = TwinAppRole.MAIN_DRIVER)
+                    currentUser.copy(twinAppRole = TwinAppRole.MAIN_DRIVER)
                 )
             }
         }
@@ -38,7 +40,7 @@ class TwinAppViewModel @Inject constructor(
             // We are simulating that the user becomes a SingleSubDriver by default
             userPreferencesRepository.saveUser(
                 user.value.copy(
-                    twinApprole = TwinAppRole.SUB_DRIVER, 
+                    twinAppRole = TwinAppRole.SUB_DRIVER, 
                     subDriverType = SubDriverType.SINGLE // Default to single, Main Driver can change it
                 )
             )

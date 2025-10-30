@@ -6,9 +6,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -24,14 +23,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.github.g0dkar.qrcode.QRCode
 import com.vehicleman.domain.repositories.ProLevel
 import com.vehicleman.domain.repositories.TwinAppRole
 import com.vehicleman.ui.viewmodel.TwinAppViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TwinAppSetupScreen(navController: NavController, viewModel: TwinAppViewModel = hiltViewModel()) {
+fun TwinAppSetupScreen(
+    navController: NavController,
+    viewModel: TwinAppViewModel = hiltViewModel()
+) {
     val user by viewModel.user.collectAsState()
 
     Scaffold(
@@ -40,7 +41,7 @@ fun TwinAppSetupScreen(navController: NavController, viewModel: TwinAppViewModel
                 title = { Text("Twin App Setup") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -54,31 +55,32 @@ fun TwinAppSetupScreen(navController: NavController, viewModel: TwinAppViewModel
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            when (user.twinAppRole) {
-                TwinAppRole.NONE -> {
-                    if (user.proLevel >= ProLevel.PRO_1) {
+            // Check if the user is a pro user or in test mode to access this feature
+            if (user.proLevel < ProLevel.PRO_1 && !user.isTestMode) {
+                Text("This is a PRO feature. Please upgrade to use Twin App.")
+            } else {
+                // UI based on the user's Twin App role
+                when (user.twinAppRole) {
+                    TwinAppRole.NONE -> {
                         Button(onClick = { viewModel.becomeMainDriver() }) {
                             Text("Become Main Driver")
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(onClick = { 
                             viewModel.becomeSubDriver()
-                            navController.popBackStack() // Simulate scan and return
+                            // In a real app, you would navigate to a QR scanner screen
                         }) {
                             Text("Scan QR to become Sub-Driver")
                         }
-                    } else {
-                        Text("You need to be a Pro user to use Twin App.")
                     }
-                }
-                TwinAppRole.MAIN_DRIVER -> {
-                    Text("You are the Main Driver. Show this QR code to your Sub-Drivers.")
-                    Spacer(modifier = Modifier.height(16.dp))
-                    // In a real app, the content would be a unique pairing ID
-                    QRCode(content = user.email, modifier = Modifier.size(200.dp))
-                }
-                TwinAppRole.SUB_DRIVER -> {
-                    Text("You are connected as a Sub-Driver.")
+                    TwinAppRole.MAIN_DRIVER -> {
+                        Text("You are the Main Driver.")
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Show this QR code to your Sub-Drivers (QR display not implemented yet).")
+                    }
+                    TwinAppRole.SUB_DRIVER -> {
+                        Text("You are connected as a Sub-Driver.")
+                    }
                 }
             }
         }

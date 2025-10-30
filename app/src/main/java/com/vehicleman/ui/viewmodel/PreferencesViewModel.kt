@@ -3,6 +3,12 @@ package com.vehicleman.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
+import com.vehicleman.data.mappers.toDriver
+import com.vehicleman.data.mappers.toDriverEntity
+import com.vehicleman.data.mappers.toRecord
+import com.vehicleman.data.mappers.toRecordEntity
+import com.vehicleman.data.mappers.toVehicle
+import com.vehicleman.data.mappers.toVehicleEntity
 import com.vehicleman.domain.model.AppBackup
 import com.vehicleman.domain.repositories.DriverRepository
 import com.vehicleman.domain.repositories.RecordRepository
@@ -40,13 +46,20 @@ class PreferencesViewModel @Inject constructor(
         }
     }
 
+    fun setTestMode(isTestMode: Boolean) {
+        viewModelScope.launch {
+            val currentUser = user.first()
+            userPreferencesRepository.saveUser(currentUser.copy(isTestMode = isTestMode))
+        }
+    }
+
     fun setVehicleSortOrder(sortOrder: VehicleSortOrder) {
         viewModelScope.launch {
             userPreferencesRepository.setVehicleSortOrder(sortOrder)
         }
     }
 
-    fun exportData(format: String) {
+    fun exportData(_format: String) {
         viewModelScope.launch {
             // ... export logic ...
         }
@@ -57,9 +70,9 @@ class PreferencesViewModel @Inject constructor(
         viewModelScope.launch {
             val backup = AppBackup(
                 user = user.value,
-                vehicles = vehicleRepository.getAllVehiclesList(),
-                records = recordRepository.getAllRecordsList(),
-                drivers = driverRepository.getAllDriversList(),
+                vehicles = vehicleRepository.getAllVehiclesList().map { it.toVehicleEntity() },
+                records = recordRepository.getAllRecordsList().map { it.toRecordEntity() },
+                drivers = driverRepository.getAllDriversList().map { it.toDriverEntity() },
                 vehicleDriverRelations = driverRepository.getAllVehicleDriverCrossRefs()
             )
             jsonBackup = gson.toJson(backup)
@@ -83,9 +96,9 @@ class PreferencesViewModel @Inject constructor(
                 
                 // Restore data
                 userPreferencesRepository.saveUser(backup.user)
-                vehicleRepository.insertAllVehicles(backup.vehicles)
-                recordRepository.insertAllRecords(backup.records)
-                driverRepository.insertAllDrivers(backup.drivers)
+                vehicleRepository.insertAllVehicles(backup.vehicles.map { it.toVehicle() })
+                recordRepository.insertAllRecords(backup.records.map { it.toRecord() })
+                driverRepository.insertAllDrivers(backup.drivers.map { it.toDriver() })
                 driverRepository.insertAllCrossRefs(backup.vehicleDriverRelations)
 
                 println("--- RESTORE COMPLETE ---")

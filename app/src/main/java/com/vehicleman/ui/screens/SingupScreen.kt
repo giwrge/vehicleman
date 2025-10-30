@@ -8,16 +8,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -28,17 +26,21 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.vehicleman.ui.viewmodel.SingupFormState
 import com.vehicleman.ui.viewmodel.SingupViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SingupScreen(navController: NavController, viewModel: SingupViewModel = hiltViewModel()) {
+fun SingupScreen(
+    navController: NavController,
+    viewModel: SingupViewModel = hiltViewModel()
+) {
     val uiState by viewModel.uiState.collectAsState()
 
+    // Navigate back on successful signup
     LaunchedEffect(uiState.isSignupSuccessful) {
         if (uiState.isSignupSuccessful) {
             navController.popBackStack()
@@ -48,10 +50,10 @@ fun SingupScreen(navController: NavController, viewModel: SingupViewModel = hilt
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = if (uiState.isCodeSent) "Verify Email" else "Sign Up") },
+                title = { Text("Sign Up") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -63,59 +65,112 @@ fun SingupScreen(navController: NavController, viewModel: SingupViewModel = hilt
                 .padding(paddingValues)
                 .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             if (uiState.isLoading) {
                 CircularProgressIndicator()
-            } else if (uiState.isCodeSent) {
-                VerificationContent(uiState, viewModel)
             } else {
-                SignupFormContent(uiState, viewModel)
+                if (!uiState.isCodeSent) {
+                    SignupForm(uiState = uiState, viewModel = viewModel)
+                } else {
+                    VerificationForm(uiState = uiState, viewModel = viewModel)
+                }
+            }
+
+            uiState.errorMessage?.let {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(text = it)
             }
         }
     }
 }
 
 @Composable
-fun SignupFormContent(uiState: com.vehicleman.ui.viewmodel.SingupFormState, viewModel: SingupViewModel) {
-    OutlinedTextField(value = uiState.username, onValueChange = viewModel::onUsernameChanged, label = { Text("Username") }, modifier = Modifier.fillMaxWidth())
-    Spacer(modifier = Modifier.height(8.dp))
-    OutlinedTextField(value = uiState.firstName, onValueChange = viewModel::onFirstNameChanged, label = { Text("First Name") }, modifier = Modifier.fillMaxWidth())
-    Spacer(modifier = Modifier.height(8.dp))
-    OutlinedTextField(value = uiState.lastName, onValueChange = viewModel::onLastNameChanged, label = { Text("Last Name") }, modifier = Modifier.fillMaxWidth())
-    Spacer(modifier = Modifier.height(8.dp))
-    OutlinedTextField(value = uiState.address, onValueChange = viewModel::onAddressChanged, label = { Text("Address") }, modifier = Modifier.fillMaxWidth())
-    Spacer(modifier = Modifier.height(8.dp))
-    OutlinedTextField(value = uiState.city, onValueChange = viewModel::onCityChanged, label = { Text("City") }, modifier = Modifier.fillMaxWidth())
-    Spacer(modifier = Modifier.height(8.dp))
-    OutlinedTextField(value = uiState.country, onValueChange = viewModel::onCountryChanged, label = { Text("Country") }, modifier = Modifier.fillMaxWidth())
-    Spacer(modifier = Modifier.height(8.dp))
-    OutlinedTextField(value = uiState.email, onValueChange = viewModel::onEmailChanged, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
+private fun SignupForm(uiState: SingupFormState, viewModel: SingupViewModel) {
+    Text("Enter your details to sign up.")
     Spacer(modifier = Modifier.height(16.dp))
-    Button(onClick = { viewModel.sendVerificationCode() }, modifier = Modifier.fillMaxWidth()) {
+    OutlinedTextField(
+        value = uiState.username,
+        onValueChange = viewModel::onUsernameChanged,
+        label = { Text("Username") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    OutlinedTextField(
+        value = uiState.email,
+        onValueChange = viewModel::onEmailChanged,
+        label = { Text("Email") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    OutlinedTextField(
+        value = uiState.firstName,
+        onValueChange = viewModel::onFirstNameChanged,
+        label = { Text("First Name") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    OutlinedTextField(
+        value = uiState.lastName,
+        onValueChange = viewModel::onLastNameChanged,
+        label = { Text("Last Name") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    OutlinedTextField(
+        value = uiState.address,
+        onValueChange = viewModel::onAddressChanged,
+        label = { Text("Address") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    OutlinedTextField(
+        value = uiState.city,
+        onValueChange = viewModel::onCityChanged,
+        label = { Text("City") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    OutlinedTextField(
+        value = uiState.country,
+        onValueChange = viewModel::onCountryChanged,
+        label = { Text("Country") },
+        modifier = Modifier.fillMaxWidth(),
+        singleLine = true
+    )
+    Spacer(modifier = Modifier.height(16.dp))
+    Button(
+        onClick = { viewModel.sendVerificationCode() },
+        enabled = uiState.username.isNotBlank() && uiState.email.isNotBlank(),
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Text("Send Verification Code")
-    }
-    uiState.errorMessage?.let {
-        Text(text = it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
     }
 }
 
 @Composable
-fun VerificationContent(uiState: com.vehicleman.ui.viewmodel.SingupFormState, viewModel: SingupViewModel) {
-    Text("A 6-digit code has been sent to your email. Please enter it below.")
+private fun VerificationForm(uiState: SingupFormState, viewModel: SingupViewModel) {
+    Text("A verification code was sent to ${uiState.email}. Please enter it below.")
     Spacer(modifier = Modifier.height(16.dp))
     OutlinedTextField(
         value = uiState.verificationCode,
         onValueChange = viewModel::onVerificationCodeChanged,
         label = { Text("Verification Code") },
-        modifier = Modifier.fillMaxWidth(),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        modifier = Modifier.fillMaxWidth()
     )
     Spacer(modifier = Modifier.height(16.dp))
-    Button(onClick = { viewModel.verifyCodeAndSignup() }, modifier = Modifier.fillMaxWidth()) {
+    Button(
+        onClick = { viewModel.verifyCodeAndSignup() },
+        enabled = uiState.verificationCode.isNotBlank(),
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Text("Verify and Sign Up")
-    }
-    uiState.errorMessage?.let {
-        Text(text = it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
     }
 }

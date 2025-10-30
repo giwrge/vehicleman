@@ -198,14 +198,16 @@ class AddEditRecordViewModel @Inject constructor(
             val user = userPreferencesRepository.user.first()
             val recordCount = userPreferencesRepository.recordCreationCount.first()
 
-            if (user.status == UserStatus.FREE && recordCount >= 30) {
-                _state.update { it.copy(shouldNavigateToSignup = true) }
-                return@launch
-            }
+            if (!user.isTestMode) { // Bypass limits in test mode
+                if (user.status == UserStatus.FREE && recordCount >= 30) {
+                    _state.update { it.copy(shouldNavigateToSignup = true) }
+                    return@launch
+                }
 
-            if (user.status == UserStatus.SIGNED_UP && user.proLevel == ProLevel.NONE && recordCount >= 150) {
-                _state.update { it.copy(shouldNavigateToProMode = true) }
-                return@launch
+                if (user.status == UserStatus.SIGNED_UP && user.proLevel == ProLevel.NONE && recordCount >= 150) {
+                    _state.update { it.copy(shouldNavigateToProMode = true) }
+                    return@launch
+                }
             }
 
             _state.value.let { s ->

@@ -4,9 +4,12 @@ import com.vehicleman.data.dao.DriverDao
 import com.vehicleman.data.entities.DriverEntity
 import com.vehicleman.data.entities.DriverWithVehicles
 import com.vehicleman.data.entities.VehicleDriverCrossRef
+import com.vehicleman.data.mappers.toDriver
+import com.vehicleman.data.mappers.toDriverEntity
 import com.vehicleman.domain.model.Driver
 import com.vehicleman.domain.repositories.DriverRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class DriverRepositoryImpl @Inject constructor(
@@ -34,7 +37,7 @@ class DriverRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getAllDriversList(): List<Driver> {
-        return driverDao.getAllDriversList().map { Driver(it.driverId, it.name) }
+        return driverDao.getAllDriversList().map { it.toDriver() }
     }
 
     override suspend fun getAllVehicleDriverCrossRefs(): List<VehicleDriverCrossRef> {
@@ -50,7 +53,7 @@ class DriverRepositoryImpl @Inject constructor(
     }
 
     override suspend fun insertAllDrivers(drivers: List<Driver>) {
-        drivers.forEach { driverDao.insertDriver(DriverEntity(it.driverId, it.name)) }
+        drivers.forEach { driverDao.insertDriver(it.toDriverEntity()) }
     }
 
     override suspend fun insertAllCrossRefs(crossRefs: List<VehicleDriverCrossRef>) {

@@ -128,8 +128,7 @@ fun AddEditVehicleForm(
     state: VehicleFormState,
     onEvent: (VehicleFormEvent) -> Unit
 ) {
-    val textFieldColors = TextFieldDefaults.outlinedTextFieldColors(
-        containerColor = Color.White.copy(alpha = 0.6f),
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
         focusedBorderColor = Color.Black,
         unfocusedBorderColor = Color.Black,
         focusedTextColor = Color.Black,
@@ -205,8 +204,7 @@ fun FuelTypeSelector(selectedFuelTypes: String, onFuelTypeChanged: (String) -> U
             readOnly = true,
             label = { Text("Τύπος Καυσίμου") },
             modifier = Modifier.fillMaxWidth(),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                containerColor = Color.White.copy(alpha = 0.6f),
+            colors = OutlinedTextFieldDefaults.colors(
                 disabledTextColor = Color.Black,
                 disabledBorderColor = Color.Black,
                 disabledLabelColor = Color.Black
@@ -255,12 +253,11 @@ fun DatePickerField(
     onValueChange: (String) -> Unit,
     colors: TextFieldColors
 ) {
-    var showDatePicker by remember { mutableStateOF(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
     val locale = Locale("el")
     val dateFormatter = SimpleDateFormat("EEEE, dd/MM/yyyy", locale)
 
-    val customTextFieldColors = TextFieldDefaults.outlinedTextFieldColors(
-        containerColor = Color.White.copy(alpha = 0.6f),
+    val customTextFieldColors = OutlinedTextFieldDefaults.colors(
         disabledTextColor = Color.Black,
         disabledBorderColor = Color.Black,
         disabledLabelColor = Color.Black

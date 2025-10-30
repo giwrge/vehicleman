@@ -17,14 +17,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class StatisticsState(
-    val drivers: List<Driver> = emptyList(),
-    val vehicles: List<Vehicle> = emptyList(),
-    val selectedDriverId: String? = null, // null means "Main/All"
-    val isSingleSubDriver: Boolean = false,
-    val isLoading: Boolean = true
-)
-
 @HiltViewModel
 class StatisticsViewModel @Inject constructor(
     private val driverRepository: DriverRepository,

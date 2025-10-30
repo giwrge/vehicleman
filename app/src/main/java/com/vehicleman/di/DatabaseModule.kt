@@ -3,6 +3,7 @@ package com.vehicleman.di
 import android.app.Application
 import androidx.room.Room
 import com.vehicleman.data.VehicleDatabase
+import com.vehicleman.data.dao.DriverDao
 import com.vehicleman.data.dao.RecordDao
 import com.vehicleman.data.dao.VehicleDao
 import dagger.Module
@@ -35,5 +36,11 @@ object DatabaseModule {
     @Singleton
     fun provideRecordDao(db: VehicleDatabase): RecordDao {
         return db.recordDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideDriverDao(db: VehicleDatabase): DriverDao {
+        return db.driverDao()
     }
 }
