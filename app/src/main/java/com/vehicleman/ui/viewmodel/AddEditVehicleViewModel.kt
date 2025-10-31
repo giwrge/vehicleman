@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -94,7 +95,11 @@ class AddEditVehicleViewModel @Inject constructor(
             val formState = _state.value
             val vehicle = formState.toVehicle()
             val finalVehicle = if (vehicle.id.isBlank() || vehicle.id == "new") {
-                vehicle.copy(dateAdded = System.currentTimeMillis(), lastModified = System.currentTimeMillis())
+                vehicle.copy(
+                    id = UUID.randomUUID().toString(), // Generate new ID
+                    dateAdded = System.currentTimeMillis(), 
+                    lastModified = System.currentTimeMillis()
+                )
             } else {
                 vehicle.copy(lastModified = System.currentTimeMillis())
             }

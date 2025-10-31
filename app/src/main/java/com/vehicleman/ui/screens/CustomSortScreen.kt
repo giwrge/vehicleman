@@ -68,19 +68,19 @@ fun CustomSortScreen(
                 .fillMaxSize()
                 .padding(paddingValues) // Apply the padding here
                 .reorderable(state)
-                .detectReorderAfterLongPress(state)
+                .detectReorderAfterLongPress(state) // This is the correct place
         ) {
             items(vehicles, { it.id }) { vehicle ->
                 ReorderableItem(state, key = vehicle.id) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.DragHandle,
                             contentDescription = "Drag handle",
-                            modifier = Modifier.detectReorderAfterLongPress(state)
                         )
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(16.dp))
                         Text(text = vehicle.name)
                     }
                 }

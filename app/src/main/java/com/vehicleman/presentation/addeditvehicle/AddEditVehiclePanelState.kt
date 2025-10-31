@@ -1,7 +1,5 @@
 package com.vehicleman.presentation.addeditvehicle
 
-import com.vehicleman.domain.model.Vehicle
-
 /**
  * UI State for the vehicle list panel.
  */

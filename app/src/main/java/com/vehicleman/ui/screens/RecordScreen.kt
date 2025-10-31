@@ -30,7 +30,8 @@ import com.vehicleman.ui.screens.components.RecordItem
 fun RecordScreen(
     navController: NavController, 
     onNavigateToAddEditRecord: (String, String?) -> Unit,
-    viewModel: RecordViewModel = hiltViewModel()
+    viewModel: RecordViewModel = hiltViewModel(),
+    vehicleId: String?
 ) {
     val state by viewModel.state
 
@@ -38,7 +39,9 @@ fun RecordScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { 
-                    onNavigateToAddEditRecord(viewModel.vehicleId, "new")
+                    viewModel.vehicleId?.let { vId ->
+                        onNavigateToAddEditRecord(vId, "new")
+                    }
                 }
             ) {
                 Icon(Icons.Filled.Add, "Add record")
@@ -58,9 +61,9 @@ fun RecordScreen(
                     },
                     onDragEnd = {
                         if (totalDragAmount < -30) { // Swipe Left
-                            navController.navigate(NavDestinations.STATISTICS_ROUTE)
+                            navController.navigate(NavDestinations.statisticsRoute(NavDestinations.RECORD_IDENTIFIER, vehicleId))
                         } else if (totalDragAmount > 30) { // Swipe Right
-                            navController.navigate(NavDestinations.PREFERENCE_ROUTE)
+                            navController.navigate(NavDestinations.preferenceRoute(NavDestinations.RECORD_IDENTIFIER, vehicleId))
                         }
                     }
                 )
@@ -71,7 +74,11 @@ fun RecordScreen(
                     record ->
                     RecordItem(
                         record = record,
-                        onClick = { onNavigateToAddEditRecord(viewModel.vehicleId, record.id) }
+                        onClick = { 
+                            viewModel.vehicleId?.let { vId ->
+                                onNavigateToAddEditRecord(vId, record.id)
+                            } 
+                        }
                     )
                 }
             }

@@ -60,10 +60,10 @@ fun AppNavigation(
                     navController.navigate(NavDestinations.entryListRoute(vehicleId))
                 },
                 onNavigateToStatistics = {
-                    navController.navigate(NavDestinations.STATISTICS_ROUTE)
+                    navController.navigate(NavDestinations.statisticsRoute(NavDestinations.HOME_IDENTIFIER))
                 },
                 onNavigateToPreferences = {
-                    navController.navigate(NavDestinations.PREFERENCE_ROUTE)
+                    navController.navigate(NavDestinations.preferenceRoute(NavDestinations.HOME_IDENTIFIER))
                 },
                 onNavigateToProMode = {
                     navController.navigate(NavDestinations.PRO_MODE_ROUTE)
@@ -86,26 +86,27 @@ fun AppNavigation(
 
         composable(
             route = "${NavDestinations.ENTRY_LIST_ROUTE}/{${NavDestinations.VEHICLE_ID_KEY}}",
-        ) {
+        ) { backStackEntry ->
+            val vehicleId = backStackEntry.arguments?.getString(NavDestinations.VEHICLE_ID_KEY)
             RecordScreen(
                 navController = navController,
                 onNavigateToAddEditRecord = { vId, recordId ->
                     navController.navigate(NavDestinations.addEditEntryRoute(vId, recordId))
-                }
+                },
+                vehicleId = vehicleId
             )
         }
 
-        composable( route = "${NavDestinations.ADD_EDIT_ENTRY_ROUTE}/{${NavDestinations.VEHICLE_ID_KEY}}/{recordId}",
-        ) { backStackEntry ->
-            AddEditRecordScreen(
-                navController = navController,
-                onNavigateBack = { navController.popBackStack() },
-                onRecordSaved = { navController.popBackStack() }
-            )
+        composable(
+            route = "${NavDestinations.ADD_EDIT_ENTRY_ROUTE}/{${NavDestinations.VEHICLE_ID_KEY}}/{recordId}",
+        ) {
+            AddEditRecordScreen(navController = navController)
         }
 
-        composable(NavDestinations.STATISTICS_ROUTE) {
-            StatisticsScreen(navController = navController)
+        composable("${NavDestinations.STATISTICS_ROUTE}/{${NavDestinations.FROM_SCREEN_KEY}}/{${NavDestinations.FROM_ID_KEY}}") { backStackEntry ->
+            val fromScreen = backStackEntry.arguments?.getString(NavDestinations.FROM_SCREEN_KEY)
+            val fromId = backStackEntry.arguments?.getString(NavDestinations.FROM_ID_KEY)
+            StatisticsScreen(navController = navController, fromScreen = fromScreen, fromId = fromId)
         }
 
         composable(
@@ -114,8 +115,10 @@ fun AppNavigation(
             StatisticVehicleScreen(navController = navController)
         }
 
-        composable(NavDestinations.PREFERENCE_ROUTE) {
-            PreferenceScreen(navController = navController)
+        composable("${NavDestinations.PREFERENCE_ROUTE}/{${NavDestinations.FROM_SCREEN_KEY}}/{${NavDestinations.FROM_ID_KEY}}") { backStackEntry ->
+            val fromScreen = backStackEntry.arguments?.getString(NavDestinations.FROM_SCREEN_KEY)
+            val fromId = backStackEntry.arguments?.getString(NavDestinations.FROM_ID_KEY)
+            PreferenceScreen(navController = navController, fromScreen = fromScreen, fromId = fromId)
         }
 
         composable(NavDestinations.PRO_MODE_ROUTE) {

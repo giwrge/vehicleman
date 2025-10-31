@@ -34,19 +34,25 @@ class AddEditRecordViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val vehicleId: String = savedStateHandle[NavDestinations.VEHICLE_ID_KEY] ?: throw IllegalArgumentException("Vehicle ID required")
-    private val recordId: String = savedStateHandle["recordId"] ?: "new"
+    private val vehicleId: String? = savedStateHandle[NavDestinations.VEHICLE_ID_KEY]
+    private val recordId: String? = savedStateHandle["recordId"]
 
-    private val _state = MutableStateFlow(AddEditRecordState(vehicleId = vehicleId, recordId = recordId))
+    private val _state = MutableStateFlow(AddEditRecordState())
     val state: StateFlow<AddEditRecordState> = _state
 
     init {
-        loadVehicleFuelTypes()
-        loadRecord()
-        loadLatestOdometer()
+        if (vehicleId != null) {
+            _state.update { it.copy(vehicleId = vehicleId) }
+            loadVehicleFuelTypes(vehicleId)
+            loadLatestOdometer(vehicleId)
+        }
+        if (recordId != null) {
+            _state.update { it.copy(recordId = recordId) }
+            loadRecord(recordId)
+        }
     }
 
-    private fun loadVehicleFuelTypes() {
+    private fun loadVehicleFuelTypes(vehicleId: String) {
         viewModelScope.launch {
             val vehicle = vehicleRepository.getVehicleById(vehicleId)
             vehicle?.let {
@@ -55,7 +61,7 @@ class AddEditRecordViewModel @Inject constructor(
         }
     }
 
-    private fun loadLatestOdometer() {
+    private fun loadLatestOdometer(vehicleId: String) {
         viewModelScope.launch {
             val latestOdometer = recordRepository.getLatestOdometer(vehicleId)
             if (recordId == "new" && latestOdometer != null && latestOdometer > 0) {
@@ -64,7 +70,7 @@ class AddEditRecordViewModel @Inject constructor(
         }
     }
 
-    private fun loadRecord() {
+    private fun loadRecord(recordId: String) {
         if (recordId != "new") {
             viewModelScope.launch {
                 try {
@@ -211,6 +217,10 @@ class AddEditRecordViewModel @Inject constructor(
             }
 
             _state.value.let { s ->
+                if (s.vehicleId.isBlank()) { // Check against the state's vehicleId
+                    _state.update { it.copy(error = "Vehicle ID is missing.") }
+                    return@let
+                }
                 if (s.odometer.isBlank()) {
                     _state.update { it.copy(error = "Τα χιλιόμετρα είναι υποχρεωτικά") }
                     return@let

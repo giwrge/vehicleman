@@ -58,8 +58,6 @@ import androidx.compose.runtime.LaunchedEffect // Προσθήκη αυτού τ
 @Composable
 fun AddEditRecordScreen(
     navController: NavController,
-    onRecordSaved: () -> Unit,
-    onNavigateBack: () -> Unit,
     viewModel: AddEditRecordViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -67,7 +65,7 @@ fun AddEditRecordScreen(
 
     LaunchedEffect(state.isSaveSuccess) {
         if (state.isSaveSuccess) {
-            onRecordSaved()
+            navController.popBackStack()
         }
     }
 
@@ -88,7 +86,7 @@ fun AddEditRecordScreen(
             TopAppBar(
                 title = { Text(if (state.recordId == "new") "Νέα Καταχώρηση" else "Επεξεργασία") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Πίσω")
                     }
                 }

@@ -3,9 +3,11 @@ package com.vehicleman.ui.preferences
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -37,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -54,7 +57,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun PreferenceScreen(
     navController: NavController,
-    viewModel: PreferencesViewModel = hiltViewModel()
+    viewModel: PreferencesViewModel = hiltViewModel(),
+    fromScreen: String?,
+    fromId: String?
 ) {
     val isNightMode by viewModel.isNightMode.collectAsState(initial = false)
     val coroutineScope = rememberCoroutineScope()
@@ -114,10 +119,31 @@ fun PreferenceScreen(
             )
         }
     ) { paddingValues ->
+        var totalDragAmount by remember { mutableStateOf(0f) }
         Column(
             modifier = Modifier
                 .padding(paddingValues)
+                .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragStart = { totalDragAmount = 0f },
+                        onHorizontalDrag = { change, dragAmount ->
+                            change.consume()
+                            totalDragAmount += dragAmount
+                        },
+                        onDragEnd = {
+                            if (totalDragAmount < -30) { // Swipe Left
+                                val route = when (fromScreen) {
+                                    NavDestinations.HOME_IDENTIFIER -> NavDestinations.HOME_ROUTE
+                                    NavDestinations.RECORD_IDENTIFIER -> NavDestinations.entryListRoute(fromId ?: "")
+                                    else -> NavDestinations.HOME_ROUTE // Default fallback
+                                }
+                                navController.navigate(route)
+                            }
+                        }
+                    )
+                }
         ) {
             // General
             Text(text = "General", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
@@ -404,12 +430,70 @@ fun SortOrderDialog(
     onDismiss: () -> Unit,
     onSortOrderSelected: (VehicleSortOrder) -> Unit
 ) {
-    // ... (Dialog implementation remains the same)
+    val sortOptions = listOf(
+        VehicleSortOrder.ALPHABETICAL to "Alphabetical",
+        VehicleSortOrder.BY_DATE_ADDED to "By Date Added",
+        VehicleSortOrder.MOST_ENTRIES to "Most Entries",
+        VehicleSortOrder.BY_LAST_MODIFIED to "By Last Modified",
+        VehicleSortOrder.CUSTOM to "Custom"
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select Sort Order") },
+        text = {
+            Column {
+                sortOptions.forEach { (sortOrder, text) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = (currentSortOrder == sortOrder),
+                                onClick = { onSortOrderSelected(sortOrder) }
+                            )
+                            .padding(vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = (currentSortOrder == sortOrder),
+                            onClick = { onSortOrderSelected(sortOrder) }
+                        )
+                        Text(
+                            text = text,
+                            modifier = Modifier.padding(start = 16.dp)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable
 fun ExportDialog(onDismiss: () -> Unit, onExport: (String) -> Unit) {
-    // ... (Dialog implementation remains the same)
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Export Data") },
+        text = { Text("Select format to export.") }, // Placeholder
+        confirmButton = {
+            TextButton(onClick = { 
+                onExport("JSON") // Hardcoded for now
+                onDismiss()
+            }) {
+                Text("JSON")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable

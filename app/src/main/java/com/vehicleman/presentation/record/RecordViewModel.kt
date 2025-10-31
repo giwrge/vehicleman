@@ -21,10 +21,14 @@ class RecordViewModel @Inject constructor(
     private val _state = mutableStateOf(RecordState())
     val state: State<RecordState> = _state
 
-    val vehicleId: String = savedStateHandle.get<String>(NavDestinations.VEHICLE_ID_KEY)!!
+    // Make vehicleId nullable and handle it safely
+    val vehicleId: String? = savedStateHandle.get<String>(NavDestinations.VEHICLE_ID_KEY)
 
     init {
-        getRecords(vehicleId)
+        // Only get records if vehicleId is not null
+        vehicleId?.let {
+            getRecords(it)
+        }
     }
 
     private fun getRecords(vehicleId: String) {

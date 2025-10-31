@@ -27,6 +27,12 @@ object NavDestinations {
     // Argument Keys
     const val VEHICLE_ID_KEY = "vehicleId"
     const val SUB_DRIVER_ID_KEY = "subDriverId"
+    const val FROM_SCREEN_KEY = "fromScreen"
+    const val FROM_ID_KEY = "fromId"
+
+    // Screen Identifiers for Navigation
+    const val HOME_IDENTIFIER = "home"
+    const val RECORD_IDENTIFIER = "record"
 
     /**
      * Helper function to build the route for the Add/Edit Vehicle Form.
@@ -49,4 +55,16 @@ object NavDestinations {
      * Helper function to build the route for the Statistic Vehicle Screen.
      */
     fun statisticVehicleRoute(vehicleId: String) = "$STATISTIC_VEHICLE_ROUTE/$vehicleId"
+
+    /**
+     * Helper function to build the route for the Statistics Screen.
+     */
+    fun statisticsRoute(fromScreen: String, fromId: String? = null) = 
+        "$STATISTICS_ROUTE/$fromScreen/${fromId ?: "-1"}"
+
+    /**
+     * Helper function to build the route for the Preference Screen.
+     */
+    fun preferenceRoute(fromScreen: String, fromId: String? = null) = 
+        "$PREFERENCE_ROUTE/$fromScreen/${fromId ?: "-1"}"
 }
