@@ -1,11 +1,19 @@
 package com.vehicleman.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -13,13 +21,21 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.vehicleman.domain.model.Driver
+import com.vehicleman.domain.model.Vehicle
+import com.vehicleman.presentation.statistics.StatisticsEvent
+import com.vehicleman.presentation.statistics.StatisticsViewModel
 import com.vehicleman.ui.navigation.NavDestinations
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,8 +43,25 @@ import com.vehicleman.ui.navigation.NavDestinations
 fun StatisticsScreen(
     navController: NavController,
     fromScreen: String?,
-    fromId: String?
+    fromId: String?,
+    viewModel: StatisticsViewModel = hiltViewModel()
 ) {
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(state.navigateToDriverStatistics) {
+        state.navigateToDriverStatistics?.let {
+            navController.navigate("DriverStatisticsScreen/$it")
+            viewModel.onEvent(StatisticsEvent.NavigationHandled)
+        }
+    }
+
+    LaunchedEffect(state.navigateToVehicleStatistics) {
+        state.navigateToVehicleStatistics?.let {
+            navController.navigate("VehicleStatisticsScreen/$it")
+            viewModel.onEvent(StatisticsEvent.NavigationHandled)
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -66,7 +99,46 @@ fun StatisticsScreen(
                     )
                 }
         ) {
-            Text("Statistics screen content goes here.")
+            // Drivers Section
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(state.drivers) {
+                    DriverCard(driver = it, onClick = { viewModel.onEvent(StatisticsEvent.OnDriverClick(it)) })
+                }
+            }
+
+            // Vehicles Section
+            LazyColumn(
+                modifier = Modifier.weight(1f), // <-- FIX 2: Fill remaining space
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(state.vehicles) {
+                    VehicleCard(vehicle = it, onClick = { viewModel.onEvent(StatisticsEvent.OnVehicleClick(it)) })
+                }
+            }
         }
+    }
+}
+
+@Composable
+fun DriverCard(driver: Driver, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier.clickable(onClick = onClick) // <-- FIX 1: Removed fillMaxWidth()
+    ) {
+        Text(text = driver.name, modifier = Modifier.padding(16.dp))
+    }
+}
+
+@Composable
+fun VehicleCard(vehicle: Vehicle, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        Text(text = vehicle.name, modifier = Modifier.padding(16.dp))
     }
 }

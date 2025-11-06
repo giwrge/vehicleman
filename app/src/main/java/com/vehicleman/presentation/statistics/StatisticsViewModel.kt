@@ -1,84 +1,60 @@
 package com.vehicleman.presentation.statistics
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.vehicleman.domain.model.Driver
-import com.vehicleman.domain.model.Vehicle
 import com.vehicleman.domain.repositories.DriverRepository
-import com.vehicleman.domain.repositories.SubDriverType
-import com.vehicleman.domain.repositories.TwinAppRole
-import com.vehicleman.domain.repositories.UserPreferencesRepository
 import com.vehicleman.domain.repositories.VehicleRepository
-import com.vehicleman.domain.repositories.VehicleSortOrder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class StatisticsViewModel @Inject constructor(
     private val driverRepository: DriverRepository,
-    private val vehicleRepository: VehicleRepository,
-    private val userPreferencesRepository: UserPreferencesRepository
+    private val vehicleRepository: VehicleRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(StatisticsState())
-    val state = _state.asStateFlow()
+    val state: StateFlow<StatisticsState> = _state
 
     init {
+        loadInitialData()
+    }
+
+    private fun loadInitialData() {
         viewModelScope.launch {
-            combine(
-                driverRepository.getDriversWithVehicles(),
-                vehicleRepository.getAllVehicles(),
-                userPreferencesRepository.vehicleSortOrder,
-                userPreferencesRepository.customVehicleOrder,
-                userPreferencesRepository.user
-            ) { driversWithVehicles, allVehicles, sortOrder, customOrder, currentUser ->
-                
-                val isSingleSubDriver = currentUser.twinAppRole == TwinAppRole.SUB_DRIVER && currentUser.subDriverType == SubDriverType.SINGLE
-                
-                val drivers = if (isSingleSubDriver) emptyList() else driversWithVehicles.map { Driver(it.driver.driverId, it.driver.name) }
-                
-                val selectedDriver = driversWithVehicles.find { it.driver.driverId == _state.value.selectedDriverId }
-
-                val visibleVehicles = when {
-                    isSingleSubDriver -> allVehicles.filter { currentUser.assignedVehicleIds.contains(it.id) }
-                    selectedDriver != null -> selectedDriver.vehicles.map { v -> allVehicles.find { it.id == v.id }!! } // Map back to full Vehicle objects
-                    else -> allVehicles // "Main/All" shows all vehicles
-                }
-
-                val sortedVehicles = when (sortOrder) {
-                    VehicleSortOrder.ALPHABETICAL -> visibleVehicles.sortedBy { it.make }
-                    VehicleSortOrder.BY_DATE_ADDED -> visibleVehicles.sortedBy { it.dateAdded }
-                    VehicleSortOrder.MOST_ENTRIES -> visibleVehicles.sortedByDescending { it.recordCount }
-                    VehicleSortOrder.BY_LAST_MODIFIED -> visibleVehicles.sortedByDescending { it.lastModified }
-                    VehicleSortOrder.CUSTOM -> {
-                        if (customOrder.isNotBlank()) {
-                            val customOrderIds = customOrder.split(",")
-                            visibleVehicles.sortedBy { vehicle ->
-                                customOrderIds.indexOf(vehicle.id).let { if (it == -1) Int.MAX_VALUE else it }
-                            }
-                        } else {
-                            visibleVehicles
-                        }
-                    }
-                }
-
-                _state.value = _state.value.copy(
-                    drivers = drivers,
-                    vehicles = sortedVehicles,
-                    isSingleSubDriver = isSingleSubDriver,
-                    isLoading = false
-                )
-
-            }.collect { }
+            _state.update { it.copy(isLoading = true) }
+            try {
+                val drivers = driverRepository.getAllDriversList()
+                val vehicles = vehicleRepository.getAllVehiclesList()
+                Log.d("StatisticsViewModel", "Loaded ${drivers.size} drivers")
+                Log.d("StatisticsViewModel", "Loaded ${vehicles.size} vehicles")
+                _state.update { it.copy(drivers = drivers, vehicles = vehicles, isLoading = false) }
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "Failed to load data: ${e.message}", isLoading = false) }
+                Log.e("StatisticsViewModel", "Error loading data", e)
+            }
         }
     }
 
-    fun onDriverSelected(driverId: String?) {
-        _state.value = _state.value.copy(selectedDriverId = driverId)
-        // The `combine` flow will automatically recalculate the vehicles list
+    fun onEvent(event: StatisticsEvent) {
+        when (event) {
+            is StatisticsEvent.OnDriverClick -> {
+                _state.update { it.copy(navigateToDriverStatistics = event.driver.driverId) }
+            }
+            is StatisticsEvent.OnVehicleClick -> {
+                _state.update { it.copy(navigateToVehicleStatistics = event.vehicle.id) }
+            }
+            is StatisticsEvent.OnSortVehiclesClick -> {
+                // Handle vehicle sorting
+            }
+            is StatisticsEvent.NavigationHandled -> {
+                _state.update { it.copy(navigateToDriverStatistics = null, navigateToVehicleStatistics = null) }
+            }
+        }
     }
 }

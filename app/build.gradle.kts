@@ -64,8 +64,10 @@ dependencies {
     // FIX: Splash Screen API
     implementation("androidx.core:core-splashscreen:1.0.1")
 
-    // Lifecycle
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+    // Lifecycle & ViewModel
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.3") // For collectAsStateWithLifecycle
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
 
     // Compose
     implementation("androidx.activity:activity-compose:1.8.2")
@@ -87,14 +89,10 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 
-    // Hilt (Dependency Injection) - ΟΛΕΣ ΟΙ ΕΚΔΟΣΕΙΣ ΕΙΝΑΙ 2.51.1
-    implementation("com.google.dagger:hilt-android:2.52") // <-- Αλλαγή από 2.49
-    kapt("com.google.dagger:hilt-android-compiler:2.52") // <-- Αλλαγή από 2.49
+    // Hilt (Dependency Injection)
+    implementation("com.google.dagger:hilt-android:2.52")
+    kapt("com.google.dagger:hilt-android-compiler:2.52")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
-
-    // ViewModel + Lifecycle
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
 
     // Room (Database)
     implementation("androidx.room:room-runtime:2.6.1")

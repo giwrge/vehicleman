@@ -11,6 +11,7 @@ import com.vehicleman.ui.screens.AddEditRecordScreen
 import com.vehicleman.ui.screens.AddEditVehicleScreen
 import com.vehicleman.ui.screens.BackupScreen
 import com.vehicleman.ui.screens.CustomSortScreen
+import com.vehicleman.ui.screens.DriverStatisticsScreen
 import com.vehicleman.ui.screens.DriversScreen
 import com.vehicleman.ui.screens.HomeScreen
 import com.vehicleman.ui.screens.ImportWizardScreen
@@ -24,6 +25,7 @@ import com.vehicleman.ui.screens.StatisticsScreen
 import com.vehicleman.ui.screens.SubDriverPermissionsScreen
 import com.vehicleman.ui.screens.TwinAppSetupScreen
 import com.vehicleman.ui.screens.UsersScreen
+import com.vehicleman.ui.screens.VehicleStatisticsScreen
 import com.vehicleman.ui.viewmodel.HomeViewModel
 
 @Composable
@@ -107,6 +109,14 @@ fun AppNavigation(
             val fromScreen = backStackEntry.arguments?.getString(NavDestinations.FROM_SCREEN_KEY)
             val fromId = backStackEntry.arguments?.getString(NavDestinations.FROM_ID_KEY)
             StatisticsScreen(navController = navController, fromScreen = fromScreen, fromId = fromId)
+        }
+
+        composable("DriverStatisticsScreen/{driverId}") {
+            DriverStatisticsScreen(navController = navController)
+        }
+
+        composable("VehicleStatisticsScreen/{vehicleId}") {
+            VehicleStatisticsScreen(navController = navController)
         }
 
         composable(
