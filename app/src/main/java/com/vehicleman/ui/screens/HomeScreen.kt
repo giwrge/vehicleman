@@ -58,9 +58,9 @@ fun HomeScreen(
                 },
                 onDragEnd = {
                     if (totalDragAmount < -30) { // Swipe Left
-                        navController.navigate(NavDestinations.statisticsRoute(NavDestinations.HOME_ROUTE))
+                        navController.navigate(NavDestinations.statisticsRoute(NavDestinations.HOME_IDENTIFIER, null))
                     } else if (totalDragAmount > 30) { // Swipe Right
-                        navController.navigate(NavDestinations.preferenceRoute(NavDestinations.HOME_ROUTE))
+                        navController.navigate(NavDestinations.preferenceRoute(NavDestinations.HOME_IDENTIFIER, null))
                     }
                 }
             )

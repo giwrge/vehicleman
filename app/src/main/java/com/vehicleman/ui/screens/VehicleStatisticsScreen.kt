@@ -28,14 +28,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.vehicleman.presentation.vehiclestatistics.VehicleStatisticsEvent
-import com.vehicleman.presentation.vehiclestatistics.VehicleStatisticsViewModel
+import com.vehicleman.presentation.statisticvehicle.StatisticVehicleEvent
+import com.vehicleman.presentation.statisticvehicle.StatisticVehicleViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VehicleStatisticsScreen(
     navController: NavController,
-    viewModel: VehicleStatisticsViewModel = hiltViewModel()
+    viewModel: StatisticVehicleViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
@@ -49,7 +49,7 @@ fun VehicleStatisticsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.onEvent(VehicleStatisticsEvent.Refresh) }) {
+                    IconButton(onClick = { viewModel.onEvent(StatisticVehicleEvent.Refresh) }) {
                         Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
                     }
                 }

@@ -44,9 +44,11 @@ class StatisticsViewModel @Inject constructor(
     fun onEvent(event: StatisticsEvent) {
         when (event) {
             is StatisticsEvent.OnDriverClick -> {
+                Log.d("StatisticsViewModel", "Driver clicked: ${event.driver.driverId}")
                 _state.update { it.copy(navigateToDriverStatistics = event.driver.driverId) }
             }
             is StatisticsEvent.OnVehicleClick -> {
+                Log.d("StatisticsViewModel", "Vehicle clicked: ${event.vehicle.id}")
                 _state.update { it.copy(navigateToVehicleStatistics = event.vehicle.id) }
             }
             is StatisticsEvent.OnSortVehiclesClick -> {

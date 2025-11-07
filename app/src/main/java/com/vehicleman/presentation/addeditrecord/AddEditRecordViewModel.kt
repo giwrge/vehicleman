@@ -41,14 +41,16 @@ class AddEditRecordViewModel @Inject constructor(
     val state: StateFlow<AddEditRecordState> = _state
 
     init {
-        if (vehicleId != null) {
+        if (vehicleId == null) {
+            _state.update { it.copy(error = "Vehicle ID is missing.") }
+        } else {
             _state.update { it.copy(vehicleId = vehicleId) }
             loadVehicleFuelTypes(vehicleId)
             loadLatestOdometer(vehicleId)
-        }
-        if (recordId != null) {
-            _state.update { it.copy(recordId = recordId) }
-            loadRecord(recordId)
+            if (recordId != null) {
+                _state.update { it.copy(recordId = recordId) }
+                loadRecord(recordId)
+            }
         }
     }
 
@@ -226,6 +228,12 @@ class AddEditRecordViewModel @Inject constructor(
                     return@let
                 }
 
+                val odometerValue = s.odometer.toIntOrNull()
+                if (odometerValue == null) {
+                    _state.update { it.copy(error = "Τα χιλιόμετρα πρέπει να είναι έγκυρος αριθμός") }
+                    return@let
+                }
+
                 val recordToSave = Record(
                     id = if (s.recordId == "new") UUID.randomUUID().toString() else s.recordId,
                     vehicleId = s.vehicleId,
@@ -233,7 +241,7 @@ class AddEditRecordViewModel @Inject constructor(
                     title = s.description.take(50),
                     description = s.description,
                     date = s.date,
-                    odometer = s.odometer.toInt(),
+                    odometer = odometerValue,
                     cost = if (s.recordType != RecordType.REMINDER) s.cost.toDoubleOrNull() else null,
                     quantity = if (s.recordType == RecordType.FUEL_UP) s.quantity.toDoubleOrNull() else null,
                     pricePerUnit = if (s.recordType == RecordType.FUEL_UP) s.pricePerUnit.toDoubleOrNull() else null,

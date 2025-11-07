@@ -25,7 +25,6 @@ import com.vehicleman.ui.screens.StatisticsScreen
 import com.vehicleman.ui.screens.SubDriverPermissionsScreen
 import com.vehicleman.ui.screens.TwinAppSetupScreen
 import com.vehicleman.ui.screens.UsersScreen
-import com.vehicleman.ui.screens.VehicleStatisticsScreen
 import com.vehicleman.ui.viewmodel.HomeViewModel
 
 @Composable
@@ -81,7 +80,7 @@ fun AppNavigation(
             val vehicleId = backStackEntry.arguments?.getString("vehicleId")
             AddEditVehicleScreen(
                 navController = navController,
-                vehicleId = vehicleId,
+                vehicleId = if (vehicleId == "new") null else vehicleId,
                 isNightMode = isNightMode
             )
         }
@@ -113,10 +112,6 @@ fun AppNavigation(
 
         composable("DriverStatisticsScreen/{driverId}") {
             DriverStatisticsScreen(navController = navController)
-        }
-
-        composable("VehicleStatisticsScreen/{vehicleId}") {
-            VehicleStatisticsScreen(navController = navController)
         }
 
         composable(

@@ -50,9 +50,7 @@ class VehicleRepositoryImpl @Inject constructor(
     }
 
     override suspend fun deleteVehicleById(vehicleId: String) {
-        vehicleDao.getVehicleById(vehicleId)?.let {
-            vehicleDao.deleteVehicle(it)
-        }
+        vehicleDao.deleteVehicleById(vehicleId)
     }
 
     override suspend fun deleteVehiclesByIds(vehicleIds: Set<String>) {

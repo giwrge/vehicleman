@@ -1,40 +1,66 @@
 package com.vehicleman.presentation.statisticvehicle
 
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.vehicleman.domain.use_case.StatisticsUseCases
+import com.vehicleman.domain.repositories.RecordRepository
+import com.vehicleman.domain.repositories.VehicleRepository
+import com.vehicleman.domain.util.VehicleStatisticsCalculator
 import com.vehicleman.ui.navigation.NavDestinations
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class StatisticVehicleViewModel @Inject constructor(
-    private val statisticsUseCases: StatisticsUseCases,
-    savedStateHandle: SavedStateHandle
+    private val vehicleRepository: VehicleRepository,
+    private val recordRepository: RecordRepository,
+    private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-
-    private val _state = mutableStateOf(StatisticVehicleState())
-    val state: State<StatisticVehicleState> = _state
 
     private val vehicleId: String = savedStateHandle.get<String>(NavDestinations.VEHICLE_ID_KEY)!!
 
+    private val _state = MutableStateFlow(StatisticVehicleState())
+    val state: StateFlow<StatisticVehicleState> = _state
+
     init {
-        getVehicleConsumption(vehicleId)
+        loadStatistics()
     }
 
-    private fun getVehicleConsumption(vehicleId: String) {
-        statisticsUseCases.getVehicleConsumption(vehicleId)
-            .onEach { consumption ->
-                _state.value = state.value.copy(
-                    totalConsumption = consumption.totalConsumption,
-                    consumptionPerFuelType = consumption.consumptionPerFuelType
-                )
+    fun onEvent(event: StatisticVehicleEvent) {
+        when (event) {
+            StatisticVehicleEvent.Refresh -> loadStatistics()
+        }
+    }
+
+    private fun loadStatistics() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            try {
+                val vehicle = vehicleRepository.getVehicleById(vehicleId)
+                if (vehicle == null) {
+                    _state.update { it.copy(error = "Vehicle not found", isLoading = false) }
+                    return@launch
+                }
+
+                val records = recordRepository.getRecordsForVehicle(vehicleId).first()
+                val stats = VehicleStatisticsCalculator.calculate(records)
+
+                _state.update {
+                    it.copy(
+                        vehicleName = vehicle.name,
+                        stats = stats,
+                        isLoading = false,
+                        error = null
+                    )
+                }
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "Failed to load statistics: ${e.message}", isLoading = false) }
             }
-            .launchIn(viewModelScope)
+        }
     }
 }

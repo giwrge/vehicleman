@@ -1,6 +1,10 @@
 package com.vehicleman.presentation.statisticvehicle
 
+import com.vehicleman.domain.util.CalculatedStats
+
 data class StatisticVehicleState(
-    val totalConsumption: Double = 0.0,
-    val consumptionPerFuelType: Map<String, Double> = emptyMap()
+    val vehicleName: String = "",
+    val stats: CalculatedStats? = null,
+    val isLoading: Boolean = true,
+    val error: String? = null
 )
