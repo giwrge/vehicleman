@@ -14,7 +14,7 @@ data class VehicleFormState(
     val plateNumber: String = "",
     val year: String = "",
     val currentOdometer: String = "",
-    val registrationDate: Date = Date(),
+    val registrationDate: Date? = null,
     val oilChangeKm: String = "",
     val oilChangeDate: String = "",
     val tiresChangeKm: String = "",

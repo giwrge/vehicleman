@@ -14,7 +14,7 @@ data class VehicleEntity(
     val year: Int,
     val fuelTypes: List<String>, // Changed from fuelType: String
     val currentOdometer: Int,
-    val registrationDate: Date,
+    val registrationDate: Date?,
     val oilChangeDate: Long,
     val oilChangeKm: Long,
     val tiresChangeKm: Long,

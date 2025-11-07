@@ -46,9 +46,12 @@ class UserPreferencesRepositoryImpl @Inject constructor(
     }
 
     override val vehicleSortOrder = context.dataStore.data.map { preferences ->
-        VehicleSortOrder.valueOf(
-            preferences[PreferencesKeys.VEHICLE_SORT_ORDER] ?: VehicleSortOrder.ALPHABETICAL.name
-        )
+        val sortOrderName = preferences[PreferencesKeys.VEHICLE_SORT_ORDER] ?: VehicleSortOrder.ALPHABETICAL.name
+        try {
+            VehicleSortOrder.valueOf(sortOrderName)
+        } catch (e: IllegalArgumentException) {
+            VehicleSortOrder.ALPHABETICAL // Default to a safe value if the stored one is invalid
+        }
     }
 
     override suspend fun setVehicleSortOrder(sortOrder: VehicleSortOrder) {
@@ -70,7 +73,11 @@ class UserPreferencesRepositoryImpl @Inject constructor(
     override val user: Flow<User> = context.dataStore.data.map { preferences ->
         val json = preferences[PreferencesKeys.USER_DATA]
         if (json != null) {
-            gson.fromJson(json, User::class.java)
+            try {
+                gson.fromJson(json, User::class.java)
+            } catch (e: Exception) {
+                User() // Default user in case of parsing error
+            }
         } else {
             User() // Default user
         }

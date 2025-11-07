@@ -36,19 +36,19 @@ class HomeViewModel @Inject constructor(
         userPreferencesRepository.customVehicleOrder,
         user // Use the user flow from above
     ) { vehicles, sortOrder, customOrder, currentUser ->
-        // 1. Filter vehicles based on user role
+        // 1. Filter vehicles based on user role (Null-safe)
         val visibleVehicles = if (currentUser.twinAppRole == TwinAppRole.SUB_DRIVER && currentUser.subDriverType == SubDriverType.SINGLE) {
-            vehicles.filter { currentUser.assignedVehicleIds.contains(it.id) }
+            vehicles.filter { (currentUser.assignedVehicleIds ?: emptyList()).contains(it.id) }
         } else {
             vehicles
         }
 
-        // 2. Sort the visible vehicles
+        // 2. Sort the visible vehicles (Null-safe)
         val sortedVehicles = when (sortOrder) {
-            VehicleSortOrder.ALPHABETICAL -> visibleVehicles.sortedBy { it.make }
-            VehicleSortOrder.BY_DATE_ADDED -> visibleVehicles.sortedBy { it.dateAdded }
-            VehicleSortOrder.MOST_ENTRIES -> visibleVehicles.sortedByDescending { it.recordCount }
-            VehicleSortOrder.BY_LAST_MODIFIED -> visibleVehicles.sortedByDescending { it.lastModified }
+            VehicleSortOrder.ALPHABETICAL -> visibleVehicles.sortedBy { it.make ?: "" }
+            VehicleSortOrder.BY_DATE_ADDED -> visibleVehicles.sortedBy { it.dateAdded ?: 0L }
+            VehicleSortOrder.MOST_ENTRIES -> visibleVehicles.sortedByDescending { it.recordCount ?: 0 }
+            VehicleSortOrder.BY_LAST_MODIFIED -> visibleVehicles.sortedByDescending { it.lastModified ?: 0L }
             VehicleSortOrder.CUSTOM -> {
                 if (customOrder.isNotBlank()) {
                     val customOrderIds = customOrder.split(",")
@@ -61,15 +61,15 @@ class HomeViewModel @Inject constructor(
             }
         }
 
-        // 3. Map to display items
+        // 3. Map to display items (Null-safe)
         sortedVehicles.map {
             VehicleDisplayItem(
                 id = it.id,
-                name = "${it.make} ${it.model}",
-                makeModel = "${it.make} • ${it.model}",
-                licensePlate = it.plateNumber,
-                odometerText = "${it.currentOdometer} km",
-                fuelTypes = it.fuelTypes,
+                name = "${it.make ?: ""} ${it.model ?: ""}",
+                makeModel = "${it.make ?: ""} • ${it.model ?: ""}",
+                licensePlate = it.plateNumber ?: "",
+                odometerText = "${it.currentOdometer ?: 0} km",
+                fuelTypes = it.fuelTypes ?: emptyList(),
                 isActive = false // This can be updated based on user interaction
             )
         }
