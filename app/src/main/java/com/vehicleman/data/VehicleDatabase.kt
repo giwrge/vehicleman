@@ -16,7 +16,7 @@ import com.vehicleman.data.entities.VehicleEntity
  */
 @Database(
     entities = [VehicleEntity::class, RecordEntity::class, DriverEntity::class, VehicleDriverCrossRef::class],
-    version = 5, // Incremented version
+    version = 7, // Incremented version again to force recreation
     exportSchema = false
 )
 @TypeConverters(Converters::class)

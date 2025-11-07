@@ -1,4 +1,4 @@
-package com.vehicleman.ui.preferences
+/*package com.vehicleman.ui.preferences
 
 import android.content.Intent
 import android.net.Uri
@@ -572,3 +572,4 @@ fun LegalDialog(onDismiss: () -> Unit) {
         }
     )
 }
+*/

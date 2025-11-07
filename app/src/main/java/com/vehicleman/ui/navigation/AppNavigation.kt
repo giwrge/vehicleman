@@ -6,7 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.vehicleman.ui.preferences.PreferenceScreen
+import com.vehicleman.ui.screens.PreferenceScreen // Corrected import
 import com.vehicleman.ui.screens.AddEditRecordScreen
 import com.vehicleman.ui.screens.AddEditVehicleScreen
 import com.vehicleman.ui.screens.BackupScreen

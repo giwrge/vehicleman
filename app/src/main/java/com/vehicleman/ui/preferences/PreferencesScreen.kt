@@ -1,4 +1,4 @@
-package com.vehicleman.ui.preferences
+/*package com.vehicleman.ui.preferences
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
@@ -17,3 +17,4 @@ fun PreferencesScreen() {
 fun PreferencesScreenPreview() {
     PreferencesScreen()
 }
+*/

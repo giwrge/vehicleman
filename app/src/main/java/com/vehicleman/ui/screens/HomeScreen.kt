@@ -58,9 +58,9 @@ fun HomeScreen(
                 },
                 onDragEnd = {
                     if (totalDragAmount < -30) { // Swipe Left
-                        navController.navigate(NavDestinations.statisticsRoute(NavDestinations.HOME_ROUTE))
+                        navController.navigate(NavDestinations.statisticsRoute(NavDestinations.HOME_IDENTIFIER, null))
                     } else if (totalDragAmount > 30) { // Swipe Right
-                        navController.navigate(NavDestinations.preferenceRoute(NavDestinations.HOME_ROUTE))
+                        navController.navigate(NavDestinations.preferenceRoute(NavDestinations.HOME_IDENTIFIER, null))
                     }
                 }
             )
@@ -213,7 +213,7 @@ fun VehicleCard(
                 Text(vehicle.name, style = MaterialTheme.typography.titleMedium, color = Color.Black)
                 Text("Πινακίδα: ${vehicle.licensePlate}", style = MaterialTheme.typography.bodyMedium, color = Color.Black)
                 Text(vehicle.odometerText, style = MaterialTheme.typography.bodySmall, color = Color.Black)
-                Text("Καύσιμο: ${vehicle.fuelTypes}", style = MaterialTheme.typography.bodySmall, color = Color.Black)
+                Text("Καύσιμο: ${vehicle.fuelTypes.joinToString(", ")}", style = MaterialTheme.typography.bodySmall, color = Color.Black)
             }
         }
     }
