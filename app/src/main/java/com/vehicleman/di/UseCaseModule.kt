@@ -8,6 +8,7 @@ import com.vehicleman.domain.use_case.GetRecord
 import com.vehicleman.domain.use_case.GetRecords
 import com.vehicleman.domain.use_case.GetVehicleConsumption
 import com.vehicleman.domain.use_case.GetVehicleStatistics
+import com.vehicleman.domain.use_case.PopulateDatabaseWithFakeDataUseCase
 import com.vehicleman.domain.use_case.RecordUseCases
 import com.vehicleman.domain.use_case.SaveRecord
 import com.vehicleman.domain.use_case.StatisticsUseCases
@@ -23,13 +24,14 @@ object UseCaseModule {
 
     @Provides
     @Singleton
-    fun provideRecordUseCases(repository: RecordRepository): RecordUseCases {
+    fun provideRecordUseCases(repository: RecordRepository, vehicleRepository: VehicleRepository): RecordUseCases {
         return RecordUseCases(
             getRecords = GetRecords(repository),
             getRecord = GetRecord(repository),
             saveRecord = SaveRecord(repository),
             deleteRecord = DeleteRecord(repository),
-            getLatestOdometer = GetLatestOdometer(repository)
+            getLatestOdometer = GetLatestOdometer(repository),
+            populateDatabaseWithFakeDataUseCase = PopulateDatabaseWithFakeDataUseCase(vehicleRepository, repository)
         )
     }
 

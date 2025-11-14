@@ -2,8 +2,10 @@ package com.vehicleman.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,7 +20,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,28 +44,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.vehicleman.R
 import com.vehicleman.domain.repositories.ProLevel
 import com.vehicleman.domain.repositories.SubDriverType
 import com.vehicleman.domain.repositories.TwinAppRole
 import com.vehicleman.domain.repositories.VehicleSortOrder
+import com.vehicleman.presentation.preference.PreferenceViewModel
 import com.vehicleman.ui.navigation.NavDestinations
-import com.vehicleman.ui.viewmodel.PreferencesViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PreferenceScreen(
     navController: NavController,
-    viewModel: PreferencesViewModel = hiltViewModel(),
+    viewModel: PreferenceViewModel = hiltViewModel(),
     fromScreen: String?,
-    fromId: String?
+    fromId: String?,
+    isNightMode: Boolean
 ) {
-    val isNightMode by viewModel.isNightMode.collectAsState(initial = false)
     val coroutineScope = rememberCoroutineScope()
     var showSortDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
@@ -70,6 +77,7 @@ fun PreferenceScreen(
     var showLegalDialog by remember { mutableStateOf(false) }
     val vehicleSortOrder by viewModel.vehicleSortOrder.collectAsState(initial = VehicleSortOrder.ALPHABETICAL)
     val user by viewModel.user.collectAsState()
+    val transparentYellow = Color(0x80FFFF00) // Yellow with 50% transparency
 
     val isSingleSubDriver = user.twinAppRole == TwinAppRole.SUB_DRIVER && user.subDriverType == SubDriverType.SINGLE
 
@@ -107,195 +115,268 @@ fun PreferenceScreen(
         LegalDialog(onDismiss = { showLegalDialog = false })
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(text = "Settings") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back")
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = if (isNightMode) painterResource(id = R.mipmap.img_preferense_background_night) else painterResource(id = R.mipmap.img_preferense_background),
+            contentDescription = "Background",
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = { Text(text = "Settings") },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    }
+                )
+            }
+        ) { paddingValues ->
+            var totalDragAmount by remember { mutableStateOf(0f) }
+            Column(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures(
+                            onDragStart = { totalDragAmount = 0f },
+                            onHorizontalDrag = { change, dragAmount ->
+                                change.consume()
+                                totalDragAmount += dragAmount
+                            },
+                            onDragEnd = {
+                                if (totalDragAmount < -30) { // Swipe Left
+                                    val route = when (fromScreen) {
+                                        NavDestinations.HOME_IDENTIFIER -> NavDestinations.HOME_ROUTE
+                                        NavDestinations.RECORD_IDENTIFIER -> NavDestinations.entryListRoute(fromId ?: "")
+                                        else -> NavDestinations.HOME_ROUTE // Default fallback
+                                    }
+                                    navController.navigate(route)
+                                }
+                            }
+                        )
+                    }
+            ) {
+                // General
+                Text(text = "General", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
+                Card(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp), colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "Night Mode", style = MaterialTheme.typography.bodyLarge)
+                            Text(text = "Enable dark theme", style = MaterialTheme.typography.bodySmall)
+                        }
+                        Switch(checked = isNightMode, onCheckedChange = { 
+                            coroutineScope.launch {
+                                viewModel.setNightMode(it)
+                            }
+                        })
                     }
                 }
-            )
-        }
-    ) { paddingValues ->
-        var totalDragAmount by remember { mutableStateOf(0f) }
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragStart = { totalDragAmount = 0f },
-                        onHorizontalDrag = { change, dragAmount ->
-                            change.consume()
-                            totalDragAmount += dragAmount
-                        },
-                        onDragEnd = {
-                            if (totalDragAmount < -30) { // Swipe Left
-                                val route = when (fromScreen) {
-                                    NavDestinations.HOME_IDENTIFIER -> NavDestinations.HOME_ROUTE
-                                    NavDestinations.RECORD_IDENTIFIER -> NavDestinations.entryListRoute(fromId ?: "")
-                                    else -> NavDestinations.HOME_ROUTE // Default fallback
-                                }
-                                navController.navigate(route)
+
+                // Temporary button to populate database
+                Button(onClick = { viewModel.populateDatabase() }, modifier = Modifier.padding(16.dp)) {
+                    Text("Populate Database with Fake Data")
+                }
+
+                Card(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp), colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "Test Mode", style = MaterialTheme.typography.bodyLarge)
+                            Text(text = "Bypass Pro restrictions", style = MaterialTheme.typography.bodySmall)
+                        }
+                        Switch(checked = user.isTestMode, onCheckedChange = { 
+                            // viewModel.setTestMode(it) // TODO: Re-implement this
+                        })
+                    }
+                }
+                val isPro = user.proLevel != ProLevel.NONE || user.isTestMode
+                Card(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .clickable(enabled = isPro && !isSingleSubDriver) { showSortDialog = true }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "Modify Vehicle List Sorting", style = MaterialTheme.typography.bodyLarge, color = if (isPro && !isSingleSubDriver) Color.Unspecified else Color.Gray)
+                            Text(text = "Change how vehicles are displayed in the main list", style = MaterialTheme.typography.bodySmall, color = if (isPro && !isSingleSubDriver) Color.Unspecified else Color.Gray)
+                        }
+                        if (!isPro) {
+                            Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
+                        }
+                    }
+                }
+
+                if (!isSingleSubDriver) { // Hide Data & Sync for SingleSubDrivers
+                    // Data & Sync
+                    Text(text = "Data & Sync", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
+                    Card(modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .clickable(enabled = isPro) { navController.navigate(NavDestinations.BACKUP_ROUTE) }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = "Backup", style = MaterialTheme.typography.bodyLarge, color = if (isPro) Color.Unspecified else Color.Gray)
+                                Text(text = "Save a backup of your data", style = MaterialTheme.typography.bodySmall, color = if (isPro) Color.Unspecified else Color.Gray)
+                            }
+                            if (!isPro) {
+                                 Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
                             }
                         }
-                    )
-                }
-        ) {
-            // General
-            Text(text = "General", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
-            Card(modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Night Mode", style = MaterialTheme.typography.bodyLarge)
-                        Text(text = "Enable dark theme", style = MaterialTheme.typography.bodySmall)
                     }
-                    Switch(checked = isNightMode, onCheckedChange = { 
-                        coroutineScope.launch {
-                            viewModel.setNightMode(it)
+                    Card(modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .clickable(enabled = isPro) { navController.navigate(NavDestinations.RESTORE_ROUTE) }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = "Restore", style = MaterialTheme.typography.bodyLarge, color = if (isPro) Color.Unspecified else Color.Gray)
+                                Text(text = "Restore your data from a backup", style = MaterialTheme.typography.bodySmall, color = if (isPro) Color.Unspecified else Color.Gray)
+                            }
+                             if (!isPro) {
+                                 Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
+                            }
                         }
-                    })
-                }
-            }
-            Card(modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)) {
-                Row(
-                    modifier = Modifier
+                    }
+                    val isPro1 = user.proLevel >= ProLevel.PRO_1 || user.isTestMode
+                    Card(modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Test Mode", style = MaterialTheme.typography.bodyLarge)
-                        Text(text = "Bypass Pro restrictions", style = MaterialTheme.typography.bodySmall)
+                        .padding(horizontal = 16.dp)
+                        .clickable(enabled = isPro1) { navController.navigate(NavDestinations.IMPORT_WIZARD_ROUTE) }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = "Import Data", style = MaterialTheme.typography.bodyLarge, color = if (isPro1) Color.Unspecified else Color.Gray)
+                                Text(text = "Transfer data from supported apps", style = MaterialTheme.typography.bodySmall, color = if (isPro1) Color.Unspecified else Color.Gray)
+                            }
+                             if (!isPro1) {
+                                 Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
+                            }
+                        }
                     }
-                    Switch(checked = user.isTestMode, onCheckedChange = { 
-                        viewModel.setTestMode(it)
-                    })
-                }
-            }
-            val isPro = user.proLevel != ProLevel.NONE || user.isTestMode
-            Card(modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .clickable(enabled = isPro && !isSingleSubDriver) { showSortDialog = true }) {
-                Row(
-                    modifier = Modifier
+                    val isPro2 = user.proLevel >= ProLevel.PRO_2 || user.isTestMode
+                    Card(modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Modify Vehicle List Sorting", style = MaterialTheme.typography.bodyLarge, color = if (isPro && !isSingleSubDriver) Color.Unspecified else Color.Gray)
-                        Text(text = "Change how vehicles are displayed in the main list", style = MaterialTheme.typography.bodySmall, color = if (isPro && !isSingleSubDriver) Color.Unspecified else Color.Gray)
-                    }
-                    if (!isPro) {
-                        Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .clickable(enabled = isPro2) { showExportDialog = true }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                         Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = "Export Data", style = MaterialTheme.typography.bodyLarge, color = if (isPro2) Color.Unspecified else Color.Gray)
+                                Text(text = "Export your data to an external file", style = MaterialTheme.typography.bodySmall, color = if (isPro2) Color.Unspecified else Color.Gray)
+                            }
+                             if (!isPro2) {
+                                 Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
+                            }
+                        }
                     }
                 }
-            }
 
-            if (!isSingleSubDriver) { // Hide Data & Sync for SingleSubDrivers
-                // Data & Sync
-                Text(text = "Data & Sync", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
-                Card(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .clickable(enabled = isPro) { navController.navigate(NavDestinations.BACKUP_ROUTE) }) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Backup", style = MaterialTheme.typography.bodyLarge, color = if (isPro) Color.Unspecified else Color.Gray)
-                            Text(text = "Save a backup of your data", style = MaterialTheme.typography.bodySmall, color = if (isPro) Color.Unspecified else Color.Gray)
+                if (!isSingleSubDriver) { // Hide User & Device Management for SingleSubDrivers
+                    // User & Device Management
+                    Text(text = "User & Device Management", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
+                    Card(modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .clickable { navController.navigate(NavDestinations.SIGN_UP_ROUTE) }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                         Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = "Sign up user", style = MaterialTheme.typography.bodyLarge)
+                                Text(text = "Free user becomes a registered user", style = MaterialTheme.typography.bodySmall)
+                            }
                         }
-                        if (!isPro) {
-                             Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
+                    }
+                    Card(modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .clickable(enabled = isPro) { navController.navigate(NavDestinations.DRIVERS_ROUTE) }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                         Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = "Manage Drivers", style = MaterialTheme.typography.bodyLarge, color = if (isPro) Color.Unspecified else Color.Gray)
+                                Text(text = "Assign vehicles to drivers for statistics", style = MaterialTheme.typography.bodySmall, color = if (isPro) Color.Unspecified else Color.Gray)
+                            }
+                            if (!isPro) {
+                                Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
+                            }
+                        }
+                    }
+                     Card(modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .clickable(enabled = isPro) { navController.navigate(NavDestinations.TWIN_APP_SETUP_ROUTE) }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                         Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = "Twin App", style = MaterialTheme.typography.bodyLarge, color = if (isPro) Color.Unspecified else Color.Gray)
+                                Text(text = "Sync data with a second device in real time", style = MaterialTheme.typography.bodySmall, color = if (isPro) Color.Unspecified else Color.Gray)
+                            }
+                            if (!isPro) {
+                                Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
+                            }
                         }
                     }
                 }
-                Card(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .clickable(enabled = isPro) { navController.navigate(NavDestinations.RESTORE_ROUTE) }) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Restore", style = MaterialTheme.typography.bodyLarge, color = if (isPro) Color.Unspecified else Color.Gray)
-                            Text(text = "Restore your data from a backup", style = MaterialTheme.typography.bodySmall, color = if (isPro) Color.Unspecified else Color.Gray)
-                        }
-                         if (!isPro) {
-                             Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
-                        }
-                    }
-                }
-                val isPro1 = user.proLevel >= ProLevel.PRO_1 || user.isTestMode
-                Card(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .clickable(enabled = isPro1) { navController.navigate(NavDestinations.IMPORT_WIZARD_ROUTE) }) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Import Data", style = MaterialTheme.typography.bodyLarge, color = if (isPro1) Color.Unspecified else Color.Gray)
-                            Text(text = "Transfer data from supported apps", style = MaterialTheme.typography.bodySmall, color = if (isPro1) Color.Unspecified else Color.Gray)
-                        }
-                         if (!isPro1) {
-                             Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
-                        }
-                    }
-                }
-                val isPro2 = user.proLevel >= ProLevel.PRO_2 || user.isTestMode
-                Card(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .clickable(enabled = isPro2) { showExportDialog = true }) {
-                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Export Data", style = MaterialTheme.typography.bodyLarge, color = if (isPro2) Color.Unspecified else Color.Gray)
-                            Text(text = "Export your data to an external file", style = MaterialTheme.typography.bodySmall, color = if (isPro2) Color.Unspecified else Color.Gray)
-                        }
-                         if (!isPro2) {
-                             Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
-                        }
-                    }
-                }
-            }
 
-            if (!isSingleSubDriver) { // Hide User & Device Management for SingleSubDrivers
-                // User & Device Management
-                Text(text = "User & Device Management", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
+                // About
+                Text(text = "About", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
                 Card(modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
-                    .clickable { navController.navigate(NavDestinations.SIGN_UP_ROUTE) }) {
+                    .clickable { showAppInfoDialog = true }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
                      Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -303,15 +384,15 @@ fun PreferenceScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Sign up user", style = MaterialTheme.typography.bodyLarge)
-                            Text(text = "Free user becomes a registered user", style = MaterialTheme.typography.bodySmall)
+                            Text(text = "App Info", style = MaterialTheme.typography.bodyLarge)
+                            Text(text = "Version, manufacturer, etc.", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
                 Card(modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .clickable(enabled = isPro) { navController.navigate(NavDestinations.DRIVERS_ROUTE) }) {
+                    .clickable { showContactDialog = true }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
                      Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -319,104 +400,47 @@ fun PreferenceScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Manage Drivers", style = MaterialTheme.typography.bodyLarge, color = if (isPro) Color.Unspecified else Color.Gray)
-                            Text(text = "Assign vehicles to drivers for statistics", style = MaterialTheme.typography.bodySmall, color = if (isPro) Color.Unspecified else Color.Gray)
+                            Text(text = "Contact Info", style = MaterialTheme.typography.bodyLarge)
+                            Text(text = "Email, website, etc.", style = MaterialTheme.typography.bodySmall)
                         }
-                        if (!isPro) {
+                    }
+                }
+                Card(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .clickable { showLegalDialog = true }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                     Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "Legal", style = MaterialTheme.typography.bodyLarge)
+                            Text(text = "Terms of Use, Privacy Policy, etc.", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+
+                // Pro Mode
+                if (user.proLevel == ProLevel.NONE) {
+                    Text(text = "Pro Mode", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
+                    Card(modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .clickable { navController.navigate(NavDestinations.PRO_MODE_ROUTE) }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                         Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(text = "Upgrade to Pro", style = MaterialTheme.typography.bodyLarge)
+                                Text(text = "Unlock all exclusive features", style = MaterialTheme.typography.bodySmall)
+                            }
                             Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
                         }
-                    }
-                }
-                 Card(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .clickable(enabled = isPro) { navController.navigate(NavDestinations.TWIN_APP_SETUP_ROUTE) }) {
-                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Twin App", style = MaterialTheme.typography.bodyLarge, color = if (isPro) Color.Unspecified else Color.Gray)
-                            Text(text = "Sync data with a second device in real time", style = MaterialTheme.typography.bodySmall, color = if (isPro) Color.Unspecified else Color.Gray)
-                        }
-                        if (!isPro) {
-                            Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
-                        }
-                    }
-                }
-            }
-
-            // About
-            Text(text = "About", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
-            Card(modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clickable { showAppInfoDialog = true }) {
-                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "App Info", style = MaterialTheme.typography.bodyLarge)
-                        Text(text = "Version, manufacturer, etc.", style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
-            Card(modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .clickable { showContactDialog = true }) {
-                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Contact Info", style = MaterialTheme.typography.bodyLarge)
-                        Text(text = "Email, website, etc.", style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
-            Card(modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clickable { showLegalDialog = true }) {
-                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Legal", style = MaterialTheme.typography.bodyLarge)
-                        Text(text = "Terms of Use, Privacy Policy, etc.", style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
-
-            // Pro Mode
-            if (user.proLevel == ProLevel.NONE) {
-                Text(text = "Pro Mode", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
-                Card(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .clickable { navController.navigate(NavDestinations.PRO_MODE_ROUTE) }) {
-                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Upgrade to Pro", style = MaterialTheme.typography.bodyLarge)
-                            Text(text = "Unlock all exclusive features", style = MaterialTheme.typography.bodySmall)
-                        }
-                        Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
                     }
                 }
             }

@@ -7,5 +7,6 @@ data class RecordUseCases @Inject constructor(
     val getRecord: GetRecord,
     val saveRecord: SaveRecord,
     val deleteRecord: DeleteRecord,
-    val getLatestOdometer: GetLatestOdometer
+    val getLatestOdometer: GetLatestOdometer,
+    val populateDatabaseWithFakeDataUseCase: PopulateDatabaseWithFakeDataUseCase
 )

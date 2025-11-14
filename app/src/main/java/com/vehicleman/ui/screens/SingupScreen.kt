@@ -1,6 +1,8 @@
 package com.vehicleman.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,9 +28,13 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.vehicleman.R
 import com.vehicleman.ui.viewmodel.SingupFormState
 import com.vehicleman.ui.viewmodel.SingupViewModel
 
@@ -36,7 +42,8 @@ import com.vehicleman.ui.viewmodel.SingupViewModel
 @Composable
 fun SingupScreen(
     navController: NavController,
-    viewModel: SingupViewModel = hiltViewModel()
+    viewModel: SingupViewModel = hiltViewModel(),
+    isNightMode: Boolean
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -47,40 +54,50 @@ fun SingupScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Sign Up") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = if (isNightMode) painterResource(id = R.mipmap.img_preferense_background_night) else painterResource(id = R.mipmap.img_preferense_background),
+            contentDescription = "Background",
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = { Text("Sign Up") },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    }
+                )
+            }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                if (uiState.isLoading) {
+                    CircularProgressIndicator()
+                } else {
+                    if (!uiState.isCodeSent) {
+                        SignupForm(uiState = uiState, viewModel = viewModel)
+                    } else {
+                        VerificationForm(uiState = uiState, viewModel = viewModel)
                     }
                 }
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            if (uiState.isLoading) {
-                CircularProgressIndicator()
-            } else {
-                if (!uiState.isCodeSent) {
-                    SignupForm(uiState = uiState, viewModel = viewModel)
-                } else {
-                    VerificationForm(uiState = uiState, viewModel = viewModel)
-                }
-            }
 
-            uiState.errorMessage?.let {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(text = it)
+                uiState.errorMessage?.let {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(text = it)
+                }
             }
         }
     }

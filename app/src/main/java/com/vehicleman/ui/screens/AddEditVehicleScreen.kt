@@ -2,7 +2,6 @@ package com.vehicleman.ui.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -107,7 +106,7 @@ private fun TopBar(
 ) {
     TopAppBar(
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-        title = { Text(if (state.id == null) "Προσθήκη Οχήματος" else "Επεξεργασία Οχήματος", color = Color.Black, modifier = Modifier.padding(start = 16.dp)) },
+        title = { Text(if (state.id == null) "Προσθήκη Οχήματος" else "Επεξεργασία Οχήματος", color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(start = 16.dp)) },
         navigationIcon = {
             IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(40.dp)) {
                 Image(painter = painterResource(id = R.mipmap.ic_backarrow), contentDescription = "Πίσω")
@@ -129,13 +128,13 @@ fun AddEditVehicleForm(
     onEvent: (VehicleFormEvent) -> Unit
 ) {
     val textFieldColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = Color.Black,
-        unfocusedBorderColor = Color.Black,
-        focusedTextColor = Color.Black,
-        unfocusedTextColor = Color.Black,
-        cursorColor = Color.Black,
-        focusedLabelColor = Color.Black,
-        unfocusedLabelColor = Color.Black
+        focusedBorderColor = MaterialTheme.colorScheme.primary,
+        unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        focusedTextColor = MaterialTheme.colorScheme.onBackground,
+        unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+        cursorColor = MaterialTheme.colorScheme.primary,
+        focusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
     )
 
     Column(
@@ -157,9 +156,9 @@ fun AddEditVehicleForm(
 
         FuelTypeSelector(selectedFuelTypes = state.fuelTypes, onFuelTypeChanged = { onEvent(VehicleFormEvent.FuelTypeChanged(it)) })
 
-        Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Black)
+        Divider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-        Text("Συντήρηση", style = MaterialTheme.typography.titleMedium, color = Color.Black)
+        Text("Συντήρηση", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
 
         OutlinedTextField(
             value = state.oilChangeKm,
@@ -180,9 +179,9 @@ fun AddEditVehicleForm(
         )
         DatePickerField(label = "Αλλαγή Ελαστικών (ημερομηνία)", value = state.tiresChangeDate, onValueChange = { onEvent(VehicleFormEvent.TiresChangeDateChanged(it)) }, colors = textFieldColors)
 
-        Divider(modifier = Modifier.padding(vertical = 8.dp), color = Color.Black)
+        Divider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-        Text("Ασφάλεια & Τέλη", style = MaterialTheme.typography.titleMedium, color = Color.Black)
+        Text("Ασφάλεια & Τέλη", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
 
         DatePickerField(label = "Ημ/νία Λήξης Ασφάλειας", value = state.insuranceExpiryDate, onValueChange = { onEvent(VehicleFormEvent.InsuranceExpiryDateChanged(it)) }, colors = textFieldColors)
         DatePickerField(label = "Ημ/νία Λήξης Τελών", value = state.taxesExpiryDate, onValueChange = { onEvent(VehicleFormEvent.TaxesExpiryDateChanged(it)) }, colors = textFieldColors)
@@ -196,6 +195,14 @@ fun AddEditVehicleForm(
 fun FuelTypeSelector(selectedFuelTypes: String, onFuelTypeChanged: (String) -> Unit) {
     val fuelOptions = listOf("Gasoline", "Diesel", "LPG", "CNG", "Electric")
     var showDialog by remember { mutableStateOf(false) }
+    
+    val disabledTextFieldColors = OutlinedTextFieldDefaults.colors(
+        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+        disabledBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+    )
 
     Box(modifier = Modifier.clickable { showDialog = true }) {
         OutlinedTextField(
@@ -204,11 +211,7 @@ fun FuelTypeSelector(selectedFuelTypes: String, onFuelTypeChanged: (String) -> U
             readOnly = true,
             label = { Text("Τύπος Καυσίμου") },
             modifier = Modifier.fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(
-                disabledTextColor = Color.Black,
-                disabledBorderColor = Color.Black,
-                disabledLabelColor = Color.Black
-            ),
+            colors = disabledTextFieldColors,
             enabled = false
         )
     }
@@ -216,7 +219,7 @@ fun FuelTypeSelector(selectedFuelTypes: String, onFuelTypeChanged: (String) -> U
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
-            title = { Text("Επιλογή Καυσίμου", color = Color.Black) },
+            title = { Text("Επιλογή Καυσίμου") },
             text = {
                 Column {
                     fuelOptions.forEach { fuelType ->
@@ -233,13 +236,13 @@ fun FuelTypeSelector(selectedFuelTypes: String, onFuelTypeChanged: (String) -> U
                                     onFuelTypeChanged(currentTypes.joinToString(", "))
                                 }
                             )
-                            Text(fuelType, modifier = Modifier.padding(start = 8.dp), color = Color.Black)
+                            Text(fuelType, modifier = Modifier.padding(start = 8.dp))
                         }
                     }
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showDialog = false }) { Text("OK", color = Color.Black) }
+                TextButton(onClick = { showDialog = false }) { Text("OK") }
             }
         )
     }
@@ -256,11 +259,13 @@ fun DatePickerField(
     var showDatePicker by remember { mutableStateOf(false) }
     val locale = Locale("el")
     val dateFormatter = SimpleDateFormat("EEEE, dd/MM/yyyy", locale)
-
-    val customTextFieldColors = OutlinedTextFieldDefaults.colors(
-        disabledTextColor = Color.Black,
-        disabledBorderColor = Color.Black,
-        disabledLabelColor = Color.Black
+    
+    val disabledTextFieldColors = OutlinedTextFieldDefaults.colors(
+        disabledTextColor = MaterialTheme.colorScheme.onSurface,
+        disabledBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
     )
 
     Box(modifier = Modifier.clickable { showDatePicker = true }) {
@@ -271,9 +276,9 @@ fun DatePickerField(
             label = { Text(label) },
             modifier = Modifier.fillMaxWidth(),
             trailingIcon = {
-                Icon(imageVector = Icons.Default.DateRange, contentDescription = "Select Date", tint = Color.Black)
+                Icon(imageVector = Icons.Default.DateRange, contentDescription = "Select Date", tint = MaterialTheme.colorScheme.onSurfaceVariant)
             },
-            colors = customTextFieldColors,
+            colors = disabledTextFieldColors,
             enabled = false // Make the text field non-editable but clickable via the Box
         )
     }
@@ -292,10 +297,10 @@ fun DatePickerField(
                         }
                         showDatePicker = false
                     }
-                ) { Text("OK", color = Color.Black) }
+                ) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel", color = Color.Black) }
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
             }
         ) {
             DatePicker(state = datePickerState)

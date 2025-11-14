@@ -76,6 +76,13 @@ class AddEditVehicleViewModel @Inject constructor(
 
     private fun saveVehicle() {
         viewModelScope.launch {
+
+            val formState = _state.value
+            if (formState.make.isBlank() || formState.model.isBlank()) {
+                _state.update { it.copy(errorMessage = "Η Μάρκα και το Μοντέλο είναι υποχρεωτικά") }
+                return@launch
+            }
+
             val user = userPreferencesRepository.user.first()
             val vehicleCount = vehicleRepository.getVehicleCount()
 
@@ -92,7 +99,6 @@ class AddEditVehicleViewModel @Inject constructor(
                 }
             }
             
-            val formState = _state.value
             val vehicle = formState.toVehicle()
             val finalVehicle = if (vehicle.id.isBlank() || vehicle.id == "new") {
                 vehicle.copy(

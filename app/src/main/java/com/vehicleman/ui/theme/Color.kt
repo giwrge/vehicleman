@@ -3,7 +3,7 @@ package com.vehicleman.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // Light Theme Colors (Ανοιχτό Θέμα)
-val PrimaryLight = Color(0xFF006C4B) // Έντονο Πράσινο-Μπλε (για ενέργεια/κύριο στοιχείο)
+val PrimaryLight = Color(0x80808080) // Gray with transparency
 val OnPrimaryLight = Color(0xFFFFFFFF)
 val PrimaryContainerLight = Color(0xFF86F8C7)
 val OnPrimaryContainerLight = Color(0xFF002114)
@@ -17,7 +17,7 @@ val OnSurfaceLight = Color(0xFF191C1A)
 val ErrorLight = Color(0xFFBA1A1A)
 
 // Dark Theme Colors (Σκούρο Θέμα)
-val PrimaryDark = Color(0xFF6AE6A9)
+val PrimaryDark = Color(0x80808080) // Gray with transparency
 val OnPrimaryDark = Color(0xFF003825)
 val PrimaryContainerDark = Color(0xFF005137)
 val OnPrimaryContainerDark = Color(0xFF86F8C7)

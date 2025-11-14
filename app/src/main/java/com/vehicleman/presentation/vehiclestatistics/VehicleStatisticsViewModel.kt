@@ -52,7 +52,7 @@ class VehicleStatisticsViewModel @Inject constructor(
 
                 _state.update {
                     it.copy(
-                        vehicleName = vehicle.name,
+                        vehicleName = "${vehicle.make} ${vehicle.model}", // Construct the name dynamically
                         stats = stats,
                         isLoading = false,
                         error = null

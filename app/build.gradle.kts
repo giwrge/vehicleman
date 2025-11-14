@@ -53,8 +53,8 @@ android {
 
 dependencies {
 
-    // Compose Bill of Materials (BOM)
-    val composeBom = platform("androidx.compose:compose-bom:2023.08.00")
+    // Compose BOM - This ensures all Compose libraries are compatible
+    val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
@@ -69,7 +69,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.3") // For collectAsStateWithLifecycle
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
 
-    // Compose
+    // Compose - No versions needed here, they are managed by the BOM
     implementation("androidx.activity:activity-compose:1.8.2")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")

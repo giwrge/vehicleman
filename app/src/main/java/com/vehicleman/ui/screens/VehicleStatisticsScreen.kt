@@ -1,6 +1,9 @@
 package com.vehicleman.ui.screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,10 +16,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -24,10 +30,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.vehicleman.R
 import com.vehicleman.presentation.vehiclestatistics.VehicleStatisticsEvent
 import com.vehicleman.presentation.vehiclestatistics.VehicleStatisticsViewModel
 
@@ -35,66 +45,90 @@ import com.vehicleman.presentation.vehiclestatistics.VehicleStatisticsViewModel
 @Composable
 fun VehicleStatisticsScreen(
     navController: NavController,
-    viewModel: VehicleStatisticsViewModel = hiltViewModel()
+    viewModel: VehicleStatisticsViewModel = hiltViewModel(),
+    isNightMode: Boolean
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(state.vehicleName) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = if (isNightMode) painterResource(id = R.mipmap.img_statistic_background_night) else painterResource(id = R.mipmap.img_statistic_background),
+            contentDescription = "Background",
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                TopAppBar(
+                    title = { Text("") }, // Remove title from TopAppBar
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { viewModel.onEvent(VehicleStatisticsEvent.Refresh) }) {
+                            Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
+                        }
                     }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.onEvent(VehicleStatisticsEvent.Refresh) }) {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
+                )
+            }
+        ) { paddingValues ->
+            if (state.isLoading) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else if (state.error != null) {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = state.error!!)
+                }
+            } else if (state.stats != null) {
+                val stats = state.stats!!
+                Column(
+                    modifier = Modifier
+                        .padding(paddingValues)
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp)
+                ) {
+                    // Display the vehicle name as a title
+                    Text(text = state.vehicleName, style = MaterialTheme.typography.headlineMedium)
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    val transparentLightGray = Color(0x80D3D3D3)
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = transparentLightGray),
+                        border = BorderStroke(1.dp, Color.Black)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            StatRow("Average Consumption:", "${String.format("%.2f", stats.averageConsumptionLitersPer100km)} L/100km")
+                            StatRow("Average Cost:", "${String.format("%.2f", stats.averageCostPer100km)} /100km")
+                            Spacer(modifier = Modifier.height(16.dp))
+                            StatRow("Estimated Monthly Km:", "${String.format("%.0f", stats.estimatedMonthlyKm)} km")
+                            StatRow("Estimated Yearly Km:", "${String.format("%.0f", stats.estimatedYearlyKm)} km")
+                            Spacer(modifier = Modifier.height(16.dp))
+                            StatRow("Estimated Monthly Cost:", "${String.format("%.2f", stats.estimatedMonthlyCost)}")
+                            StatRow("Estimated Yearly Cost:", "${String.format("%.2f", stats.estimatedYearlyCost)}")
+                            Spacer(modifier = Modifier.height(16.dp))
+                            StatRow("Total Fuel Cost:", "${String.format("%.2f", stats.totalFuelCost)}")
+                            StatRow("Total Service Cost:", "${String.format("%.2f", stats.totalServiceCost)}")
+                            StatRow("Total Insurance Cost:", "${String.format("%.2f", stats.totalInsuranceCost)}")
+                            StatRow("Total Tax Cost:", "${String.format("%.2f", stats.totalTaxCost)}")
+                            StatRow("Total Other Expenses:", "${String.format("%.2f", stats.totalOtherExpenses)}")
+                        }
                     }
                 }
-            )
-        }
-    ) { paddingValues ->
-        if (state.isLoading) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                CircularProgressIndicator()
-            }
-        } else if (state.error != null) {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(text = state.error!!)
-            }
-        } else if (state.stats != null) {
-            val stats = state.stats!!
-            Column(
-                modifier = Modifier
-                    .padding(paddingValues)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp)
-            ) {
-                StatRow("Average Consumption:", "${String.format("%.2f", stats.averageConsumptionLitersPer100km)} L/100km")
-                StatRow("Average Cost:", "${String.format("%.2f", stats.averageCostPer100km)} /100km")
-                Spacer(modifier = Modifier.height(16.dp))
-                StatRow("Estimated Monthly Km:", "${String.format("%.0f", stats.estimatedMonthlyKm)} km")
-                StatRow("Estimated Yearly Km:", "${String.format("%.0f", stats.estimatedYearlyKm)} km")
-                Spacer(modifier = Modifier.height(16.dp))
-                StatRow("Estimated Monthly Cost:", "${String.format("%.2f", stats.estimatedMonthlyCost)}")
-                StatRow("Estimated Yearly Cost:", "${String.format("%.2f", stats.estimatedYearlyCost)}")
-                Spacer(modifier = Modifier.height(16.dp))
-                StatRow("Total Fuel Cost:", "${String.format("%.2f", stats.totalFuelCost)}")
-                StatRow("Total Service Cost:", "${String.format("%.2f", stats.totalServiceCost)}")
-                StatRow("Total Insurance Cost:", "${String.format("%.2f", stats.totalInsuranceCost)}")
-                StatRow("Total Tax Cost:", "${String.format("%.2f", stats.totalTaxCost)}")
-                StatRow("Total Other Expenses:", "${String.format("%.2f", stats.totalOtherExpenses)}")
             }
         }
     }

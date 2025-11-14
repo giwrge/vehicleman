@@ -6,7 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.vehicleman.ui.screens.PreferenceScreen // Corrected import
+import com.vehicleman.ui.screens.PreferenceScreen
 import com.vehicleman.ui.screens.AddEditRecordScreen
 import com.vehicleman.ui.screens.AddEditVehicleScreen
 import com.vehicleman.ui.screens.BackupScreen
@@ -89,13 +89,12 @@ fun AppNavigation(
         composable(
             route = "${NavDestinations.ENTRY_LIST_ROUTE}/{${NavDestinations.VEHICLE_ID_KEY}}",
         ) { backStackEntry ->
-            val vehicleId = backStackEntry.arguments?.getString(NavDestinations.VEHICLE_ID_KEY)
             RecordScreen(
                 navController = navController,
                 onNavigateToAddEditRecord = { vId, recordId ->
                     navController.navigate(NavDestinations.addEditEntryRoute(vId, recordId))
                 },
-                vehicleId = vehicleId
+                isNightMode = isNightMode
             )
         }
 
@@ -108,15 +107,15 @@ fun AppNavigation(
         composable("${NavDestinations.STATISTICS_ROUTE}/{${NavDestinations.FROM_SCREEN_KEY}}/{${NavDestinations.FROM_ID_KEY}}") { backStackEntry ->
             val fromScreen = backStackEntry.arguments?.getString(NavDestinations.FROM_SCREEN_KEY)
             val fromId = backStackEntry.arguments?.getString(NavDestinations.FROM_ID_KEY)
-            StatisticsScreen(navController = navController, fromScreen = fromScreen, fromId = fromId)
+            StatisticsScreen(navController = navController, fromScreen = fromScreen, fromId = fromId, isNightMode = isNightMode)
         }
 
-        composable("DriverStatisticsScreen/{driverId}") {
-            DriverStatisticsScreen(navController = navController)
+        composable("DriverStatisticsScreen/{driverId}") { 
+            DriverStatisticsScreen(navController = navController, isNightMode = isNightMode)
         }
 
         composable("VehicleStatisticsScreen/{vehicleId}") {
-            VehicleStatisticsScreen(navController = navController)
+            VehicleStatisticsScreen(navController = navController, isNightMode = isNightMode)
         }
 
         composable(
@@ -128,7 +127,7 @@ fun AppNavigation(
         composable("${NavDestinations.PREFERENCE_ROUTE}/{${NavDestinations.FROM_SCREEN_KEY}}/{${NavDestinations.FROM_ID_KEY}}") { backStackEntry ->
             val fromScreen = backStackEntry.arguments?.getString(NavDestinations.FROM_SCREEN_KEY)
             val fromId = backStackEntry.arguments?.getString(NavDestinations.FROM_ID_KEY)
-            PreferenceScreen(navController = navController, fromScreen = fromScreen, fromId = fromId)
+            PreferenceScreen(navController = navController, fromScreen = fromScreen, fromId = fromId, isNightMode = isNightMode)
         }
 
         composable(NavDestinations.PRO_MODE_ROUTE) {
@@ -136,7 +135,7 @@ fun AppNavigation(
         }
 
         composable(NavDestinations.SIGN_UP_ROUTE) {
-            SingupScreen(navController = navController)
+            SingupScreen(navController = navController, isNightMode = isNightMode)
         }
 
         composable(NavDestinations.USERS_ROUTE) {
@@ -148,11 +147,11 @@ fun AppNavigation(
         }
         
         composable(NavDestinations.DRIVERS_ROUTE) {
-            DriversScreen(navController = navController)
+            DriversScreen(navController = navController, isNightMode = isNightMode)
         }
 
         composable(NavDestinations.TWIN_APP_SETUP_ROUTE) {
-            TwinAppSetupScreen(navController = navController)
+            TwinAppSetupScreen(navController = navController, isNightMode = isNightMode)
         }
         
         composable("${NavDestinations.SUB_DRIVER_PERMISSIONS_ROUTE}/{${NavDestinations.SUB_DRIVER_ID_KEY}}") { backStackEntry ->
@@ -161,15 +160,15 @@ fun AppNavigation(
         }
         
         composable(NavDestinations.BACKUP_ROUTE) {
-            BackupScreen(navController = navController)
+            BackupScreen(navController = navController, isNightMode = isNightMode)
         }
         
         composable(NavDestinations.RESTORE_ROUTE) {
-            RestoreScreen(navController = navController)
+            RestoreScreen(navController = navController, isNightMode = isNightMode)
         }
 
         composable(NavDestinations.IMPORT_WIZARD_ROUTE) {
-            ImportWizardScreen(navController = navController)
+            ImportWizardScreen(navController = navController, isNightMode = isNightMode)
         }
     }
 }
