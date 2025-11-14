@@ -1,0 +1,21 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- body -->
+    <path
+        android:fillColor="#FFB0BEC5"
+        android:pathData="M6,5 L18,5 L18,19 L6,19 Z" />
+
+    <!-- plug -->
+    <path
+        android:fillColor="#FFB0BEC5"
+        android:pathData="M10,3 L14,3 L14,5 L10,5 Z" />
+
+    <!-- bolt -->
+    <path
+        android:fillColor="#FFECEFF1"
+        android:pathData="M11,9 L14,9 L12.5,12.5 L15,12.5 L10,18 L11.5,14.3 L9,14.3 Z" />
+</vector>

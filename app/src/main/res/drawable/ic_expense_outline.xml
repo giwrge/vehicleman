@@ -1,0 +1,27 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Circle coin -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFB0BEC5"
+        android:strokeWidth="1.8"
+        android:pathData="M12,4 A8,8 0 1,1 11.99,4 Z" />
+
+    <!-- Vertical bar -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFB0BEC5"
+        android:strokeWidth="1.6"
+        android:pathData="M12,7 L12,17" />
+
+    <!-- Horizontal 'cost' bar -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFB0BEC5"
+        android:strokeWidth="1.6"
+        android:pathData="M9,10 L14.5,10" />
+</vector>

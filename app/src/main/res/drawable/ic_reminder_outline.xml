@@ -1,0 +1,27 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- bell body -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFB0BEC5"
+        android:strokeWidth="1.8"
+        android:pathData="M12,5
+                          C9.8,5 8,6.8 8,9
+                          L8,13
+                          L6.5,15
+                          L17.5,15
+                          L16,13
+                          L16,9
+                          C16,6.8 14.2,5 12,5 Z" />
+
+    <!-- clapper -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFB0BEC5"
+        android:strokeWidth="1.8"
+        android:pathData="M11,16.5 A1,1 0 1,0 13,16.5 A1,1 0 1,0 11,16.5 Z" />
+</vector>

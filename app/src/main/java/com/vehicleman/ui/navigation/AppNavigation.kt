@@ -89,7 +89,9 @@ fun AppNavigation(
         composable(
             route = "${NavDestinations.ENTRY_LIST_ROUTE}/{${NavDestinations.VEHICLE_ID_KEY}}",
         ) { backStackEntry ->
+            val vehicleId = backStackEntry.arguments?.getString(NavDestinations.VEHICLE_ID_KEY)
             RecordScreen(
+                vehicleId = vehicleId,
                 navController = navController,
                 onNavigateToAddEditRecord = { vId, recordId ->
                     navController.navigate(NavDestinations.addEditEntryRoute(vId, recordId))
