@@ -3,6 +3,8 @@ package com.vehicleman.ui.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -15,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -193,9 +196,36 @@ fun AddEditVehicleForm(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FuelTypeSelector(selectedFuelTypes: String, onFuelTypeChanged: (String) -> Unit) {
-    val fuelOptions = listOf("Gasoline", "Diesel", "LPG", "CNG", "Electric")
+    val fuelCategories = remember {
+        linkedMapOf(
+            "Ηλεκτρικό:" to listOf(
+                "Ρεύμα" to "electric"
+            ),
+            "Βενζίνη:" to listOf(
+                "unleaded_95" to "unleaded_95",
+                "unleaded_98" to "unleaded_98",
+                "unleaded_100" to "unleaded_100"
+            ),
+            "Πετρέλαιο:" to listOf(
+                "diesel" to "diesel",
+                "b7 (Diesel με 7% βιοντίζελ)" to "b7"
+            ),
+            "Υγραέριο (LPG):" to listOf(
+                "lpg" to "lpg",
+                "autogas" to "autogas"
+            ),
+            "Φυσικό Αέριο (CNG):" to listOf(
+                "cng" to "cng"
+            )
+        )
+    }
+
+    val valueToDisplayMap = remember {
+        fuelCategories.values.flatten().associate { (displayName, storedValue) -> storedValue to displayName }
+    }
+
     var showDialog by remember { mutableStateOf(false) }
-    
+
     val disabledTextFieldColors = OutlinedTextFieldDefaults.colors(
         disabledTextColor = MaterialTheme.colorScheme.onSurface,
         disabledBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -205,8 +235,14 @@ fun FuelTypeSelector(selectedFuelTypes: String, onFuelTypeChanged: (String) -> U
     )
 
     Box(modifier = Modifier.clickable { showDialog = true }) {
+        val selectedDisplayNames = selectedFuelTypes
+            .split(", ")
+            .filter { it.isNotBlank() }
+            .map { valueToDisplayMap[it] ?: it }
+            .joinToString(", ")
+
         OutlinedTextField(
-            value = selectedFuelTypes,
+            value = selectedDisplayNames,
             onValueChange = {},
             readOnly = true,
             label = { Text("Τύπος Καυσίμου") },
@@ -221,22 +257,37 @@ fun FuelTypeSelector(selectedFuelTypes: String, onFuelTypeChanged: (String) -> U
             onDismissRequest = { showDialog = false },
             title = { Text("Επιλογή Καυσίμου") },
             text = {
-                Column {
-                    fuelOptions.forEach { fuelType ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(
-                                checked = selectedFuelTypes.contains(fuelType),
-                                onCheckedChange = {
-                                    val currentTypes = selectedFuelTypes.split(", ").filter { it.isNotBlank() }.toMutableSet()
-                                    if (it) {
-                                        currentTypes.add(fuelType)
-                                    } else {
-                                        currentTypes.remove(fuelType)
-                                    }
-                                    onFuelTypeChanged(currentTypes.joinToString(", "))
-                                }
+                LazyColumn {
+                    fuelCategories.forEach { (category, fuels) ->
+                        item {
+                            Text(
+                                text = category,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
                             )
-                            Text(fuelType, modifier = Modifier.padding(start = 8.dp))
+                        }
+                        items(fuels) { (displayName, storedValue) ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        val currentTypes = selectedFuelTypes.split(", ").filter { it.isNotBlank() }.toMutableSet()
+                                        if (currentTypes.contains(storedValue)) {
+                                            currentTypes.remove(storedValue)
+                                        } else {
+                                            currentTypes.add(storedValue)
+                                        }
+                                        onFuelTypeChanged(currentTypes.joinToString(", "))
+                                    }
+                            ) {
+                                Checkbox(
+                                    checked = selectedFuelTypes.contains(storedValue),
+                                    onCheckedChange = null
+                                )
+                                Text(displayName, modifier = Modifier.padding(start = 8.dp))
+                            }
                         }
                     }
                 }
