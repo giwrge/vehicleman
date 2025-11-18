@@ -91,10 +91,21 @@ fun AppNavigation(
         ) { backStackEntry ->
             val vehicleId = backStackEntry.arguments?.getString(NavDestinations.VEHICLE_ID_KEY)
             RecordScreen(
-                vehicleId = vehicleId,
                 navController = navController,
                 onNavigateToAddEditRecord = { vId, recordId ->
                     navController.navigate(NavDestinations.addEditEntryRoute(vId, recordId))
+                },
+                onNavigateToStatistics = { currentVehicleId ->
+                    navController.navigate("VehicleStatisticsScreen/$currentVehicleId")
+                },
+                onNavigateToPreferences = {
+                    navController.navigate("${NavDestinations.PREFERENCE_ROUTE}/record_screen/${vehicleId ?: ""}")
+                },
+                onNavigateToProMode = {
+                    navController.navigate(NavDestinations.PRO_MODE_ROUTE)
+                },
+                onNavigateToSignUp = {
+                    navController.navigate(NavDestinations.SIGN_UP_ROUTE)
                 },
                 isNightMode = isNightMode
             )

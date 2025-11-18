@@ -5,22 +5,16 @@ import com.vehicleman.domain.model.Vehicle
 
 /**
  * Expanded, UI-friendly state for the Record screen.
- * - expenseRecords: descending date (most recent first)
- * - reminderRecords: ascending reminderDate (next first)
- * - latestUpcomingReminder: the nearest future reminder (sticky)
+ * - timelineItems: A single, chronologically sorted list of all records.
+ * - latestUpcomingReminder: the nearest future reminder (for the sticky header).
+ * - initialScrollIndex: The suggested index to scroll to upon first load or after a timeout.
  */
 data class RecordState(
     val vehicles: List<Vehicle> = emptyList(),
     val selectedVehicleId: String? = null,
-
-    // full timeline (mixed) if needed
-    val timelineItems: List<Record> = emptyList(),
-
-    // split lists for UI convenience
-    val expenseRecords: List<Record> = emptyList(),         // sorted DESC by date
-    val reminderRecords: List<Record> = emptyList(),        // sorted ASC by reminderDate
-    val latestUpcomingReminder: Record? = null,             // the sticky top item (closest future reminder)
-
+    val timelineItems: List<Record> = emptyList(), // Single, sorted list for the UI
+    val latestUpcomingReminder: Record? = null,   // The sticky top item (closest future reminder)
+    val initialScrollIndex: Int = 0,
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )
