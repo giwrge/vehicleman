@@ -18,4 +18,6 @@ interface VehicleRepository {
     suspend fun getAllVehiclesList(): List<Vehicle>
     suspend fun deleteAllVehicles()
     suspend fun insertAllVehicles(vehicles: List<Vehicle>)
+
+    suspend fun getVehicles(): List<Vehicle>
 }

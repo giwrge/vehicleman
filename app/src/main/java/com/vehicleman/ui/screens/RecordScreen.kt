@@ -1,24 +1,13 @@
 package com.vehicleman.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.*
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -34,16 +23,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.vehicleman.R
 import com.vehicleman.domain.model.Record
-import com.vehicleman.domain.model.RecordType
 import com.vehicleman.domain.model.Vehicle
+import com.vehicleman.domain.use_case.RecordCategorizerUseCase
+import com.vehicleman.presentation.record.mapCategoryToIcon
 import com.vehicleman.presentation.record.RecordEvent
 import com.vehicleman.presentation.record.RecordViewModel
 import com.vehicleman.ui.navigation.NavDestinations
@@ -69,6 +62,8 @@ fun RecordScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var recentlyDeleted by remember { mutableStateOf<Record?>(null) }
 
+    val categorizer = remember { RecordCategorizerUseCase() }
+
     DisposableEffect(Unit) {
         onDispose {
             viewModel.onScreenHidden()
@@ -92,43 +87,38 @@ fun RecordScreen(
             val firstVisibleIndex = listState.firstVisibleItemIndex
             if (firstVisibleIndex < 0 || state.timelineItems.isEmpty()) return@derivedStateOf true
             val firstVisibleRecord = state.timelineItems.getOrNull(firstVisibleIndex) ?: return@derivedStateOf true
-            val firstVisibleDate = if (firstVisibleRecord.isReminder) firstVisibleRecord.reminderDate else firstVisibleRecord.date
+            val firstVisibleDate = if (firstVisibleRecord.isReminder) firstVisibleRecord.reminderDate ?: firstVisibleRecord.date else firstVisibleRecord.date
             (firstVisibleDate != null && sticky.reminderDate != null) && firstVisibleDate.before(sticky.reminderDate)
         }
     }
 
-    Scaffold(
-        containerColor = Color.Transparent,
-        topBar = {
-            RecordScreenTopAppBar(
-                vehicles = state.vehicles,
-                selectedVehicleId = state.selectedVehicleId,
-                onVehicleSelected = { viewModel.onEvent(RecordEvent.VehicleSelected(it)) },
-                onNavigateToHome = { navController.navigate(NavDestinations.HOME_ROUTE) { popUpTo(NavDestinations.HOME_ROUTE) { inclusive = true } } },
-                onNavigateToStatistics = { state.selectedVehicleId?.let { onNavigateToStatistics(it) } },
-                onNavigateToPreferences = onNavigateToPreferences,
-                onNavigateToProMode = onNavigateToProMode,
-                onNavigateToSignUp = onNavigateToSignUp
-            )
-        },
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-        floatingActionButton = {
-            FloatingActionButton(onClick = {
-                state.selectedVehicleId?.let { onNavigateToAddEditRecord(it, "new") }
-            }) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Νέα εγγραφή")
+    Box(modifier = Modifier.fillMaxSize()) {
+        PremiumRoadBackground(listState = listState, isNightMode = isNightMode)
+
+        Scaffold(
+            containerColor = Color.Transparent,
+            topBar = {
+                RecordScreenTopAppBar(
+                    vehicles = state.vehicles,
+                    selectedVehicleId = state.selectedVehicleId,
+                    onVehicleSelected = { viewModel.onEvent(RecordEvent.VehicleSelected(it)) },
+                    onNavigateToHome = { navController.navigate(NavDestinations.HOME_ROUTE) { popUpTo(NavDestinations.HOME_ROUTE) { inclusive = true } } },
+                    onNavigateToStatistics = { state.selectedVehicleId?.let { onNavigateToStatistics(it) } },
+                    onNavigateToPreferences = onNavigateToPreferences,
+                    onNavigateToProMode = onNavigateToProMode,
+                    onNavigateToSignUp = onNavigateToSignUp
+                )
+            },
+            snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+            floatingActionButton = {
+                FloatingActionButton(onClick = {
+                    state.selectedVehicleId?.let { onNavigateToAddEditRecord(it, "new") }
+                }) {
+                    Icon(imageVector = Icons.Default.Add, contentDescription = "Νέα εγγραφή")
+                }
             }
-        }
-    ) { innerPadding ->
-
-        Box(
-            modifier = Modifier.fillMaxSize().padding(innerPadding)
-        ) {
-            PremiumRoadBackground(listState = listState, isNightMode = isNightMode) // You need to create this
-
-            Column(modifier = Modifier.fillMaxSize()) {
-                Spacer(modifier = Modifier.height(8.dp))
-
+        ) { innerPadding ->
+            Column(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                 AnimatedVisibility(
                     visible = showStickyReminder,
                     enter = slideInVertically { -it },
@@ -139,7 +129,7 @@ fun RecordScreen(
                             record = it,
                             isNightMode = isNightMode,
                             onClick = { onNavigateToAddEditRecord(it.vehicleId, it.id) },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                         )
                     }
                 }
@@ -148,7 +138,7 @@ fun RecordScreen(
                     state = listState,
                     modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(bottom = 80.dp) // Space for FAB
+                    contentPadding = PaddingValues(top = if (!showStickyReminder) 8.dp else 0.dp, bottom = 80.dp) // Space for FAB
                 ) {
                     items(state.timelineItems, key = { it.id }) { record ->
                         val dismissState = rememberSwipeToDismissBoxState(
@@ -177,7 +167,8 @@ fun RecordScreen(
                                 record = record,
                                 isNightMode = isNightMode,
                                 onEdit = { onNavigateToAddEditRecord(record.vehicleId, record.id) },
-                                onMarkCompleted = { viewModel.onEvent(RecordEvent.MarkReminderCompleted(record.id)) }
+                                onMarkCompleted = { viewModel.onEvent(RecordEvent.MarkReminderCompleted(record.id)) },
+                                categorizer = categorizer
                             )
                         }
                     }
@@ -227,22 +218,46 @@ private fun RecordScreenTopAppBar(
         },
         navigationIcon = {
             IconButton(onClick = onNavigateToHome) {
-                Icon(painter = painterResource(R.mipmap.ic_home), contentDescription = "Home")
+                Icon(
+                    painter = painterResource(R.mipmap.ic_home),
+                    contentDescription = "Home",
+                    modifier = Modifier.size(32.dp),
+                    tint = Color.Unspecified
+                )
             }
         },
         actions = {
             IconButton(onClick = onNavigateToStatistics) {
-                Icon(painter = painterResource(R.mipmap.ic_statistic_bar), contentDescription = "Statistics")
+                Icon(
+                    painter = painterResource(R.mipmap.ic_statistic_bar),
+                    contentDescription = "Statistics",
+                    modifier = Modifier.size(28.dp),
+                    tint = Color.Unspecified
+                )
             }
-            // Icons from HomeScreen
             IconButton(onClick = onNavigateToSignUp) {
-                Icon(painter = painterResource(R.mipmap.ic_sing_up), contentDescription = "Sign Up", modifier = Modifier.size(32.dp))
+                Icon(
+                    painter = painterResource(R.mipmap.ic_sing_up),
+                    contentDescription = "Sign Up",
+                    modifier = Modifier.size(32.dp),
+                    tint = Color.Unspecified
+                )
             }
             IconButton(onClick = onNavigateToProMode) {
-                Icon(painter = painterResource(R.mipmap.ic_promode_vip), contentDescription = "Pro Mode", modifier = Modifier.size(32.dp))
+                Icon(
+                    painter = painterResource(R.mipmap.ic_promode_vip),
+                    contentDescription = "Pro Mode",
+                    modifier = Modifier.size(32.dp),
+                    tint = Color.Unspecified
+                )
             }
             IconButton(onClick = onNavigateToPreferences) {
-                Icon(painter = painterResource(R.mipmap.ic_settings), contentDescription = "Settings", modifier = Modifier.size(32.dp))
+                Icon(
+                    painter = painterResource(R.mipmap.ic_settings),
+                    contentDescription = "Settings",
+                    modifier = Modifier.size(32.dp),
+                    tint = Color.Unspecified
+                )
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
@@ -257,98 +272,298 @@ private fun StickyUpcomingReminder(
     modifier: Modifier = Modifier
 ) {
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
-    val bgColor = if (isNightMode) Color(0xFF1A237E).copy(alpha = 0.7f) else Color(0xFFE3F2FD).copy(alpha = 0.7f)
+
+    val bgColor = if (isNightMode)
+        Color(0xFFFFC94D).copy(alpha = 0.90f)
+    else
+        Color(0xFFFFF2B0).copy(alpha = 0.92f)
+
+    val shadowColor = if (isNightMode)
+        Color(0xFF000000).copy(alpha = 0.45f)
+    else
+        Color(0xFF333333).copy(alpha = 0.25f)
 
     Card(
-        modifier = modifier.padding(horizontal = 12.dp).shadow(6.dp, RoundedCornerShape(12.dp)).clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = bgColor)
+        modifier = modifier
+            .padding(horizontal = 12.dp)
+            .shadow(
+                elevation = 10.dp,
+                spotColor = shadowColor,
+                ambientColor = shadowColor,
+                shape = RoundedCornerShape(14.dp)
+            )
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(containerColor = bgColor),
+        shape = RoundedCornerShape(14.dp)
     ) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(52.dp).clip(CircleShape).background(Color(0xFF3B5998)), contentAlignment = Alignment.Center) {
-                Text("🔔", style = MaterialTheme.typography.titleLarge)
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Bell Icon
+            Icon(
+                painter = painterResource(id = R.drawable.ic_bell),
+                contentDescription = "Reminder",
+                tint = Color.Unspecified,
+                modifier = Modifier.size(42.dp)
+            )
+
+            Spacer(Modifier.width(12.dp))
+
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = record.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                record.reminderDate?.let {
+                    Text(
+                        "Στις: ${dateFormat.format(it)}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
             }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(record.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                record.description?.let { Text(it, style = MaterialTheme.typography.bodyMedium, maxLines = 2) }
-                record.reminderDate?.let { Text("Στις: ${dateFormat.format(it)}", style = MaterialTheme.typography.bodySmall) }
-            }
+
+            // Days left bubble
             record.reminderDate?.let {
-                val daysLeft = ((it.time - System.currentTimeMillis()) / (1000L * 60 * 60 * 24)).coerceAtLeast(0)
-                Text("${daysLeft}d", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(8.dp))
+                val daysLeft =
+                    ((it.time - System.currentTimeMillis()) / (1000L * 60 * 60 * 24)).coerceAtLeast(0)
+
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(
+                            if (daysLeft <= 3) Color(0xFFE53935)
+                            else if (daysLeft <= 10) Color(0xFFFDD835)
+                            else Color(0xFF43A047)
+                        )
+                        .padding(horizontal = 10.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        "$daysLeft d",
+                        style = MaterialTheme.typography.titleSmall.copy(color = Color.White)
+                    )
+                }
             }
         }
     }
 }
+
 
 @Composable
 private fun TimelineRow(
     record: Record,
     isNightMode: Boolean,
     onEdit: () -> Unit,
-    onMarkCompleted: () -> Unit
+    onMarkCompleted: () -> Unit,
+    categorizer: RecordCategorizerUseCase
 ) {
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
-    val cardColor = Color.LightGray.copy(alpha = 0.4f)
-    val (iconRes, tint) = remember(record.recordType, record.fuelType, isNightMode) { mapRecordToIcon(record, isNightMode) }
-    var expanded by remember { mutableStateOf(false) }
+
+    val category = remember(record.title, record.isReminder) {
+        categorizer(record.title, record.isReminder)
+    }
+
+    val iconRes = remember(category) {
+        mapCategoryToIcon(category)
+    }
+
+    // Elegant transparent card
+    val alphaBg = if (isNightMode) 0.20f else 0.10f
 
     Card(
-        modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded }.shadow(2.dp, RoundedCornerShape(10.dp)),
-        colors = CardDefaults.cardColors(containerColor = cardColor)
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.Transparent),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = alphaBg)
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column(Modifier.padding(14.dp)) {
+
+            // Header Row
             Row(verticalAlignment = Alignment.CenterVertically) {
+
+                // Icon with overlay
                 Box(
-                    modifier = Modifier.size(44.dp).clip(CircleShape).background(androidx.compose.ui.graphics.Brush.linearGradient(listOf(tint, tint.copy(alpha = 0.9f)))),
+                    modifier = Modifier.size(48.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(painter = painterResource(id = iconRes), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(24.dp))
-                }
-                Spacer(Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(record.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                    record.description?.let { Text(it, style = MaterialTheme.typography.bodyMedium, maxLines = if (expanded) Int.MAX_VALUE else 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis) }
-                    Row(modifier = Modifier.padding(top = 4.dp)) {
-                        Text(dateFormat.format(record.date), style = MaterialTheme.typography.bodySmall)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("${record.odometer} km", style = MaterialTheme.typography.bodySmall)
+                    Icon(
+                        painter = painterResource(id = iconRes),
+                        contentDescription = null,
+                        tint = Color.Unspecified,
+                        modifier = Modifier.size(34.dp)
+                    )
+
+                    if (record.isReminder) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_bell),
+                            contentDescription = null,
+                            tint = Color.Unspecified,
+                            modifier = Modifier
+                                .size(22.dp)
+                                .align(Alignment.BottomEnd)
+                        )
                     }
                 }
+
+                Spacer(Modifier.width(12.dp))
+
+                // Title & Info
+                Column(Modifier.weight(1f)) {
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+
+                        Text(
+                            record.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+
+                        // Auto Tag
+                        if (record.description == null && record.isReminder) {
+                            Spacer(Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(
+                                        if (isNightMode) Color(0xFF3949AB)
+                                        else Color(0xFF5C6BC0)
+                                    )
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    "AUTO",
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(4.dp))
+
+                    // Date + KM
+                    Row {
+                        val displayDate =
+                            record.reminderDate ?: record.date
+
+                        Text(
+                            dateFormat.format(displayDate),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Spacer(Modifier.width(10.dp))
+
+                        if (!record.isReminder) {
+                            Text(
+                                "${record.odometer} km",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.width(12.dp))
+
+                // Right Info Column
                 Column(horizontalAlignment = Alignment.End) {
                     if (!record.isReminder) {
-                        Text(String.format(Locale.getDefault(), "%.2f €", record.cost ?: 0.0), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                        if (record.recordType == RecordType.FUEL_UP) {
-                            Text("${record.quantity ?: 0.0} lt", style = MaterialTheme.typography.bodySmall)
+                        val cost = record.cost ?: 0.0
+                        Text(
+                            String.format("%.2f €", cost),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        if (record.recordType.name == "FUEL_UP") {
+                            record.quantity?.let {
+                                Text("$it lt", style = MaterialTheme.typography.bodySmall)
+                            }
                         }
+
                     } else {
-                        val badgeText = if (record.isCompleted) "Ολοκληρώθηκε" else "Εκκρεμεί"
-                        Text(badgeText, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+                        val txt = if (record.isCompleted) "✔ Ολοκληρώθηκε"
+                        else "⏳ Εκκρεμεί"
+
+                        Text(
+                            txt,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                 }
             }
 
-            AnimatedVisibility(visible = expanded) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    SuggestionChip(onClick = onEdit, label = { Text("Επεξεργασία") })
-                    if (record.isReminder && !record.isCompleted) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        SuggestionChip(onClick = onMarkCompleted, label = { Text("Ολοκλήρωση") })
-                    }
+            // Description + Actions
+            record.description?.let {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(start = 56.dp)
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                SuggestionChip(label = { Text("Επεξεργασία") }, onClick = onEdit)
+
+                if (record.isReminder && !record.isCompleted) {
+                    Spacer(Modifier.width(8.dp))
+                    SuggestionChip(label = { Text("Ολοκλήρωση") }, onClick = onMarkCompleted)
                 }
             }
         }
     }
 }
 
-// Dummy composable, replace with your actual implementation
 @Composable
-fun PremiumRoadBackground(listState: LazyListState, isNightMode: Boolean) {
-    // Your road background implementation
+private fun PremiumRoadBackground(listState: LazyListState, isNightMode: Boolean) {
+    val imageRes = if (isNightMode) R.drawable.road_night else R.drawable.road_light
+    val painter = painterResource(id = imageRes)
+
+    val infiniteTransition = rememberInfiniteTransition(label = "road_background_anim")
+    val animationOffset by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 100000, easing = LinearEasing)
+        ),
+        label = "road_background_offset"
+    )
+
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val painterIntrinsicSize = painter.intrinsicSize
+        if (painterIntrinsicSize == Size.Unspecified || painterIntrinsicSize.height == 0f) return@Canvas
+
+        val canvasWidth = size.width
+        val canvasHeight = size.height
+
+        val scaledImageHeight = (canvasWidth / painterIntrinsicSize.width) * painterIntrinsicSize.height
+        val scaledImageSize = Size(canvasWidth, scaledImageHeight)
+
+        val scrollBasedOffset = listState.firstVisibleItemScrollOffset / 3f
+        val constantOffset = animationOffset * scaledImageHeight
+        val totalOffset = scrollBasedOffset + constantOffset
+
+        var yPos = -(totalOffset % scaledImageHeight)
+
+        while (yPos < canvasHeight) {
+            translate(left = 0f, top = yPos) {
+                with(painter) {
+                    draw(size = scaledImageSize)
+                }
+            }
+            yPos += scaledImageHeight
+        }
+    }
 }
 
 @Composable
@@ -356,32 +571,10 @@ private fun DeleteBackground() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFB71C1C))
+            .background(Color.Transparent)
             .padding(horizontal = 16.dp),
         contentAlignment = Alignment.CenterEnd
     ) {
-        Text(
-            text = "Διαγραφή",
-            color = Color.White,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold
-        )
+        // Transparent background for swipe
     }
-}
-
-
-private fun mapRecordToIcon(record: Record, isNightMode: Boolean): Pair<Int, Color> {
-    val baseTint = when (record.recordType) {
-        RecordType.FUEL_UP -> Color(0xFF0D47A1)
-        RecordType.EXPENSE -> Color(0xFF4E342E)
-        RecordType.REMINDER -> Color(0xFF00695C)
-    }
-
-    val iconRes = when (record.recordType) {
-        RecordType.FUEL_UP -> R.drawable.ic_fuel_generic_filled
-        RecordType.EXPENSE -> R.drawable.ic_expense_filled
-        RecordType.REMINDER -> R.drawable.ic_reminder_filled
-    }
-
-    return iconRes to baseTint
 }

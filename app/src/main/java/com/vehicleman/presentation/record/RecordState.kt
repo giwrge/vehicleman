@@ -4,17 +4,43 @@ import com.vehicleman.domain.model.Record
 import com.vehicleman.domain.model.Vehicle
 
 /**
- * Expanded, UI-friendly state for the Record screen.
- * - timelineItems: A single, chronologically sorted list of all records.
- * - latestUpcomingReminder: the nearest future reminder (for the sticky header).
- * - initialScrollIndex: The suggested index to scroll to upon first load or after a timeout.
+ * UI State για τη RecordScreen.
+ *
+ * Περιέχει:
+ * - Λίστα οχημάτων
+ * - Επιλεγμένο όχημα
+ * - Χρονολογική λίστα εγγραφών (expenses + reminders)
+ * - Auto upcoming reminder (πρώτη μελλοντική υπενθύμιση)
+ * - Scroll index για πρώτη εμφάνιση (στο "σήμερα")
+ * - Κατάσταση φόρτωσης
+ * - Μήνυμα λάθους
  */
 data class RecordState(
+
+    // --------------------------
+    // VEHICLES
+    // --------------------------
     val vehicles: List<Vehicle> = emptyList(),
     val selectedVehicleId: String? = null,
-    val timelineItems: List<Record> = emptyList(), // Single, sorted list for the UI
-    val latestUpcomingReminder: Record? = null,   // The sticky top item (closest future reminder)
+
+    // --------------------------
+    // TIMELINE (Expenses + Reminders)
+    // --------------------------
+    val timelineItems: List<Record> = emptyList(),
+
+    // --------------------------
+    // AUTO REMINDERS – FIRST UPCOMING
+    // --------------------------
+    val latestUpcomingReminder: Record? = null,
+
+    // --------------------------
+    // SCROLL POSITION
+    // --------------------------
     val initialScrollIndex: Int = 0,
+
+    // --------------------------
+    // LOADING / ERROR
+    // --------------------------
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )

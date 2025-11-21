@@ -21,4 +21,6 @@ interface RecordRepository {
     suspend fun getAllRecordsList(): List<Record>
     suspend fun deleteAllRecords()
     suspend fun insertAllRecords(records: List<Record>)
+
+    suspend fun getRecordsByVehicle(vehicleId: String): List<Record>
 }
