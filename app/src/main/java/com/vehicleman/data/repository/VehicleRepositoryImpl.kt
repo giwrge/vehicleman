@@ -23,6 +23,9 @@ class VehicleRepositoryImpl @Inject constructor(
     override fun getAllVehicles(): Flow<List<Vehicle>> {
         return vehicleDao.getAllVehicles().map { list -> list.map(VehicleEntity::toVehicle) }
     }
+    override suspend fun getVehicles(): List<Vehicle> {
+        return vehicleDao.getAllVehiclesList().map { it.toVehicle() }
+    }
 
     override suspend fun getVehicleById(id: String): Vehicle? {
         return vehicleDao.getVehicleById(id)?.toVehicle()

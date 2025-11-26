@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 interface RecordRepository {
 
     fun getRecordsForVehicle(vehicleId: String): Flow<List<Record>>
+    suspend fun getRecordsByVehicle(vehicleId: String): List<Record>
 
     suspend fun getRecordById(id: String): Record?
 
@@ -22,5 +23,4 @@ interface RecordRepository {
     suspend fun deleteAllRecords()
     suspend fun insertAllRecords(records: List<Record>)
 
-    suspend fun getRecordsByVehicle(vehicleId: String): List<Record>
 }

@@ -21,6 +21,9 @@ interface RecordDao {
     @Query("SELECT * FROM records WHERE vehicleId = :vehicleId ORDER BY date DESC, odometer DESC")
     fun getRecordsForVehicle(vehicleId: String): Flow<List<RecordEntity>>
 
+    @Query("SELECT * FROM records WHERE vehicleId = :vehicleId ORDER BY date DESC, odometer DESC")
+    suspend fun getRecordsForVehicleList(vehicleId: String): List<RecordEntity>
+
     @Query("SELECT * FROM records ORDER BY date DESC")
     fun getAllRecords(): Flow<List<RecordEntity>>
     

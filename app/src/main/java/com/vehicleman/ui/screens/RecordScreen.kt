@@ -5,6 +5,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -21,6 +22,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Size
@@ -28,17 +30,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.vehicleman.R
 import com.vehicleman.domain.model.Record
 import com.vehicleman.domain.model.Vehicle
-import com.vehicleman.domain.use_case.RecordCategorizerUseCase
-import com.vehicleman.presentation.record.mapCategoryToIcon
+import com.vehicleman.domain.use_case.recordcategorizer.RecordCategorizerUseCase
 import com.vehicleman.presentation.record.RecordEvent
 import com.vehicleman.presentation.record.RecordViewModel
+import com.vehicleman.presentation.record.mapCategoryToIcon
 import com.vehicleman.ui.navigation.NavDestinations
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -111,10 +112,17 @@ fun RecordScreen(
             },
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
             floatingActionButton = {
-                FloatingActionButton(onClick = {
-                    state.selectedVehicleId?.let { onNavigateToAddEditRecord(it, "new") }
-                }) {
-                    Icon(imageVector = Icons.Default.Add, contentDescription = "Νέα εγγραφή")
+                FloatingActionButton(
+                    onClick = { state.selectedVehicleId?.let { onNavigateToAddEditRecord(it, "new") } },
+                    containerColor = Color.Transparent,
+                    elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.mipmap.ic_add_record),
+                        contentDescription = "Νέα εγγραφή",
+                        tint = Color.Unspecified,
+                        modifier = Modifier.size(56.dp)
+                    )
                 }
             }
         ) { innerPadding ->
@@ -143,30 +151,36 @@ fun RecordScreen(
                     items(state.timelineItems, key = { it.id }) { record ->
                         val dismissState = rememberSwipeToDismissBoxState(
                             confirmValueChange = { value ->
-                                if (value == SwipeToDismissBoxValue.EndToStart) {
-                                    scope.launch {
-                                        recentlyDeleted = record
-                                        viewModel.deleteRecord(record)
-                                        val result = snackbarHostState.showSnackbar("Η εγγραφή διαγράφηκε", "ΑΝΑΙΡΕΣΗ")
-                                        if (result == SnackbarResult.ActionPerformed) {
-                                            recentlyDeleted?.let { viewModel.saveRecord(it) }
+                                when (value) {
+                                    SwipeToDismissBoxValue.EndToStart -> {
+                                        scope.launch {
+                                            recentlyDeleted = record
+                                            viewModel.deleteRecord(record)
+                                            val result = snackbarHostState.showSnackbar("Η εγγραφή διαγράφηκε", "ΑΝΑΙΡΕΣΗ")
+                                            if (result == SnackbarResult.ActionPerformed) {
+                                                recentlyDeleted?.let { viewModel.saveRecord(it) }
+                                            }
                                         }
+                                        true // Confirm the dismiss
                                     }
-                                    true
-                                } else false
+                                    SwipeToDismissBoxValue.StartToEnd -> {
+                                        onNavigateToAddEditRecord(record.vehicleId, record.id)
+                                        false // Do not dismiss the item, just trigger navigation and snap back
+                                    }
+                                    SwipeToDismissBoxValue.Settled -> false
+                                }
                             }
                         )
 
                         SwipeToDismissBox(
                             state = dismissState,
-                            backgroundContent = { DeleteBackground() },
+                            backgroundContent = { SwipeBackground(dismissState) },
                             enableDismissFromEndToStart = true,
-                            enableDismissFromStartToEnd = false
+                            enableDismissFromStartToEnd = true // Enable swipe right
                         ) {
                             TimelineRow(
                                 record = record,
                                 isNightMode = isNightMode,
-                                onEdit = { onNavigateToAddEditRecord(record.vehicleId, record.id) },
                                 onMarkCompleted = { viewModel.onEvent(RecordEvent.MarkReminderCompleted(record.id)) },
                                 categorizer = categorizer
                             )
@@ -354,15 +368,15 @@ private fun StickyUpcomingReminder(
 private fun TimelineRow(
     record: Record,
     isNightMode: Boolean,
-    onEdit: () -> Unit,
     onMarkCompleted: () -> Unit,
     categorizer: RecordCategorizerUseCase
 ) {
     val dateFormat = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
 
-    val category = remember(record.title, record.isReminder) {
-        categorizer(record.title, record.isReminder)
+    val category = remember(record.title, record.description, record.isReminder) {
+        categorizer(record.title, record.isReminder, record.description)
     }
+
 
     val iconRes = remember(category) {
         mapCategoryToIcon(category)
@@ -507,16 +521,13 @@ private fun TimelineRow(
                 )
             }
 
-            Spacer(Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                SuggestionChip(label = { Text("Επεξεργασία") }, onClick = onEdit)
-
-                if (record.isReminder && !record.isCompleted) {
-                    Spacer(Modifier.width(8.dp))
+            // Action for reminders
+            if (record.isReminder && !record.isCompleted) {
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
                     SuggestionChip(label = { Text("Ολοκλήρωση") }, onClick = onMarkCompleted)
                 }
             }
@@ -566,15 +577,41 @@ private fun PremiumRoadBackground(listState: LazyListState, isNightMode: Boolean
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DeleteBackground() {
+private fun SwipeBackground(dismissState: SwipeToDismissBoxState) {
+    val direction = dismissState.targetValue
+    val progress = dismissState.progress
+    val visibilityThreshold = 0.15f
+
+    // Alpha is 1f (fully visible) if the threshold is passed in either swipe direction.
+    val alpha = if ((direction == SwipeToDismissBoxValue.StartToEnd || direction == SwipeToDismissBoxValue.EndToStart) && progress > visibilityThreshold) {
+        1f
+    } else {
+        0f
+    }
+
+    val (alignment, iconResId) = when (direction) {
+        SwipeToDismissBoxValue.EndToStart -> Alignment.CenterEnd to R.mipmap.ic_delete
+        SwipeToDismissBoxValue.StartToEnd -> Alignment.CenterStart to R.mipmap.ic_wrench_edit
+        else -> Alignment.Center to null
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Transparent)
-            .padding(horizontal = 16.dp),
-        contentAlignment = Alignment.CenterEnd
+            .padding(horizontal = 24.dp),
+        contentAlignment = alignment
     ) {
-        // Transparent background for swipe
+        iconResId?.let { resId ->
+            Image(
+                painter = painterResource(id = resId),
+                contentDescription = null, // Decorative
+                modifier = Modifier
+                    .size(38.dp) // Increased size for both icons
+                    .alpha(alpha.coerceIn(0f, 1f))
+            )
+        }
     }
 }

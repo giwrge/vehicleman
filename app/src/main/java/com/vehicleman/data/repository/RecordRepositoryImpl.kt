@@ -19,7 +19,11 @@ class RecordRepositoryImpl @Inject constructor(
     override fun getRecordsForVehicle(vehicleId: String): Flow<List<Record>> {
         return recordDao.getRecordsForVehicle(vehicleId).map { list -> list.map(RecordEntity::toRecord) }
     }
-    
+
+    override suspend fun getRecordsByVehicle(vehicleId: String): List<Record> {
+        return recordDao.getRecordsForVehicleList(vehicleId).map { it.toRecord() }
+    }
+
     override fun getAllRecords(): Flow<List<Record>> {
         return recordDao.getAllRecords().map { list -> list.map(RecordEntity::toRecord) }
     }
