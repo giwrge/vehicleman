@@ -10,6 +10,8 @@ object NavDestinations {
     const val ADD_EDIT_VEHICLE_ROUTE = "add_edit_vehicle_route"
     const val ENTRY_LIST_ROUTE = "entry_list_route"
     const val ADD_EDIT_ENTRY_ROUTE = "add_edit_entry_route"
+
+    const val ADD_EDIT_RECORD_ROUTE = "add_edit_record_route"   // ✅ ΝΕΟ
     const val STATISTICS_ROUTE = "statistics_route"
     const val STATISTIC_VEHICLE_ROUTE = "statistic_vehicle_route"
     const val PREFERENCE_ROUTE = "preference_route"
@@ -26,6 +28,8 @@ object NavDestinations {
 
     // Argument Keys
     const val VEHICLE_ID_KEY = "vehicleId"
+
+    const val RECORD_ID_KEY = "recordId"                       // ✅ ΝΕΟ
     const val SUB_DRIVER_ID_KEY = "subDriverId"
     const val FROM_SCREEN_KEY = "fromScreen"
     const val FROM_ID_KEY = "fromId"
@@ -67,4 +71,11 @@ object NavDestinations {
      */
     fun preferenceRoute(fromScreen: String, fromId: String? = null) = 
         "$PREFERENCE_ROUTE/$fromScreen/${fromId ?: "-1"}"
+
+    // Helper route builder for Add/Edit Record
+    fun addEditRecordRoute(vehicleId: String, recordId: String? = null): String =
+        if (recordId == null)
+            "$ADD_EDIT_RECORD_ROUTE/$vehicleId/new"
+        else
+            "$ADD_EDIT_RECORD_ROUTE/$vehicleId/$recordId"
 }

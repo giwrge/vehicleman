@@ -114,8 +114,13 @@ fun AppNavigation(
         composable(
             route = "${NavDestinations.ADD_EDIT_ENTRY_ROUTE}/{${NavDestinations.VEHICLE_ID_KEY}}/{recordId}",
         ) {
-            AddEditRecordScreen(navController = navController)
+            AddEditRecordScreen(
+                navController = navController,
+                isNightMode = isNightMode
+            )
         }
+
+
 
         composable("${NavDestinations.STATISTICS_ROUTE}/{${NavDestinations.FROM_SCREEN_KEY}}/{${NavDestinations.FROM_ID_KEY}}") { backStackEntry ->
             val fromScreen = backStackEntry.arguments?.getString(NavDestinations.FROM_SCREEN_KEY)

@@ -5,271 +5,386 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vehicleman.domain.model.Record
 import com.vehicleman.domain.model.RecordType
-import com.vehicleman.domain.repositories.ProLevel
 import com.vehicleman.domain.repositories.RecordRepository
-import com.vehicleman.domain.repositories.UserPreferencesRepository
-import com.vehicleman.domain.repositories.UserStatus
 import com.vehicleman.domain.repositories.VehicleRepository
-import com.vehicleman.ui.navigation.NavDestinations
+import com.vehicleman.domain.model.category.RecordCategory
+import com.vehicleman.domain.use_case.recordcategorizer.RecordCategorizerUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.Calendar
+import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.UUID
 import javax.inject.Inject
-import kotlin.math.pow
-import kotlin.math.roundToInt
-
-private val defaultSuggestions = listOf("Service", "Oil Change", "Tires", "Fuel", "KTEO", "Insurance")
 
 @HiltViewModel
 class AddEditRecordViewModel @Inject constructor(
     private val recordRepository: RecordRepository,
-    private val vehicleRepository: VehicleRepository, // Injected VehicleRepository
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val vehicleRepository: VehicleRepository,
+    private val categorizer: RecordCategorizerUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val vehicleId: String? = savedStateHandle[NavDestinations.VEHICLE_ID_KEY]
-    private val recordId: String? = savedStateHandle["recordId"]
-
     private val _state = MutableStateFlow(AddEditRecordState())
-    val state: StateFlow<AddEditRecordState> = _state
+    val state = _state.asStateFlow()
+
+    private val vehicleId: String =
+        savedStateHandle.get<String>("vehicleId") ?: ""
+
+    private val recordId: String? =
+        savedStateHandle.get<String>("recordId")
+
+    private val dateFormat = SimpleDateFormat("dd/MM/yyyy")
 
     init {
-        if (vehicleId != null) {
+        if (vehicleId.isBlank()) {
+            // Δεν μπορούμε να συνεχίσουμε χωρίς vehicleId
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    errorMessage = "Λείπει το όχημα για την εγγραφή."
+                )
+            }
+        } else {
             _state.update { it.copy(vehicleId = vehicleId) }
-            loadVehicleFuelTypes(vehicleId)
-            loadLatestOdometer(vehicleId)
-        }
-        if (recordId != null) {
-            _state.update { it.copy(recordId = recordId) }
-            loadRecord(recordId)
+
+            if (recordId == null || recordId == "new") {
+                loadNewRecord()
+            } else {
+                loadExistingRecord(recordId)
+            }
+
+            loadVehicleFuelTypes()
         }
     }
 
-    private fun loadVehicleFuelTypes(vehicleId: String) {
+    // -------------------------------------------------------------------------
+    // LOAD VEHICLE FUEL TYPES (προς το παρόν κενό, μέχρι να μπουν τα fields στο Vehicle)
+    // -------------------------------------------------------------------------
+
+    private fun loadVehicleFuelTypes() {
         viewModelScope.launch {
-            val vehicle = vehicleRepository.getVehicleById(vehicleId)
-            vehicle?.let {
-                _state.update { state -> state.copy(vehicleFuelTypes = it.fuelTypes) }
+            // Όταν προσθέσουμε στο Vehicle π.χ. primaryFuelType / supportedFuelTypes,
+            // θα γεμίσουμε εδώ την λίστα.
+            _state.update { s ->
+                s.copy(
+                    vehicleFuelTypes = emptyList(),
+                    selectedFuelType = null
+                )
             }
         }
     }
 
-    private fun loadLatestOdometer(vehicleId: String) {
-        viewModelScope.launch {
-            val latestOdometer = recordRepository.getLatestOdometer(vehicleId)
-            if (recordId == "new" && latestOdometer != null && latestOdometer > 0) {
-                _state.update { it.copy(odometer = latestOdometer.toString()) }
-            }
+    // -------------------------------------------------------------------------
+    // NEW RECORD
+    // -------------------------------------------------------------------------
+
+    private fun loadNewRecord() {
+        val now = Date()
+        _state.update {
+            it.copy(
+                isLoading = false,
+                isNew = true,
+                date = now,
+                dateText = dateFormat.format(now),
+                category = null,
+                suggestions = emptyList()
+            )
         }
     }
 
-    private fun loadRecord(recordId: String) {
-        if (recordId != "new") {
-            viewModelScope.launch {
-                try {
-                    val record = recordRepository.getRecordById(recordId)
-                    record?.let {
-                        _state.update { currentState ->
-                            currentState.copy(
-                                date = record.date,
-                                odometer = record.odometer.toString(),
-                                description = record.description ?: record.title,
-                                isReminder = record.isReminder,
-                                reminderDate = record.reminderDate,
-                                reminderOdometer = record.reminderOdometer?.toString() ?: "",
-                                cost = record.cost?.toString() ?: "",
-                                quantity = record.quantity?.toString() ?: "",
-                                pricePerUnit = record.pricePerUnit?.toString() ?: "",
-                                selectedFuelType = record.fuelType,
-                                showFuelTypeSelection = record.recordType == RecordType.FUEL_UP && currentState.vehicleFuelTypes.size > 1,
-                                showReminderFields = record.isReminder,
-                                showCostDetails = record.recordType != RecordType.REMINDER
-                            )
-                        }
-                    }
-                } catch (e: Exception) {
-                    _state.update { it.copy(error = "Αδυναμία φόρτωσης καταχώρησης: ${e.message}") }
+    // -------------------------------------------------------------------------
+    // LOAD EXISTING RECORD
+    // -------------------------------------------------------------------------
+
+    private fun loadExistingRecord(id: String) {
+        viewModelScope.launch {
+            val record = recordRepository.getRecordById(id)
+
+            if (record == null) {
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "Δεν βρέθηκε η εγγραφή."
+                    )
                 }
+                return@launch
             }
+
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    isNew = false,
+                    recordId = record.id,
+                    recordType = record.recordType,
+                    title = record.title,
+                    description = record.description ?: "",
+                    date = record.date,
+                    dateText = dateFormat.format(record.date),
+                    odometer = record.odometer?.toString() ?: "",
+                    cost = record.cost?.toString() ?: "",
+                    quantity = record.quantity?.toString() ?: "",
+                    pricePerUnit = record.pricePerUnit?.toString() ?: "",
+                    fuelType = record.fuelType,
+                    fuelTypeText = record.fuelType ?: "",
+                    isReminder = record.isReminder,
+                    isCompleted = record.isCompleted,
+                    reminderDate = record.reminderDate,
+                    reminderDateText = record.reminderDate?.let { d -> dateFormat.format(d) } ?: "",
+                    reminderOdometer = record.reminderOdometer?.toString() ?: "",
+                    isReminderSwitchLocked = record.isReminder,
+                    showReminderFields = record.isReminder,
+                    // την κατηγορία την ξανα-υπολογίζουμε από τίτλο/περιγραφή
+                    category = null,
+                    suggestions = emptyList()
+                )
+            }
+
+            // Υπολογίζουμε εκ νέου την κατηγορία για την υπάρχουσα εγγραφή
+            updateCategorization()
         }
-        _state.update { it.copy(suggestions = defaultSuggestions) }
     }
+
+    // -------------------------------------------------------------------------
+    // EVENT HANDLING
+    // -------------------------------------------------------------------------
 
     fun onEvent(event: AddEditRecordEvent) {
         when (event) {
-            is AddEditRecordEvent.OnDescriptionChange -> handleSmartInput(event.text)
-            is AddEditRecordEvent.OnDateChange -> handleDateChange(event.date)
-            is AddEditRecordEvent.OnOdometerChange -> _state.update { it.copy(odometer = event.odometer) }
-            is AddEditRecordEvent.OnCostChange -> _state.update { it.copy(cost = event.cost) }
-            is AddEditRecordEvent.OnQuantityChange -> _state.update { it.copy(quantity = event.quantity) }
-            is AddEditRecordEvent.OnPricePerUnitChange -> handlePricePerUnitChange(event.price)
-            is AddEditRecordEvent.OnSuggestionChipClicked -> handleSuggestionChipClicked(event.suggestion)
-            is AddEditRecordEvent.OnToggleReminder -> _state.update { it.copy(isReminder = event.isChecked, showReminderFields = event.isChecked) }
-            is AddEditRecordEvent.OnReminderDateChange -> _state.update { it.copy(reminderDate = event.date) }
-            is AddEditRecordEvent.OnReminderOdometerChange -> _state.update { it.copy(reminderOdometer = event.odometer) }
-            is AddEditRecordEvent.OnFuelTypeSelected -> _state.update { it.copy(selectedFuelType = event.fuelType) }
-            AddEditRecordEvent.OnSaveClicked -> saveRecord()
-            AddEditRecordEvent.OnTwoTapActivated -> { /* Logic for 2-tap activation */ }
-        }
-    }
 
-    private fun handleSuggestionChipClicked(suggestion: String) {
-        val currentDesc = _state.value.description
-        val newDesc = if (currentDesc.isEmpty()) suggestion else "$currentDesc $suggestion"
-        handleSmartInput(newDesc)
-    }
-
-    private fun handlePricePerUnitChange(price: String) {
-        _state.update { it.copy(pricePerUnit = price) }
-        val quantity = _state.value.quantity.toDoubleOrNull()
-        val pricePerUnit = price.toDoubleOrNull()
-        if (quantity != null && pricePerUnit != null) {
-            val cost = (quantity * pricePerUnit).roundTo(2)
-            _state.update { it.copy(cost = cost.toString()) }
-        }
-    }
-
-    private fun handleSmartInput(text: String) {
-        val normalizedText = text.lowercase()
-        val newRecordType = when {
-            normalizedText.contains("βενζίνη") || normalizedText.contains("πετρέλαιο") || normalizedText.contains("υγραέριο") -> RecordType.FUEL_UP
-            normalizedText.contains("υπενθύμιση") || normalizedText.contains("ασφάλεια") || normalizedText.contains("ΚΤΕΟ") -> RecordType.REMINDER
-            else -> RecordType.EXPENSE
-        }
-
-        val numbers = "-?(\\d+(\\.\\d+)?)".toRegex().findAll(text).map { it.value.toDouble() }.toList()
-
-        var cost = ""
-        var quantity = ""
-        var pricePerUnit = ""
-
-        if (newRecordType == RecordType.FUEL_UP) {
-            if (numbers.size == 2) {
-                quantity = numbers[0].toString()
-                pricePerUnit = numbers[1].toString()
-                cost = (numbers[0] * numbers[1]).roundTo(2).toString()
-            } else if (numbers.size == 1) {
-                cost = numbers[0].toString()
+            is AddEditRecordEvent.LoadExisting -> {
+                // Αν τυχόν το καλέσεις από UI
+                loadExistingRecord(event.recordId)
             }
-        } else if (newRecordType == RecordType.EXPENSE && numbers.isNotEmpty()) {
-            cost = numbers.first().toString()
-        }
 
-        val showFuelSelection = newRecordType == RecordType.FUEL_UP && _state.value.vehicleFuelTypes.size > 1
-        val selectedFuel = if (newRecordType == RecordType.FUEL_UP && _state.value.vehicleFuelTypes.size == 1) {
-            _state.value.vehicleFuelTypes.first()
-        } else if (newRecordType != RecordType.FUEL_UP) {
-            null
-        } else {
-            _state.value.selectedFuelType
-        }
+            is AddEditRecordEvent.TitleChanged -> {
+                _state.update { it.copy(title = event.value) }
+                updateCategorization()
+                updateSuggestions()
+                validateSave()
+            }
 
+            is AddEditRecordEvent.DescriptionChanged -> {
+                _state.update { it.copy(description = event.value) }
+                updateCategorization()
+                validateSave()
+            }
+
+            is AddEditRecordEvent.DateTextChanged -> {
+                _state.update { it.copy(dateText = event.value) }
+                validateSave()
+            }
+
+            is AddEditRecordEvent.DateChanged -> {
+                _state.update {
+                    it.copy(
+                        date = event.value,
+                        dateText = dateFormat.format(event.value)
+                    )
+                }
+                validateSave()
+            }
+
+            is AddEditRecordEvent.OdometerChanged -> {
+                _state.update { it.copy(odometer = event.value) }
+                validateSave()
+            }
+
+            is AddEditRecordEvent.CostChanged -> {
+                _state.update { it.copy(cost = event.value) }
+                validateSave()
+            }
+
+            is AddEditRecordEvent.QuantityChanged -> {
+                _state.update { it.copy(quantity = event.value) }
+                validateSave()
+            }
+
+            is AddEditRecordEvent.PricePerUnitChanged -> {
+                _state.update { it.copy(pricePerUnit = event.value) }
+                validateSave()
+            }
+
+            is AddEditRecordEvent.FuelTypeChanged -> {
+                _state.update { it.copy(fuelTypeText = event.value) }
+                validateSave()
+            }
+
+            is AddEditRecordEvent.RecordTypeChanged -> {
+                handleRecordTypeChange(event.value)
+            }
+
+            is AddEditRecordEvent.SuggestionClicked -> {
+                _state.update { it.copy(title = event.suggestion) }
+                updateCategorization()
+                validateSave()
+            }
+
+            is AddEditRecordEvent.ToggleReminder -> {
+                if (!_state.value.isReminderSwitchLocked) {
+                    _state.update {
+                        it.copy(
+                            isReminder = event.value,
+                            showReminderFields = event.value
+                        )
+                    }
+                }
+                validateSave()
+            }
+
+            is AddEditRecordEvent.ReminderDateTextChanged -> {
+                _state.update { it.copy(reminderDateText = event.value) }
+                validateSave()
+            }
+
+            is AddEditRecordEvent.ReminderDateChanged -> {
+                _state.update {
+                    it.copy(
+                        reminderDate = event.value,
+                        reminderDateText = dateFormat.format(event.value)
+                    )
+                }
+                validateSave()
+            }
+
+            is AddEditRecordEvent.ReminderOdometerChanged -> {
+                _state.update { it.copy(reminderOdometer = event.value) }
+                validateSave()
+            }
+
+            AddEditRecordEvent.ToggleCompleted -> {
+                _state.update { it.copy(isCompleted = !it.isCompleted) }
+                validateSave()
+            }
+
+            AddEditRecordEvent.Save -> saveRecord()
+
+            AddEditRecordEvent.ErrorShown -> {
+                _state.update { it.copy(errorMessage = null) }
+            }
+
+            AddEditRecordEvent.NavigateBackConsumed -> {
+                _state.update { it.copy(navigateBack = false) }
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // HANDLE RECORD TYPE CHANGE
+    // -------------------------------------------------------------------------
+
+    private fun handleRecordTypeChange(type: RecordType) {
         _state.update {
             it.copy(
-                description = text,
-                recordType = newRecordType,
-                cost = cost,
-                quantity = quantity,
-                pricePerUnit = pricePerUnit,
-                showCostDetails = newRecordType != RecordType.REMINDER,
-                showFuelTypeSelection = showFuelSelection,
-                selectedFuelType = selectedFuel
+                recordType = type,
+                showCostDetails = type == RecordType.FUEL_UP,
+                showFuelTypeSelection = type == RecordType.FUEL_UP,
+                isReminder = type == RecordType.REMINDER,
+                showReminderFields = type == RecordType.REMINDER,
+                isReminderSwitchLocked = type == RecordType.REMINDER
             )
         }
+        updateCategorization()
+        validateSave()
     }
 
-    private fun handleDateChange(newDate: Date) {
-        val isFuture = newDate.after(Date().startOfDay())
+    // -------------------------------------------------------------------------
+    // CATEGORIZER
+    // -------------------------------------------------------------------------
 
-        _state.update { currentState ->
-            currentState.copy(
-                date = newDate,
-                isReminder = if (isFuture) true else currentState.isReminder,
-                isReminderSwitchLocked = isFuture,
-                showReminderFields = isFuture || currentState.isReminder,
-                recordType = if (isFuture) RecordType.REMINDER else RecordType.EXPENSE
-            )
+    private fun updateCategorization() {
+        val s = _state.value
+
+        if (s.title.isBlank() && s.description.isBlank()) {
+            _state.update { it.copy(category = null) }
+            return
         }
+
+        val category: RecordCategory = categorizer(
+            title = s.title,
+            isReminder = s.recordType == RecordType.REMINDER,
+            description = s.description
+        )
+
+        _state.update { it.copy(category = category) }
     }
+
+    // -------------------------------------------------------------------------
+    // SUGGESTIONS (AUTOCOMPLETE)
+    // -------------------------------------------------------------------------
+
+    private fun updateSuggestions() {
+        val input = _state.value.title.lowercase()
+
+        val base = listOf(
+            "λάδια", "service", "φρένα", "μπουζί",
+            "air filter", "oil filter",
+            "gas", "fuel", "unleaded", "diesel",
+            "τροχοί", "λάστιχα", "αντισκωριακό"
+        )
+
+        val suggestions = base.filter {
+            input.isNotBlank() && it.contains(input)
+        }
+
+        _state.update { it.copy(suggestions = suggestions) }
+    }
+
+    // -------------------------------------------------------------------------
+    // VALIDATION
+    // -------------------------------------------------------------------------
+
+    private fun validateSave() {
+        val s = _state.value
+        val valid =
+            s.title.isNotBlank() &&
+                    s.dateText.isNotBlank()
+
+        _state.update { it.copy(isSaveEnabled = valid) }
+    }
+
+    // -------------------------------------------------------------------------
+    // SAVE
+    // -------------------------------------------------------------------------
 
     private fun saveRecord() {
         viewModelScope.launch {
-            val user = userPreferencesRepository.user.first()
-            val recordCount = userPreferencesRepository.recordCreationCount.first()
+            try {
+                val s = _state.value
 
-            if (!user.isTestMode) { // Bypass limits in test mode
-                if (user.status == UserStatus.FREE && recordCount >= 30) {
-                    _state.update { it.copy(shouldNavigateToSignup = true) }
-                    return@launch
-                }
+                val reminderOdoInt: Int? =
+                    s.reminderOdometer.toIntOrNull()
 
-                if (user.status == UserStatus.SIGNED_UP && user.proLevel == ProLevel.NONE && recordCount >= 150) {
-                    _state.update { it.copy(shouldNavigateToProMode = true) }
-                    return@launch
-                }
-            }
-
-            _state.value.let { s ->
-                if (s.vehicleId.isBlank()) { // Check against the state's vehicleId
-                    _state.update { it.copy(error = "Vehicle ID is missing.") }
-                    return@let
-                }
-                if (s.odometer.isBlank()) {
-                    _state.update { it.copy(error = "Τα χιλιόμετρα είναι υποχρεωτικά") }
-                    return@let
-                }
-
-                val recordToSave = Record(
-                    id = if (s.recordId == "new") UUID.randomUUID().toString() else s.recordId,
+                val record = Record(
+                    id = s.recordId ?: java.util.UUID.randomUUID().toString(),
                     vehicleId = s.vehicleId,
                     recordType = s.recordType,
-                    title = s.description.take(50),
-                    description = s.description,
+                    title = s.title,
+                    description = s.description.ifBlank { null },
                     date = s.date,
-                    odometer = s.odometer.toInt(),
-                    cost = if (s.recordType != RecordType.REMINDER) s.cost.toDoubleOrNull() else null,
-                    quantity = if (s.recordType == RecordType.FUEL_UP) s.quantity.toDoubleOrNull() else null,
-                    pricePerUnit = if (s.recordType == RecordType.FUEL_UP) s.pricePerUnit.toDoubleOrNull() else null,
-                    fuelType = if (s.recordType == RecordType.FUEL_UP) s.selectedFuelType else null,
+                    odometer = s.odometer.toIntOrNull() ?: 0,
+                    cost = s.cost.toDoubleOrNull(),
+                    quantity = s.quantity.toDoubleOrNull(),
+                    pricePerUnit = s.pricePerUnit.toDoubleOrNull(),
+                    fuelType = s.fuelTypeText.ifBlank { null },
                     isReminder = s.isReminder,
-                    reminderDate = if (s.isReminder) s.reminderDate else null,
-                    reminderOdometer = if (s.isReminder) s.reminderOdometer.toIntOrNull() else null,
-                    isCompleted = false
+                    reminderDate = s.reminderDate,
+                    // Record.reminderOdometer είναι Int, άρα:
+                    reminderOdometer = reminderOdoInt ?: 0,
+                    isCompleted = s.isCompleted
                 )
 
-                try {
-                    recordRepository.saveRecord(recordToSave)
-                    if (s.recordId == "new") {
-                        userPreferencesRepository.incrementRecordCreationCount()
-                    }
-                    _state.update { it.copy(error = null, isSaveSuccess = true) } // <-- ΣΗΜΑΝΤΙΚΗ ΑΛΛΑΓΗ: Ενημέρωσε το isSaveSuccess
-                } catch (e: Exception) {
-                    _state.update { it.copy(error = "Αποτυχία αποθήκευσης: ${e.message}") }
+
+                recordRepository.saveRecord(record)
+
+                _state.update { it.copy(navigateBack = true) }
+
+            } catch (e: Exception) {
+                _state.update {
+                    it.copy(errorMessage = "Σφάλμα κατά την αποθήκευση.")
                 }
             }
         }
-    }
-
-
-    private fun Date.startOfDay(): Date {
-        val calendar = Calendar.getInstance()
-        calendar.time = this
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
-        return calendar.time
-    }
-
-    private fun Double.roundTo(decimals: Int): Double {
-        val multiplier = 10.0.pow(decimals)
-        return (this * multiplier).roundToInt() / multiplier
     }
 }
