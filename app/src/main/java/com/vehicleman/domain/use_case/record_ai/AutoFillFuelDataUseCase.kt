@@ -1,104 +1,65 @@
 package com.vehicleman.domain.use_case.record_ai
 
 import javax.inject.Inject
-import kotlin.math.roundToInt
+import kotlin.math.round
 
 /**
- * Υπολογίζει έξυπνα τα πεδία καυσίμων:
+ * Use case για αυτόματο υπολογισμό των πεδίων καυσίμων.
  *
- * - ποσότητα lt
- * - κόστος €
- * - τιμή/lt
- * - περιγραφή
- * - KM από προηγούμενο refueling (αν δοθεί)
+ * Λογική:
+ * - Αν έχεις cost & liters → pricePerLiter = cost / liters
+ * - Αν έχεις cost & pricePerLiter → liters = cost / pricePerLiter
+ * - Αν έχεις liters & pricePerLiter → cost = liters * pricePerLiter
+ *
+ * Όλα στρογγυλοποιούνται σε 2 δεκαδικά (τύπου 29.09).
  */
 class AutoFillFuelDataUseCase @Inject constructor() {
 
-    data class FuelResult(
-        val liters: Double?,
-        val cost: Double?,
-        val pricePerLiter: Double?,
-        val fuelType: String?,
-        val description: String?
-    )
+    operator fun invoke(request: FuelAutofillRequest): FuelAutofillResult {
+        val known = listOf(
+            request.costEuro != null,
+            request.liters != null,
+            request.pricePerLiter != null
+        ).count { it }
 
-    operator fun invoke(
-        input: ParsedInput,
-        lastOdometer: Int?,
-        previousFuelOdometer: Int? // τελευταίο fuel_up πριν από αυτό
-    ): FuelResult {
-
-        var liters = input.detectedLiters
-        var cost = input.detectedEuroCost
-        var ppu = input.detectedPricePerLiter
-        var type = input.detectedFuelType
-
-        // -------------------------------------------------------------
-        // 1) Fuel type guess (αν δεν βρέθηκε από parsing)
-        // -------------------------------------------------------------
-        if (type == null) {
-            type = guessFuelType(input.normalized)
+        if (known != 2) {
+            // Δεν υπολογίζουμε τίποτα αν τα γνωστά δεν είναι ΑΚΡΙΒΩΣ δύο.
+            return FuelAutofillResult(
+                costEuro = request.costEuro,
+                liters = request.liters,
+                pricePerLiter = request.pricePerLiter,
+                fuelTypeHint = request.fuelTypeHint
+            )
         }
 
-        // -------------------------------------------------------------
-        // 2) Compute missing fields
-        // -------------------------------------------------------------
+        var cost = request.costEuro
+        var liters = request.liters
+        var price = request.pricePerLiter
 
-        // Case A: cost + ppu → compute liters
-        if (liters == null && cost != null && ppu != null && ppu > 0) {
-            liters = (cost / ppu)
+        if (cost != null && liters != null && price == null) {
+            // cost & liters → price
+            if (liters > 0.0) {
+                price = roundTo2(cost / liters)
+            }
+        } else if (cost != null && price != null && liters == null) {
+            // cost & price → liters
+            if (price > 0.0) {
+                liters = roundTo2(cost / price)
+            }
+        } else if (liters != null && price != null && cost == null) {
+            // liters & price → cost
+            cost = roundTo2(liters * price)
         }
 
-        // Case B: liters + ppu → compute cost
-        if (cost == null && liters != null && ppu != null) {
-            cost = liters * ppu
-        }
-
-        // Case C: liters + cost → compute ppu
-        if (ppu == null && liters != null && cost != null && liters > 0) {
-            ppu = cost / liters
-        }
-
-        // Round for UI neatness
-        liters = liters?.let { (it * 100).roundToInt() / 100.0 }
-        cost = cost?.let { (it * 100).roundToInt() / 100.0 }
-        ppu = ppu?.let { (it * 1000).roundToInt() / 1000.0 }
-
-        // -------------------------------------------------------------
-        // 3) Compute distance since last refuel (description)
-        // -------------------------------------------------------------
-        val rangeDescription = if (lastOdometer != null && previousFuelOdometer != null) {
-            val diff = lastOdometer - previousFuelOdometer
-            if (diff > 0) " — ${diff} km από το προηγούμενο γέμισμα" else ""
-        } else {
-            ""
-        }
-
-        val description = if (liters != null && ppu != null) {
-            "Ανεφοδιασμός: $liters lt @ $ppu €/lt$rangeDescription"
-        } else null
-
-        return FuelResult(
+        return FuelAutofillResult(
+            costEuro = cost,
             liters = liters,
-            cost = cost,
-            pricePerLiter = ppu,
-            fuelType = type,
-            description = description
+            pricePerLiter = price,
+            fuelTypeHint = request.fuelTypeHint
         )
     }
 
-    // ---------------------------------------------------------------------
-    // Guess fuel type from text
-    // ---------------------------------------------------------------------
-    private fun guessFuelType(text: String): String? {
-        return when {
-            "100" in text && ("ben" in text || "unleaded" in text) -> "unleaded_100"
-            "98" in text -> "unleaded_98"
-            "95" in text -> "unleaded_95"
-            "diesel" in text || "dizel" in text -> "diesel"
-            "lpg" in text || "ygraerio" in text -> "lpg"
-            "cng" in text -> "cng"
-            else -> null
-        }
+    private fun roundTo2(value: Double): Double {
+        return round(value * 100.0) / 100.0
     }
 }

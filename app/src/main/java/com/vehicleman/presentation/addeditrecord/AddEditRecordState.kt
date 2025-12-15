@@ -41,6 +41,8 @@ data class AddEditRecordState(
     val reminderOdometer: String = "",
     val isReminderSwitchLocked: Boolean = false,
     val showReminderFields: Boolean = false,
+    val costReminder: String = "",   // NEW FIELD
+
 
     // --- Dynamic UI logic ---
     val showCostDetails: Boolean = false,

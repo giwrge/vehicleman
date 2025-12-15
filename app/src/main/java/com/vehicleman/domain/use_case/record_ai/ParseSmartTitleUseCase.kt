@@ -1,173 +1,199 @@
 package com.vehicleman.domain.use_case.record_ai
 
 import java.text.Normalizer
-import java.text.SimpleDateFormat
-import java.util.*
-import kotlin.math.roundToInt
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
+import java.util.Locale
+import javax.inject.Inject
 
-class ParseSmartTitleUseCase {
+/**
+ * Use case που κάνει "έξυπνο" parsing του τίτλου:
+ *
+ * - Καθαρίζει ελληνικά/greeklish → normalized tokens
+ * - Αναγνωρίζει καύσιμα (benzini, diesel, 95, 100 κτλ.)
+ * - Βρίσκει ποσά σε €
+ * - Βρίσκει λίτρα (lt)
+ * - Βρίσκει τιμή €/lt (1.719, 1,719 κτλ.)
+ * - Βλέπει λέξεις για service, ασφάλεια, ΚΤΕΟ, λάστιχα κ.λπ.
+ * - Αναγνωρίζει ημερομηνίες (κυρίως μορφές dd/MM/yyyy και dd-MM-yyyy)
+ */
+class ParseSmartTitleUseCase @Inject constructor() {
 
-    private val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    private val euroRegex = Regex("""(\d+[.,]?\d*)\s*(e|€)""", RegexOption.IGNORE_CASE)
+    private val litersRegex = Regex("""(\d+[.,]?\d*)\s*(lt|λίτρα?)""", RegexOption.IGNORE_CASE)
+    private val pricePerLiterRegex = Regex("""(\d+[.,]\d{2,3})\s*(€/lt|/lt|ευρώ/lt)?""", RegexOption.IGNORE_CASE)
 
-    operator fun invoke(raw: String): ParsedInput {
-        if (raw.isBlank()) return ParsedInput(raw = raw)
+    // Πολύ basic date parsing: 12/12/2025, 12-12-2025 κ.λπ.
+    private val datePatterns = listOf(
+        DateTimeFormatter.ofPattern("d/M/yyyy"),
+        DateTimeFormatter.ofPattern("d-M-yyyy"),
+        DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+        DateTimeFormatter.ofPattern("dd-MM-yyyy")
+    )
 
-        val normalized = normalize(raw)
+    operator fun invoke(rawTitle: String, nowDate: LocalDate = LocalDate.now()): ParsedSmartTitle {
+        val normalized = normalize(rawTitle)
+        val tokens = normalized.split("\\s+".toRegex())
+            .filter { it.isNotBlank() }
 
-        val tokens = normalized.split(" ").filter { it.isNotBlank() }
+        val lower = normalized.lowercase(Locale.getDefault())
 
-        // --- DETECT FLAGS ---
-        val isFuel = detectFuel(tokens)
-        val isService = detectService(tokens)
-        val isTires = detectTires(tokens)
-        val isLegal = detectLegal(tokens)
-        val isEV = detectEV(tokens)
+        // --- Fuel detection ---
+        val fuelTypeHint = detectFuelType(lower)
 
-        // --- DETECT VALUES (fuel only) ---
-        val fuelType = detectFuelType(tokens)
-        val cost = detectCost(tokens)
-        val price = detectPrice(tokens)
-        val quantity = detectQuantity(tokens)
+        // --- Expense / service keywords ---
+        val (categoryHint, serviceItems) = detectCategoryAndServiceItems(lower)
 
-        // --- DETECT DATE ---
-        val parsedDate = detectDate(tokens)
-        val isFuture = parsedDate?.after(Date()) == true
+        // --- Amounts & fuel numbers ---
+        val costEuro = detectFirstDouble(euroRegex, lower)
+        val liters = detectFirstDouble(litersRegex, lower)
+        val pricePerLiter = detectFirstDouble(pricePerLiterRegex, lower)
 
-        // --- SERVICE ITEMS ---
-        val serviceItems = detectServiceParts(tokens)
+        // --- Date / reminder style detection ---
+        val detectedDate = detectDate(lower)
+        val isFutureDate = detectedDate?.isAfter(nowDate) == true
 
-        // --- REMINDER LOGIC ---
-        val isReminder =
-            isFuture || containsReminderKeywords(tokens)
+        val isFuelLike = fuelTypeHint != null || containsAny(lower, FUEL_KEYWORDS)
+        val isReminderLike = isFutureDate || containsAny(lower, REMINDER_KEYWORDS)
+        val isExpenseLike = !isFuelLike && (categoryHint != null || containsAny(lower, EXPENSE_KEYWORDS))
 
-        return ParsedInput(
-            raw = raw,
-            isFuel = isFuel,
-            isService = isService,
-            isTires = isTires,
-            isLegal = isLegal,
-            isEV = isEV,
-            isReminder = isReminder,
-            detectedFuelType = fuelType,
-            detectedQuantity = quantity,
-            detectedPrice = price,
-            detectedCost = cost,
+        return ParsedSmartTitle(
+            raw = rawTitle,
+            normalized = normalized,
+            tokens = tokens,
+            isFuelLike = isFuelLike,
+            isExpenseLike = isExpenseLike,
+            isReminderLike = isReminderLike,
+            categoryHint = categoryHint,
+            detectedFuelType = fuelTypeHint,
+            detectedLiters = liters,
+            detectedPricePerLiter = pricePerLiter,
+            detectedCostEuro = costEuro,
+            detectedGenericAmountEuro = costEuro, // προς το παρόν το ίδιο
             detectedServiceItems = serviceItems,
-            detectedDate = parsedDate,
-            detectedFuture = isFuture
+            detectedDate = detectedDate,
+            isFutureDate = isFutureDate
         )
     }
 
-    // ----------------------------------------------------------
-    // NORMALIZATION
-    // ----------------------------------------------------------
+    // ----------------- Helpers -----------------
 
-    private fun normalize(text: String): String {
-        val noAccents = Normalizer.normalize(text, Normalizer.Form.NFD)
-            .replace("\\p{M}".toRegex(), "")
-            .lowercase(Locale.getDefault())
+    private fun normalize(input: String): String {
+        val noAccents = Normalizer.normalize(input, Normalizer.Form.NFD)
+            .replace("\\p{InCombiningDiacriticalMarks}+".toRegex(), "")
 
         return noAccents
-            .replace("[^a-z0-9α-ω. ]".toRegex(), " ")
-            .replace("\\s+".toRegex(), " ")
+            .replace("€", "e")
+            .replace(",", ",") // κρατάμε , όπως είναι, θα το χειριστούμε στο regex
             .trim()
     }
 
-    // ----------------------------------------------------------
-    // DETECT FLAGS
-    // ----------------------------------------------------------
-
-    private fun detectFuel(tokens: List<String>): Boolean {
-        val fuelWords = listOf(
-            "fuel","gas","gasoline","petrol","unleaded",
-            "benzini","βενζινη","diesel","dizel","υγραεριο","lpg","cng","95","100"
-        )
-        return tokens.any { it in fuelWords }
-    }
-
-    private fun detectService(tokens: List<String>): Boolean {
-        val serviceWords = listOf("service","servis","λαδια","ladia","μπουζι","bouzi","filtra","φιλτρα")
-        return tokens.any { it in serviceWords }
-    }
-
-    private fun detectTires(tokens: List<String>): Boolean {
-        val keywords = listOf("tires","tyres","ελαστικα","lastixa","zantes")
-        return tokens.any { it in keywords }
-    }
-
-    private fun detectLegal(tokens: List<String>): Boolean {
-        val keywords = listOf("τελη","teli","ασφαλεια","insurance","diodia")
-        return tokens.any { it in keywords }
-    }
-
-    private fun detectEV(tokens: List<String>): Boolean {
-        val keywords = listOf("charge","ev","φορτιση")
-        return tokens.any { it in keywords }
-    }
-
-    private fun containsReminderKeywords(tokens: List<String>): Boolean {
-        val k = listOf("kteo","ασφαλεια","τελη","mot","service","ραντεβου","appointment")
-        return tokens.any { it in k }
-    }
-
-    // ----------------------------------------------------------
-    // FUEL DETAILS
-    // ----------------------------------------------------------
-
-    private fun detectFuelType(tokens: List<String>): String? {
+    private fun detectFuelType(lower: String): FuelTypeHint? {
         return when {
-            tokens.contains("100") -> "unleaded_100"
-            tokens.contains("98") -> "unleaded_98"
-            tokens.contains("95") -> "unleaded_95"
-            tokens.contains("diesel") || tokens.contains("dizel") || tokens.contains("πετρελαιο") -> "diesel"
-            tokens.contains("lpg") || tokens.contains("υγραεριο") -> "lpg"
+            containsAny(lower, listOf("100", "100ara", "unleaded 100")) &&
+                    containsAny(lower, FUEL_KEYWORDS) -> FuelTypeHint.UNLEADED_100
+
+            containsAny(lower, listOf("95", "95ara", "unleaded 95")) &&
+                    containsAny(lower, FUEL_KEYWORDS) -> FuelTypeHint.UNLEADED_95
+
+            containsAny(lower, listOf("diesel", "πετρελ", "gazol")) -> FuelTypeHint.DIESEL
+            containsAny(lower, listOf("lpg", "υγραερι", "gas")) -> FuelTypeHint.LPG
+            containsAny(lower, listOf("cng", "φυσικο αεριο")) -> FuelTypeHint.CNG
+            containsAny(lower, listOf("recharge", "φορτιση", "φορτιση", "ηλεκτρ", "kw")) -> FuelTypeHint.ELECTRIC
+
+            containsAny(lower, FUEL_KEYWORDS) -> FuelTypeHint.UNLEADED_95
             else -> null
         }
     }
 
-    private fun detectCost(tokens: List<String>): Double? {
-        val euroToken = tokens.find { it.endsWith("e") || it.endsWith("€") }
-        return euroToken?.replace("e","")?.replace("€","")?.toDoubleOrNull()
+    private fun detectCategoryAndServiceItems(lower: String): Pair<CategoryHint?, List<String>> {
+        val items = mutableListOf<String>()
+        var hint: CategoryHint? = null
+
+        if (containsAny(lower, SERVICE_KEYWORDS)) {
+            hint = CategoryHint.SERVICE
+            if (lower.contains("λαδια") || lower.contains("ladia")) items += "Λάδια"
+            if (lower.contains("φιλτρο") || lower.contains("filtr")) items += "Φίλτρο"
+            if (lower.contains("μπουζ") || lower.contains("bouz")) items += "Μπουζί"
+            if (lower.contains("φιλτρο αερο") || lower.contains("air filter")) items += "Φίλτρο αέρος"
+        }
+
+        if (containsAny(lower, TIRE_KEYWORDS)) {
+            hint = CategoryHint.TIRES
+        }
+
+        if (containsAny(lower, INSURANCE_KEYWORDS)) {
+            hint = CategoryHint.INSURANCE
+        }
+
+        if (containsAny(lower, TAX_KEYWORDS)) {
+            hint = CategoryHint.TAXES
+        }
+
+        if (containsAny(lower, WASH_KEYWORDS)) {
+            hint = CategoryHint.WASH
+        }
+
+        return hint to items
     }
 
-    private fun detectPrice(tokens: List<String>): Double? {
-        return tokens.firstOrNull { it.contains('.') && it.length <= 6 }
-            ?.toDoubleOrNull()
+    private fun detectFirstDouble(regex: Regex, text: String): Double? {
+        val match = regex.find(text) ?: return null
+        val rawNumber = match.groupValues[1]
+        val normalizedNumber = rawNumber.replace(",", ".")
+        return normalizedNumber.toDoubleOrNull()
     }
 
-    private fun detectQuantity(tokens: List<String>): Double? {
-        val ltToken = tokens.find { it.endsWith("lt") || it.endsWith("l") }
-        return ltToken?.replace("lt","")?.replace("l","")?.toDoubleOrNull()
-    }
+    private fun detectDate(text: String): LocalDate? {
+        // βρίσκουμε "κομμάτια" σαν 12/12/2025 ή 12-12-2025
+        val dateCandidateRegex = Regex("""\b\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b""")
+        val candidate = dateCandidateRegex.find(text)?.value ?: return null
 
-    // ----------------------------------------------------------
-    // DATE PARSER
-    // ----------------------------------------------------------
-
-    private fun detectDate(tokens: List<String>): Date? {
-        tokens.forEach { t ->
-            if (t.count { it == '/' } == 2) {
-                return try { dateFormat.parse(t) } catch (e: Exception) { null }
+        for (pattern in datePatterns) {
+            try {
+                return LocalDate.parse(candidate, pattern)
+            } catch (ignored: DateTimeParseException) {
             }
         }
         return null
     }
 
-    // ----------------------------------------------------------
-    // SERVICE PARTS
-    // ----------------------------------------------------------
+    private fun containsAny(text: String, keywords: List<String>): Boolean {
+        return keywords.any { text.contains(it, ignoreCase = true) }
+    }
 
-    private fun detectServiceParts(tokens: List<String>): List<String> {
-        val mapping = mapOf(
-            "λαδια" to "Oil Change",
-            "ladia" to "Oil Change",
-            "μπουζι" to "Spark Plugs",
-            "bouzi" to "Spark Plugs",
-            "filtra" to "Filters",
-            "φιλτρο" to "Filters",
-            "air" to "Air Filter",
-            "cabin" to "Cabin Filter"
+    companion object {
+        private val FUEL_KEYWORDS = listOf(
+            "benzini", "benzin", "βενζιν", "fuel", "gasolina", "unleaded", "95", "100", "full tank"
         )
-        return tokens.mapNotNull { mapping[it] }
+
+        private val SERVICE_KEYWORDS = listOf(
+            "service", "σερβις", "λαδια", "ladia", "filtr", "φιλτρο", "bouzi", "μπουζι"
+        )
+
+        private val TIRE_KEYWORDS = listOf(
+            "λαστιχα", "lastixa", "ελαστικ", "pneumat", "tyre", "tire"
+        )
+
+        private val INSURANCE_KEYWORDS = listOf(
+            "ασφαλεια", "asfal", "insurance"
+        )
+
+        private val TAX_KEYWORDS = listOf(
+            "τελη", "teli", "κυκλοφοριας", "road tax"
+        )
+
+        private val WASH_KEYWORDS = listOf(
+            "πλυσιμο", "plisimo", "car wash", "πλυντηριο"
+        )
+
+        private val REMINDER_KEYWORDS = listOf(
+            "kteo", "κτεο", "service", "ασφαλεια", "τελη", "ελεγχος", "inspection", "υπενθυμιση"
+        )
+
+        private val EXPENSE_KEYWORDS = listOf(
+            "service", "σερβις", "λαστιχα", "ασφαλεια", "φιλτρο", "μπουζι", "πλυσιμο", "πισω φρεν"
+        )
     }
 }

@@ -33,6 +33,14 @@ interface RecordDao {
     @Query("DELETE FROM records")
     suspend fun deleteAllRecords()
 
+    @Query("""
+    SELECT * FROM records
+    WHERE vehicleId = :vehicleId AND recordType = 'FUEL_UP'
+    ORDER BY date DESC LIMIT 1
+""")
+    suspend fun getLastFuelUpRecord(vehicleId: String): RecordEntity?
+
+
     // Παίρνει μόνο τις ενεργές υπενθυμίσεις
     @Query("SELECT * FROM records WHERE vehicleId = :vehicleId AND isReminder = 1 AND isCompleted = 0 ORDER BY reminderDate ASC")
     fun getActiveReminders(vehicleId: String): Flow<List<RecordEntity>>

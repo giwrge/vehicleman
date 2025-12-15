@@ -23,4 +23,7 @@ interface RecordRepository {
     suspend fun deleteAllRecords()
     suspend fun insertAllRecords(records: List<Record>)
 
+    suspend fun getLastFuelUpRecord(vehicleId: String): Record?
+
+
 }

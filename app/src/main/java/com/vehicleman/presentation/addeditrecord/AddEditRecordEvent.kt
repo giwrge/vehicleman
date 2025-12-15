@@ -30,6 +30,8 @@ sealed class AddEditRecordEvent {
     data class ReminderDateTextChanged(val value: String) : AddEditRecordEvent()
     data class ReminderDateChanged(val value: Date) : AddEditRecordEvent()
     data class ReminderOdometerChanged(val value: String) : AddEditRecordEvent()
+
+    data class CostReminderChanged(val value: String) : AddEditRecordEvent()
     object ToggleCompleted : AddEditRecordEvent()
 
     // Switch ON/OFF (but locked if auto-generated)

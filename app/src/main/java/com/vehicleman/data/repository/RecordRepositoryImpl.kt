@@ -44,6 +44,11 @@ class RecordRepositoryImpl @Inject constructor(
         return recordDao.getLatestOdometer(vehicleId)
     }
 
+    override suspend fun getLastFuelUpRecord(vehicleId: String): Record? {
+        return recordDao.getLastFuelUpRecord(vehicleId)?.toRecord()
+    }
+
+
     override suspend fun getAllRecordsList(): List<Record> {
         return recordDao.getAllRecordsList().map { it.toRecord() }
     }

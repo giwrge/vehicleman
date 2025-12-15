@@ -22,7 +22,9 @@ data class Record(
     val isReminder: Boolean,
     val reminderDate: Date?,
     val reminderOdometer: Int?,
-    val isCompleted: Boolean = false
+    val isCompleted: Boolean = false,
+    val costReminder: Double?
+
 )
 enum class RecordType {
     EXPENSE, // Κανονική Δαπάνη (π.χ. σέρβις, λάστιχα)

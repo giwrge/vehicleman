@@ -1,61 +1,37 @@
 package com.vehicleman.domain.use_case.record_ai
 
-import com.vehicleman.domain.model.RecordType
 import javax.inject.Inject
 
+/**
+ * Use case που μετατρέπει το ParsedSmartTitle σε "τι είδους record μοιάζει να είναι".
+ *
+ * Αυτό ΔΕΝ γνωρίζει τα δικά σου domain enums.
+ * Απλά βγάζει ένα RecordTypeHint που μπορείς να χαρτογραφήσεις όπου θέλεις.
+ */
 class PredictRecordTypeFromParsedDataUseCase @Inject constructor() {
 
-    /**
-     * Παίρνουμε το ParsedInput και αποφασίζουμε:
-     *  - EXPENSE (service, επισκευές, γενικά έξοδα)
-     *  - FUEL_UP (όταν αφορά καύσιμα ή μοιάζει με ανεφοδιασμό)
-     *  - REMINDER (όταν αφορά μελλοντική ημερομηνία ή keywords)
-     */
-    operator fun invoke(input: ParsedInput): RecordType {
-
-        // -----------------------------------------------------
-        // 1) ΑΝ ΥΠΑΡΧΕΙ ΜΕΛΛΟΝΤΙΚΗ ΗΜΕΡΟΜΗΝΙΑ → είναι REMINDER
-        // -----------------------------------------------------
-        if (input.containsFutureDate) {
-            return RecordType.REMINDER
+    operator fun invoke(parsed: ParsedSmartTitle): RecordTypeHint {
+        // 1) Αν είναι future date ή έχει reminder-style keywords → REMINDER
+        if (parsed.isFutureDate || parsed.isReminderLike) {
+            return RecordTypeHint.REMINDER
         }
 
-        // -----------------------------------------------------
-        // 2) Αν βρήκαμε keywords υπενθύμισης στο title
-        // -----------------------------------------------------
-        if (input.reminderKeywords) {
-            return RecordType.REMINDER
-        }
-
-        // -----------------------------------------------------
-        // 3) Αν αναγνωρίστηκαν keywords καυσίμων → FUEL_UP
-        // -----------------------------------------------------
-        if (input.fuelKeywords) {
-            return RecordType.FUEL_UP
-        }
-
-        // -----------------------------------------------------
-        // 4) Fuel-like pattern ("benzini 50e 1.78", "5lt diesel")
-        // -----------------------------------------------------
-        if (input.detectedLiters != null ||
-            input.detectedPricePerLiter != null ||
-            input.detectedFuelType != null
+        // 2) Αν μοιάζει με fuel ή έχουμε fuelType/lt/€/lt → FUEL
+        if (parsed.isFuelLike ||
+            parsed.detectedFuelType != null ||
+            (parsed.detectedLiters != null && parsed.detectedPricePerLiter != null) ||
+            (parsed.detectedLiters != null && parsed.detectedCostEuro != null) ||
+            (parsed.detectedCostEuro != null && parsed.detectedPricePerLiter != null)
         ) {
-            return RecordType.FUEL_UP
+            return RecordTypeHint.FUEL
         }
 
-        // -----------------------------------------------------
-        // 5) Αν υπάρχουν service keywords → EXPENSE
-        // -----------------------------------------------------
-        if (input.serviceKeywords) {
-            return RecordType.EXPENSE
+        // 3) Αν μοιάζει με expense ή έχει κάποια categoryHint → EXPENSE
+        if (parsed.isExpenseLike || parsed.categoryHint != null) {
+            return RecordTypeHint.EXPENSE
         }
 
-        // -----------------------------------------------------
-        // 6) Αν ΔΕΝ υπάρχουν keywords → fallback:
-        //    Αν υπάρχει past date → EXPENSE
-        //    Αν δεν υπάρχει τίποτα αναγνωρίσιμο → EXPENSE (default)
-        // -----------------------------------------------------
-        return RecordType.EXPENSE
+        // 4) Δεν είμαστε σίγουροι → UNKNOWN
+        return RecordTypeHint.UNKNOWN
     }
 }
