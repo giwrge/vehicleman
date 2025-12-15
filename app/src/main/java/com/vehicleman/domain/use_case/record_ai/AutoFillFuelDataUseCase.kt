@@ -5,7 +5,6 @@ import kotlin.math.round
 
 /**
  * Use case για αυτόματο υπολογισμό των πεδίων καυσίμων.
- *
  * Λογική:
  * - Αν έχεις cost & liters → pricePerLiter = cost / liters
  * - Αν έχεις cost & pricePerLiter → liters = cost / pricePerLiter

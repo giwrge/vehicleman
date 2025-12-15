@@ -4,6 +4,9 @@ import com.vehicleman.domain.model.Record
 import com.vehicleman.domain.repositories.RecordRepository
 import javax.inject.Inject
 
+/* γφθρ */
+
+
 class GetLastFuelUpRecord @Inject constructor(
     private val repository: RecordRepository
 ) {

@@ -4,7 +4,6 @@ import javax.inject.Inject
 
 /**
  * Use case που μετατρέπει το ParsedSmartTitle σε "τι είδους record μοιάζει να είναι".
- *
  * Αυτό ΔΕΝ γνωρίζει τα δικά σου domain enums.
  * Απλά βγάζει ένα RecordTypeHint που μπορείς να χαρτογραφήσεις όπου θέλεις.
  */

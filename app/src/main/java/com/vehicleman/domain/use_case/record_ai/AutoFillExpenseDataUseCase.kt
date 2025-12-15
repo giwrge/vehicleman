@@ -5,7 +5,6 @@ import javax.inject.Inject
 /**
  * Αυτό το use case δημιουργεί έξυπνη περιγραφή και αρχικοποίηση πεδίων
  * για EXPENSE-type εγγραφές (service, λάστιχα, πλύσιμο, ασφάλεια κτλ.)
- *
  * Δεν γνωρίζει τίποτα για RecordEntity/Domain – επιστρέφει καθαρά δεδομένα.
  */
 class AutoFillExpenseDataUseCase @Inject constructor() {

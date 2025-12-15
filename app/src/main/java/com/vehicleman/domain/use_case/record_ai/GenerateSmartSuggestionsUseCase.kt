@@ -5,13 +5,11 @@ import kotlin.math.min
 
 /**
  * Παράγει "έξυπνες" προτάσεις για τον τίτλο στο AddEditRecordScreen.
- *
  * Συνδυάζει:
  *  - το κείμενο του χρήστη (query)
  *  - παλιές καταχωρήσεις (recentTitles / recentDescriptions)
  *  - domainKeywords (dictionary)
  *  - fuzzy matching score
- *
  * Το ViewModel θα φιλτράρει ποιο suggestion θα κάνει apply όταν γίνει TAP.
  */
 class GenerateSmartSuggestionsUseCase @Inject constructor() {

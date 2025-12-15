@@ -80,7 +80,6 @@ enum class FuelTypeHint {
 /**
  * Αίτημα για AutoFillFuelDataUseCase:
  * Δίνεις ό,τι έχεις (από UI ή από parser) και υπολογίζει το *ένα* που λείπει.
- *
  * Κανόνας:
  * - Αν είναι γνωστά ΑΚΡΙΒΩΣ δύο από costEuro / liters / pricePerLiter,
  *   τότε το use case υπολογίζει το τρίτο.

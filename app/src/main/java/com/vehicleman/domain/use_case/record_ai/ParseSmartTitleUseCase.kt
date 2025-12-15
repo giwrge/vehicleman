@@ -9,7 +9,6 @@ import javax.inject.Inject
 
 /**
  * Use case που κάνει "έξυπνο" parsing του τίτλου:
- *
  * - Καθαρίζει ελληνικά/greeklish → normalized tokens
  * - Αναγνωρίζει καύσιμα (benzini, diesel, 95, 100 κτλ.)
  * - Βρίσκει ποσά σε €
@@ -18,6 +17,9 @@ import javax.inject.Inject
  * - Βλέπει λέξεις για service, ασφάλεια, ΚΤΕΟ, λάστιχα κ.λπ.
  * - Αναγνωρίζει ημερομηνίες (κυρίως μορφές dd/MM/yyyy και dd-MM-yyyy)
  */
+
+
+
 class ParseSmartTitleUseCase @Inject constructor() {
 
     private val euroRegex = Regex("""(\d+[.,]?\d*)\s*(e|€)""", RegexOption.IGNORE_CASE)

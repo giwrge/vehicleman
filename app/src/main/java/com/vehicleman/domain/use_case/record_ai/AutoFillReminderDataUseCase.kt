@@ -5,11 +5,9 @@ import javax.inject.Inject
 
 /**
  * Συμπληρώνει αυτόματα πεδία υπενθύμισης:
- *
  * - ημερομηνία
  * - km υπενθύμισης
  * - περιγραφή
- *
  * Βασίζεται στα στοιχεία του parser + στο "τελευταίο οδόμετρο" του οχήματος.
  */
 class AutoFillReminderDataUseCase @Inject constructor() {
