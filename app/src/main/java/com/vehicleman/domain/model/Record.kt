@@ -23,7 +23,7 @@ data class Record(
     val reminderDate: Date?,
     val reminderOdometer: Int?,
     val isCompleted: Boolean = false,
-    val costReminder: Double?
+    val costReminder: Double? = null
 
 )
 enum class RecordType {

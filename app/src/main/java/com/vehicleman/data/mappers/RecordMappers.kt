@@ -25,6 +25,7 @@ fun RecordEntity.toRecord(): Record {
         isReminder = isReminder,
         reminderDate = reminderDate,
         reminderOdometer = reminderOdometer,
+        costReminder = costReminder,
         isCompleted = isCompleted
     )
 }
@@ -45,6 +46,7 @@ fun Record.toRecordEntity(): RecordEntity {
         isReminder = isReminder,
         reminderDate = reminderDate,
         reminderOdometer = reminderOdometer,
+        costReminder = costReminder,
         isCompleted = isCompleted
     )
 }

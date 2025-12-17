@@ -28,5 +28,7 @@ data class RecordEntity(
     val reminderDate: Date?, // Nullable
     val reminderOdometer: Int?, // Nullable
 
-    val isCompleted: Boolean // π.χ. για να μαρκάρεις ένα reminder ως ολοκληρωμένο
+    val isCompleted: Boolean, // π.χ. για να μαρκάρεις ένα reminder ως ολοκληρωμένο
+
+    val costReminder: Double? = null
 )
