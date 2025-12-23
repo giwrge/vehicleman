@@ -23,8 +23,9 @@ import com.vehicleman.domain.use_case.record_ai.PredictRecordTypeFromParsedDataU
 import com.vehicleman.domain.use_case.record_ai.RecordTypeHint
 import com.vehicleman.domain.use_case.record_ai.ReminderAutofillRequest
 import com.vehicleman.domain.use_case.record_ai.ReminderAutofillResult
-import com.vehicleman.domain.use_case.record_ai.SuggestionsRequest
 import com.vehicleman.domain.use_case.record_ai.RecentRecordSuggestion
+import com.vehicleman.domain.use_case.record_ai.SuggestionSource
+import com.vehicleman.domain.use_case.record_ai.SuggestionsRequest
 import com.vehicleman.domain.use_case.record_ai.cleanedText
 import com.vehicleman.domain.use_case.recordcategorizer.RecordSynonymDictionary
 import com.vehicleman.domain.use_case.recordcategorizer.RecordSynonymNormalizer
@@ -182,6 +183,92 @@ class AddEditRecordViewModel @Inject constructor(
             updateCategorization()
         }
     }
+    // -------------------------------------------------------------------------
+    // LOAD RECENT RECORD από το PILL
+    // -------------------------------------------------------------------------
+
+    private fun applyRecentRecordAutofill(template: Record) {
+        // 1) Γέμισε state από το template (χωρίς να αλλάξεις vehicleId / recordId του screen)
+        _state.update { old ->
+            old.copy(
+                // κρατάμε το current recordId (new ή existing), ΔΕΝ το κάνουμε overwrite
+                recordType = template.recordType,
+
+                title = template.title,
+                description = template.description.orEmpty(),
+
+                // date: εδώ προτείνω να ΜΗΝ αλλάζεις τη date του user (εκτός αν το θες).
+                // Αν το θες να γίνεται copy: βάλε date = template.date και dateText = format(template.date)
+                // Για ultra behavior συνήθως κρατάμε την τρέχουσα date που έχει επιλέξει ο χρήστης.
+
+                odometer = template.odometer.toString(),
+
+                cost = template.cost?.toString().orEmpty(),
+                quantity = template.quantity?.toString().orEmpty(),
+                pricePerUnit = template.pricePerUnit?.toString().orEmpty(),
+
+                fuelTypeText = template.fuelType.orEmpty(),
+
+                isReminder = template.recordType == RecordType.REMINDER,
+                showReminderFields = template.recordType == RecordType.REMINDER,
+                isReminderSwitchLocked = template.recordType == RecordType.REMINDER,
+
+                reminderDate = template.reminderDate,
+                reminderDateText = template.reminderDate?.let { dateFormat.format(it) }.orEmpty(),
+                reminderOdometer = template.reminderOdometer?.toString().orEmpty(),
+                costReminder = template.costReminder?.toString().orEmpty(),
+
+                showCostDetails = template.recordType == RecordType.FUEL_UP,
+                showFuelTypeSelection = template.recordType == RecordType.FUEL_UP,
+            )
+        }
+
+        // 2) Αν είναι FUEL_UP: κάνε ultra++ recalc (async)
+        if (template.recordType == RecordType.FUEL_UP) {
+            viewModelScope.launch {
+                recalcFuelUpUltraDescription()
+            }
+        } else {
+            // Για EXPENSE/REMINDER απλά κάνε re-categorize + validation
+            updateCategorization()
+            validateSave()
+        }
+    }
+    // -------------------------------------------------------------------------
+    // CALCULATE KM FROM LAST FUEL
+    // -------------------------------------------------------------------------
+    private suspend fun recalcFuelUpUltraDescription() {
+        val s = _state.value
+
+        val currentOdo = s.odometer.toIntOrNull()
+
+        // Τελευταίο fuel record (οποιοδήποτε καύσιμο)
+        val lastFuelRecord = getLastFuelUpRecord(s.vehicleId)
+        val lastFuelOdo = lastFuelRecord?.odometer
+
+        val kmSinceLastFuel = if (currentOdo != null && lastFuelOdo != null && currentOdo > lastFuelOdo) {
+            currentOdo - lastFuelOdo
+        } else {
+            null
+        }
+
+        val autoDescription = buildString {
+            if (kmSinceLastFuel != null) {
+                append("Διαδρομή από την προηγούμενη φορά που έβαλες καύσιμο: $kmSinceLastFuel km")
+            } else {
+                // Αν δεν βρούμε προηγούμενο ή αν είναι μικρότερο/ίδιο odometer
+                append("Καταχώρηση καυσίμου")
+            }
+        }
+
+        _state.update { old ->
+            old.copy(description = autoDescription)
+        }
+
+        updateCategorization()
+        validateSave()
+    }
+
 
     // -------------------------------------------------------------------------
     // INTELLIGENT DATE HANDLING (future date ⇒ reminder)
@@ -291,9 +378,48 @@ class AddEditRecordViewModel @Inject constructor(
             is AddEditRecordEvent.RecordTypeChanged -> handleRecordTypeChange(event.value)
 
             is AddEditRecordEvent.SuggestionClicked -> {
-                applySuggestion(event.item)
-                validateSave()
+                val item = event.item
+
+                when (item.source) {
+                    SuggestionSource.RECENT_RECORD -> {
+                        val id = item.recordId
+                        if (id.isNullOrBlank()) {
+                            _state.update { it.copy(errorMessage = "Το RECENT suggestion δεν έχει recordId.") }
+                        } else {
+                            viewModelScope.launch {
+                                val record = recordRepository.getRecordById(id)
+                                if (record != null) {
+                                    applyRecentRecordAutofill(record)
+                                } else {
+                                    _state.update { it.copy(errorMessage = "Δεν βρέθηκε το template record.") }
+                                }
+                            }
+                        }
+                    }
+
+                    SuggestionSource.DOMAIN_KEYWORD -> {
+                        val current = _state.value.title
+                        val newTitle =
+                            if (current.isBlank()) item.text else (current.trimEnd() + " " + item.text).trim()
+
+                        _state.update { it.copy(title = newTitle) }
+                        processIntelligentTitle(newTitle)
+                        validateSave()
+                    }
+
+                    else -> {
+                        // ✅ για ό,τι άλλο source έχεις (π.χ. AI, FAVORITE, etc.)
+                        val current = _state.value.title
+                        val newTitle =
+                            if (current.isBlank()) item.text else (current.trimEnd() + " " + item.text).trim()
+
+                        _state.update { it.copy(title = newTitle) }
+                        processIntelligentTitle(newTitle)
+                        validateSave()
+                    }
+                }
             }
+
 
 
             is AddEditRecordEvent.ToggleReminder -> {
@@ -589,12 +715,12 @@ class AddEditRecordViewModel @Inject constructor(
             return
         }
 
-        val recent = recentRecords.map {
+        val recent = recentRecords.map { r ->
             RecentRecordSuggestion(
-                recordId = it.id,
-                title = it.title,
-                description = it.description,
-                date = it.date
+                recordId = r.id,
+                title = r.title,
+                description = r.description,
+                date = r.date
             )
         }
 
