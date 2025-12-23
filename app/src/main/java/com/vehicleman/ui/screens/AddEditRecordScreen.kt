@@ -38,6 +38,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.vehicleman.domain.model.RecordType
@@ -45,6 +54,9 @@ import com.vehicleman.domain.model.category.RecordCategory
 import com.vehicleman.presentation.addeditrecord.AddEditRecordEvent
 import com.vehicleman.presentation.addeditrecord.AddEditRecordViewModel
 import com.vehicleman.presentation.record.mapCategoryToIcon
+import com.vehicleman.domain.use_case.record_ai.SuggestionItem
+import com.vehicleman.domain.use_case.record_ai.SuggestionSource
+import com.vehicleman.ui.screens.components.SuggestionPill
 import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -195,35 +207,44 @@ fun AddEditRecordScreen(
                 // ---------------------------------------------------------------
                 // SUGGESTIONS - σειρές (όχι buttons)
                 // ---------------------------------------------------------------
+
                 if (state.suggestions.isNotEmpty()) {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        state.suggestions.take(8).forEach { suggestionText ->
+                        state.suggestions.take(8).forEach { item ->
                             Surface(
                                 tonalElevation = 2.dp,
+                                shape = MaterialTheme.shapes.medium,
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
                                         viewModel.onEvent(
-                                            AddEditRecordEvent.SuggestionClicked(suggestionText)
+                                            AddEditRecordEvent.SuggestionClicked(item)
                                         )
                                     }
                             ) {
-                                Text(
-                                    text = suggestionText,
-                                    modifier = Modifier.padding(10.dp),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // ---- Text (left)
+                                    Text(
+                                        text = item.text,
+                                        modifier = Modifier.weight(1f),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+
+                                    // ---- Pill (right)
+                                    SuggestionPill(source = item.source)
+                                }
                             }
                         }
                     }
                 }
-
-                // Από εδώ και κάτω εμφανίζονται οι φόρμες ΜΟΝΟ αν έχει γραφτεί τίτλος
-                if (state.title.isNotBlank()) {
-
                     // -----------------------------------------------------------
                     // Km (μόνο για Expense / Fuel)
                     // -----------------------------------------------------------
@@ -378,6 +399,33 @@ fun AddEditRecordScreen(
             }
         }
     }
+
+@Composable
+private fun SuggestionPill(source: SuggestionSource) {
+    val (text, bgColor, textColor) = when (source) {
+        SuggestionSource.RECENT_RECORD -> Triple(
+            "RECENT",
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+            MaterialTheme.colorScheme.primary
+        )
+        SuggestionSource.DOMAIN_KEYWORD -> Triple(
+            "SMART",
+            MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f),
+            MaterialTheme.colorScheme.secondary
+        )
+    }
+
+    Surface(
+        color = bgColor,
+        shape = MaterialTheme.shapes.small
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
+            color = textColor
+        )
+    }
 }
 
 @Composable
@@ -401,3 +449,4 @@ private fun CategoryPreview(category: RecordCategory) {
         )
     }
 }
+

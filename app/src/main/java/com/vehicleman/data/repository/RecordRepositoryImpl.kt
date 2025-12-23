@@ -17,7 +17,8 @@ class RecordRepositoryImpl @Inject constructor(
 ) : RecordRepository {
 
     override fun getRecordsForVehicle(vehicleId: String): Flow<List<Record>> {
-        return recordDao.getRecordsForVehicle(vehicleId).map { list -> list.map(RecordEntity::toRecord) }
+        return recordDao.getRecordsForVehicle(vehicleId)
+            .map { list -> list.map(RecordEntity::toRecord) }
     }
 
     override suspend fun getRecordsByVehicle(vehicleId: String): List<Record> {
@@ -47,7 +48,6 @@ class RecordRepositoryImpl @Inject constructor(
     override suspend fun getLastFuelUpRecord(vehicleId: String): Record? {
         return recordDao.getLastFuelUpRecord(vehicleId)?.toRecord()
     }
-
 
     override suspend fun getAllRecordsList(): List<Record> {
         return recordDao.getAllRecordsList().map { it.toRecord() }

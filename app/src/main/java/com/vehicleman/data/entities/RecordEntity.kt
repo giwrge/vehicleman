@@ -4,31 +4,29 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.util.Date
 
-@Entity(tableName = "records") // Όρισε το όνομα του πίνακα
+@Entity(tableName = "records")
 data class RecordEntity(
     @PrimaryKey
     val id: String,
     val vehicleId: String,
 
-    val recordType: String, // "EXPENSE", "REMINDER", "FUEL_UP" - Πολύ σημαντικό!
+    val recordType: String, // "EXPENSE", "REMINDER", "FUEL_UP"
     val title: String,
-    val description: String?, // Καλύτερα nullable αν μπορεί να λείπει
+    val description: String?,
 
     val date: Date,
     val odometer: Int,
 
-    // Πεδία που αφορούν κυρίως τα Expenses
-    val cost: Double?, // Nullable γιατί τα Reminders δεν έχουν κόστος
-    val quantity: Double?, // Nullable, αφορά μόνο τα Fuel-ups
-    val pricePerUnit: Double?, // Nullable, αφορά μόνο τα Fuel-ups
-    val fuelType: String?, // To store the specific fuel type for a FUEL_UP
+    // Expense / Fuel fields
+    val cost: Double?,
+    val quantity: Double?,
+    val pricePerUnit: Double?,
+    val fuelType: String?,
 
-    // Πεδία που αφορούν τα Reminders
+    // Reminder fields
     val isReminder: Boolean,
-    val reminderDate: Date?, // Nullable
-    val reminderOdometer: Int?, // Nullable
-
-    val isCompleted: Boolean, // π.χ. για να μαρκάρεις ένα reminder ως ολοκληρωμένο
-
-    val costReminder: Double? = null
+    val reminderDate: Date?,
+    val reminderOdometer: Int?,
+    val costReminder: Double?,          // ✅ NEW (nullable)
+    val isCompleted: Boolean
 )

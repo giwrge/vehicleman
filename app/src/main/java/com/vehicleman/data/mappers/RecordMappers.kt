@@ -8,12 +8,7 @@ fun RecordEntity.toRecord(): Record {
     return Record(
         id = id,
         vehicleId = vehicleId,
-        // Χρησιμοποιούμε έναν ασφαλή τρόπο μετατροπής του String σε Enum
-        recordType = try {
-            RecordType.valueOf(recordType)
-        } catch (e: IllegalArgumentException) {
-            RecordType.EXPENSE // Ένα λογικό default σε περίπτωση σφάλματος
-        },
+        recordType = runCatching { RecordType.valueOf(recordType) }.getOrElse { RecordType.EXPENSE },
         title = title,
         description = description,
         date = date,
@@ -25,8 +20,8 @@ fun RecordEntity.toRecord(): Record {
         isReminder = isReminder,
         reminderDate = reminderDate,
         reminderOdometer = reminderOdometer,
-        costReminder = costReminder,
-        isCompleted = isCompleted
+        isCompleted = isCompleted,
+        costReminder = costReminder
     )
 }
 
@@ -34,7 +29,7 @@ fun Record.toRecordEntity(): RecordEntity {
     return RecordEntity(
         id = id,
         vehicleId = vehicleId,
-        recordType = recordType.name, // Μετατρέπουμε το Enum σε String για αποθήκευση
+        recordType = recordType.name,
         title = title,
         description = description,
         date = date,

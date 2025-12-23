@@ -550,4 +550,17 @@ object RecordSynonymDictionary {
         put("zimia saloniou", intDamage)
         put("eksoflisi esoterikou", intDamage)
     }
+    /**
+     * Όλα τα keywords που γνωρίζει το λεξικό (normalized).
+     * Ιδανικά για suggestions / search.
+     */
+    fun allKeywords(): List<String> =
+        keywordToCategory.keys
+            .asSequence()
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .distinct()
+            .toList()
+
+
 }

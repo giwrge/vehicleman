@@ -24,7 +24,10 @@ import com.vehicleman.domain.use_case.record_ai.RecordTypeHint
 import com.vehicleman.domain.use_case.record_ai.ReminderAutofillRequest
 import com.vehicleman.domain.use_case.record_ai.ReminderAutofillResult
 import com.vehicleman.domain.use_case.record_ai.SuggestionsRequest
+import com.vehicleman.domain.use_case.record_ai.RecentRecordSuggestion
 import com.vehicleman.domain.use_case.record_ai.cleanedText
+import com.vehicleman.domain.use_case.recordcategorizer.RecordSynonymDictionary
+import com.vehicleman.domain.use_case.recordcategorizer.RecordSynonymNormalizer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -288,14 +291,10 @@ class AddEditRecordViewModel @Inject constructor(
             is AddEditRecordEvent.RecordTypeChanged -> handleRecordTypeChange(event.value)
 
             is AddEditRecordEvent.SuggestionClicked -> {
-                val current = _state.value.title
-                val newTitle = if (current.isBlank()) event.suggestion
-                else (current.trimEnd() + " " + event.suggestion).trim()
-
-                _state.update { it.copy(title = newTitle) }
-                processIntelligentTitle(newTitle)
+                applySuggestion(event.item)
                 validateSave()
             }
+
 
             is AddEditRecordEvent.ToggleReminder -> {
                 if (!_state.value.isReminderSwitchLocked) {
@@ -527,35 +526,92 @@ class AddEditRecordViewModel @Inject constructor(
     // -------------------------------------------------------------------------
     // 🔥 SUGGESTIONS (AI AUTOCOMPLETE)
     // -------------------------------------------------------------------------
+    private fun applySuggestion(item: com.vehicleman.domain.use_case.record_ai.SuggestionItem) {
+        viewModelScope.launch {
+            val recordId = item.recordId
+
+            if (recordId != null) {
+                // ✅ Fill EVERYTHING from existing record
+                val record = recordRepository.getRecordById(recordId) ?: run {
+                    // fallback: just put the text
+                    _state.update { it.copy(title = item.text) }
+                    processIntelligentTitle(item.text)
+                    return@launch
+                }
+
+                _state.update { s ->
+                    s.copy(
+                        // keep current vehicleId / recordId (we are creating a new record normally)
+                        title = record.title,
+                        description = record.description.orEmpty(),
+
+                        recordType = record.recordType,
+                        date = record.date,
+                        dateText = dateFormat.format(record.date),
+
+                        odometer = record.odometer.toString(),
+                        cost = record.cost?.toString().orEmpty(),
+                        quantity = record.quantity?.toString().orEmpty(),
+                        pricePerUnit = record.pricePerUnit?.toString().orEmpty(),
+                        fuelType = record.fuelType,
+                        fuelTypeText = record.fuelType.orEmpty(),
+
+                        isReminder = record.isReminder,
+                        isCompleted = record.isCompleted,
+                        reminderDate = record.reminderDate,
+                        reminderDateText = record.reminderDate?.let { d -> dateFormat.format(d) }.orEmpty(),
+                        reminderOdometer = record.reminderOdometer?.toString().orEmpty(),
+                        costReminder = record.costReminder?.toString().orEmpty(),
+
+                        showCostDetails = record.recordType == RecordType.FUEL_UP,
+                        showFuelTypeSelection = record.recordType == RecordType.FUEL_UP,
+                        showReminderFields = record.recordType == RecordType.REMINDER || record.isReminder,
+                        isReminderSwitchLocked = false,
+
+                        suggestions = emptyList()
+                    )
+                }
+
+                updateCategorization()
+                return@launch
+            }
+
+            // Keyword/system suggestion: use as title (or append if you prefer)
+            _state.update { it.copy(title = item.text) }
+            processIntelligentTitle(item.text)
+        }
+    }
+
     private fun updateSuggestions() {
-        val input = _state.value.title.trim()
-        if (input.isBlank()) {
+        val inputRaw = _state.value.title.trim()
+        if (inputRaw.isBlank()) {
             _state.update { it.copy(suggestions = emptyList()) }
             return
         }
 
-        val titles = recentRecords.map { it.title }
-        val descriptions = recentRecords.mapNotNull { it.description }
-
-        val domainKeywords = listOf(
-            "λάδια", "service", "φρένα", "μπουζί",
-            "air filter", "oil filter",
-            "fuel 95", "fuel 100", "diesel",
-            "τροχοί", "λάστιχα", "αντισκωριακό",
-            "ΚΤΕΟ", "ασφάλεια", "τέλη κυκλοφορίας"
-        )
+        val recent = recentRecords.map {
+            RecentRecordSuggestion(
+                recordId = it.id,
+                title = it.title,
+                description = it.description,
+                date = it.date
+            )
+        }
 
         val request = SuggestionsRequest(
-            userQuery = input,
-            recentTitles = titles,
-            recentDescriptions = descriptions,
-            domainKeywords = domainKeywords,
+            userQuery = inputRaw,
+            recentRecords = recent,
+            domainKeywords = RecordSynonymDictionary.allKeywords(),
             maxSuggestions = 8
         )
 
         val result = generateSuggestions(request)
-        _state.update { it.copy(suggestions = result.map { s -> s.text }) }
+
+        _state.update { it.copy(suggestions = result) } // ✅ όχι map{it.text}
     }
+
+
+
 
     // -------------------------------------------------------------------------
     // VALIDATION

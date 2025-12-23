@@ -54,6 +54,11 @@ object RecordSynonymNormalizer {
 
         return null
     }
+    /**
+     * Public normalize helper για search/suggestions.
+     * Χρησιμοποιεί ΑΚΡΙΒΩΣ την ίδια λογική με το detectCategory.
+     */
+    fun normalizeForSearch(input: String): String = normalize(input)
 
     // -------------------------------------------------------
 

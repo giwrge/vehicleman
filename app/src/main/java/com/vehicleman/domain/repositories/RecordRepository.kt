@@ -15,15 +15,14 @@ interface RecordRepository {
     suspend fun deleteRecord(record: Record)
 
     suspend fun getLatestOdometer(vehicleId: String): Int?
-    
+
+    // ✅ Fuel specific
+    suspend fun getLastFuelUpRecord(vehicleId: String): Record?
+
     fun getAllRecords(): Flow<List<Record>>
 
     // For Backup/Restore
     suspend fun getAllRecordsList(): List<Record>
     suspend fun deleteAllRecords()
     suspend fun insertAllRecords(records: List<Record>)
-
-    suspend fun getLastFuelUpRecord(vehicleId: String): Record?
-
-
 }
