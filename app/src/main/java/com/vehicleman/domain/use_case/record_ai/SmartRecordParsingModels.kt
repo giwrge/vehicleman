@@ -1,5 +1,6 @@
 package com.vehicleman.domain.use_case.record_ai
 
+import com.vehicleman.domain.model.category.RecordCategory
 import java.time.LocalDate
 
 /**
@@ -18,8 +19,8 @@ data class ParsedSmartTitle(
     val isExpenseLike: Boolean,
     val isReminderLike: Boolean,
 
-    // Πιθανό "hint" για κατηγορία (service, tyres κτλ.)
-    val categoryHint: CategoryHint?,
+    // The detected category from RecordCategorizer
+    val detectedCategory: RecordCategory,
 
     // Καύσιμα
     val detectedFuelType: FuelTypeHint?,
@@ -47,20 +48,6 @@ enum class RecordTypeHint {
     EXPENSE,
     REMINDER,
     UNKNOWN
-}
-
-/**
- * Πιο συγκεκριμένο "hint" για κατηγορία.
- * Θα το χαρτογραφήσεις αργότερα στο δικό σου RecordCategory / icons.
- */
-enum class CategoryHint {
-    FUEL,
-    SERVICE,
-    TIRES,
-    INSURANCE,
-    TAXES,
-    WASH,
-    OTHER
 }
 
 /**

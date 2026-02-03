@@ -92,6 +92,14 @@ fun AddEditRecordScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
+    // *** ΑΥΤΟΜΑΤΗ ΕΠΙΒΕΒΑΙΩΣΗ ΗΜΕΡΟΜΗΝΙΑΣ ***
+    LaunchedEffect(datePickerState.selectedDateMillis) {
+        datePickerState.selectedDateMillis?.let {
+            viewModel.onEvent(AddEditRecordEvent.DateChanged(Date(it)))
+            showDatePicker = false
+        }
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
@@ -180,20 +188,7 @@ fun AddEditRecordScreen(
                 if (showDatePicker) {
                     DatePickerDialog(
                         onDismissRequest = { showDatePicker = false },
-                        confirmButton = {
-                            TextButton(
-                                onClick = {
-                                    val millis = datePickerState.selectedDateMillis
-                                    if (millis != null) {
-                                        val date = Date(millis)
-                                        viewModel.onEvent(AddEditRecordEvent.DateChanged(date))
-                                    }
-                                    showDatePicker = false
-                                }
-                            ) {
-                                Text("OK")
-                            }
-                        },
+                        confirmButton = { }, // ΑΦΑΙΡΕΘΗΚΕ ΤΟ ΟΚ
                         dismissButton = {
                             TextButton(onClick = { showDatePicker = false }) {
                                 Text("Άκυρο")
@@ -264,7 +259,7 @@ fun AddEditRecordScreen(
                     // -----------------------------------------------------------
                     // Κόστος (μόνο Expense / Fuel)
                     // -----------------------------------------------------------
-                    if (state.recordType != RecordType.REMINDER) {
+                    if (!state.isFutureDate) {
                         OutlinedTextField(
                             value = state.cost,
                             onValueChange = {
@@ -365,14 +360,16 @@ fun AddEditRecordScreen(
                     // -----------------------------------------------------------
                     // Πεδία ΚΟΣΤΟΣ ΥΠΕΝΘΥΜΙΣΗΣ
                     // -----------------------------------------------------------
-                    OutlinedTextField(
-                        value = state.costReminder,
-                        onValueChange = { viewModel.onEvent(AddEditRecordEvent.CostReminderChanged(it)) },
-                        label = { Text("Κόστος υπενθύμισης (€)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true
-                    )
+                    if (state.isFutureDate) {
+                        OutlinedTextField(
+                            value = state.costReminder,
+                            onValueChange = { viewModel.onEvent(AddEditRecordEvent.CostReminderChanged(it)) },
+                            label = { Text("Κόστος υπενθύμισης (€)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true
+                        )
+                    }
 
                     // -----------------------------------------------------------
                     // ΠΕΡΙΓΡΑΦΗ (AI μπορεί να τη συμπληρώσει)

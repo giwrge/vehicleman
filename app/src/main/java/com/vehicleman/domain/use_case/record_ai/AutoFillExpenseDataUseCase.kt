@@ -1,5 +1,6 @@
 package com.vehicleman.domain.use_case.record_ai
 
+import com.vehicleman.domain.model.category.RecordCategory
 import javax.inject.Inject
 
 /**
@@ -11,7 +12,7 @@ class AutoFillExpenseDataUseCase @Inject constructor() {
 
     operator fun invoke(parsed: ParsedSmartTitle): ExpenseAutofillResult {
         val items = parsed.detectedServiceItems
-        val category = parsed.categoryHint
+        val category = parsed.detectedCategory
         val cost = parsed.detectedGenericAmountEuro
 
         val description = buildDescription(
@@ -21,7 +22,7 @@ class AutoFillExpenseDataUseCase @Inject constructor() {
         )
 
         return ExpenseAutofillResult(
-            categoryHint = category,
+            recordCategory = category,
             items = items,
             costEuro = cost,
             autoDescription = description
@@ -29,15 +30,14 @@ class AutoFillExpenseDataUseCase @Inject constructor() {
     }
 
     private fun buildDescription(
-        category: CategoryHint?,
+        category: RecordCategory,
         items: List<String>,
         cost: Double?
     ): String {
         val builder = StringBuilder()
 
-        if (category != null) {
-            builder.append(categoryToHumanTitle(category))
-        }
+        val title = category.javaClass.simpleName
+        builder.append(title)
 
         // expand items
         if (items.isNotEmpty()) {
@@ -53,17 +53,6 @@ class AutoFillExpenseDataUseCase @Inject constructor() {
         return builder.toString().trim()
     }
 
-    private fun categoryToHumanTitle(category: CategoryHint): String {
-        return when (category) {
-            CategoryHint.SERVICE -> "Service"
-            CategoryHint.TIRES -> "Ελαστικά"
-            CategoryHint.INSURANCE -> "Ασφάλεια"
-            CategoryHint.TAXES -> "Τέλη κυκλοφορίας"
-            CategoryHint.WASH -> "Πλύσιμο"
-            else -> "Έξοδο"
-        }
-    }
-
     private fun formatEuro(value: Double): String {
         return String.format("%.2f €", value)
     }
@@ -74,7 +63,7 @@ class AutoFillExpenseDataUseCase @Inject constructor() {
  * Μπορεί να μπει κατευθείαν στο AddEditRecordState.
  */
 data class ExpenseAutofillResult(
-    val categoryHint: CategoryHint?,
+    val recordCategory: RecordCategory,
     val items: List<String>,
     val costEuro: Double?,
     val autoDescription: String

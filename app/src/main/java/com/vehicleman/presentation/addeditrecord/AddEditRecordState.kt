@@ -19,6 +19,7 @@ data class AddEditRecordState(
     val description: String = "",
     val date: Date = Date(),
     val dateText: String = "",
+    val isFutureDate: Boolean = false, // <-- ΝΕΑ ΜΕΤΑΒΛΗΤΗ
 
     val odometer: String = "",
     val cost: String = "",

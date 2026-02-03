@@ -29,6 +29,7 @@ import com.vehicleman.domain.use_case.record_ai.SuggestionsRequest
 import com.vehicleman.domain.use_case.record_ai.cleanedText
 import com.vehicleman.domain.use_case.recordcategorizer.RecordSynonymDictionary
 import com.vehicleman.domain.use_case.recordcategorizer.RecordSynonymNormalizer
+import com.vehicleman.presentation.record.mapCategoryToDisplayName
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -279,7 +280,10 @@ class AddEditRecordViewModel @Inject constructor(
             .atZone(ZoneId.systemDefault())
             .toLocalDate()
 
-        if (!newLocal.isAfter(todayLocal)) return
+        val isFuture = newLocal.isAfter(todayLocal)
+        _state.update { it.copy(isFutureDate = isFuture) }
+
+        if (!isFuture) return
 
         val title = _state.value.title
         val parsed = parseSmartTitle(title, todayLocal)
@@ -398,29 +402,14 @@ class AddEditRecordViewModel @Inject constructor(
                     }
 
                     SuggestionSource.DOMAIN_KEYWORD -> {
-                        val current = _state.value.title
-                        val newTitle =
-                            if (current.isBlank()) item.text else (current.trimEnd() + " " + item.text).trim()
-
-                        _state.update { it.copy(title = newTitle) }
-                        processIntelligentTitle(newTitle)
-                        validateSave()
-                    }
-
-                    else -> {
-                        // ✅ για ό,τι άλλο source έχεις (π.χ. AI, FAVORITE, etc.)
-                        val current = _state.value.title
-                        val newTitle =
-                            if (current.isBlank()) item.text else (current.trimEnd() + " " + item.text).trim()
-
-                        _state.update { it.copy(title = newTitle) }
-                        processIntelligentTitle(newTitle)
+                        val category = categorizer(title = item.text, isReminder = false)
+                        val displayName = mapCategoryToDisplayName(category)
+                        _state.update { it.copy(title = displayName) }
+                        processIntelligentTitle(displayName)
                         validateSave()
                     }
                 }
             }
-
-
 
             is AddEditRecordEvent.ToggleReminder -> {
                 if (!_state.value.isReminderSwitchLocked) {

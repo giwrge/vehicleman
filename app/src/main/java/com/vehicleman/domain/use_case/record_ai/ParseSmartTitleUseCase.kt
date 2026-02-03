@@ -1,5 +1,7 @@
 package com.vehicleman.domain.use_case.record_ai
 
+import com.vehicleman.domain.model.category.RecordCategory
+import com.vehicleman.domain.use_case.recordcategorizer.RecordCategorizerUseCase
 import java.text.Normalizer
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -14,13 +16,12 @@ import javax.inject.Inject
  * - Βρίσκει ποσά σε €
  * - Βρίσκει λίτρα (lt)
  * - Βρίσκει τιμή €/lt (1.719, 1,719 κτλ.)
- * - Βλέπει λέξεις για service, ασφάλεια, ΚΤΕΟ, λάστιχα κ.λπ.
+ * - **Χρησιμοποιεί το RecordCategorizerUseCase για να βρει την κατηγορία**
  * - Αναγνωρίζει ημερομηνίες (κυρίως μορφές dd/MM/yyyy και dd-MM-yyyy)
  */
-
-
-
-class ParseSmartTitleUseCase @Inject constructor() {
+class ParseSmartTitleUseCase @Inject constructor(
+    private val recordCategorizer: RecordCategorizerUseCase
+) {
 
     private val euroRegex = Regex("""(\d+[.,]?\d*)\s*(e|€)""", RegexOption.IGNORE_CASE)
     private val litersRegex = Regex("""(\d+[.,]?\d*)\s*(lt|λίτρα?)""", RegexOption.IGNORE_CASE)
@@ -41,24 +42,31 @@ class ParseSmartTitleUseCase @Inject constructor() {
 
         val lower = normalized.lowercase(Locale.getDefault())
 
-        // --- Fuel detection ---
-        val fuelTypeHint = detectFuelType(lower)
+        // --- Date / reminder style detection ---
+        val detectedDate = detectDate(lower)
+        val isFutureDate = detectedDate?.isAfter(nowDate) == true
 
-        // --- Expense / service keywords ---
-        val (categoryHint, serviceItems) = detectCategoryAndServiceItems(lower)
+        // --- Main Category Detection (using the injected use case) ---
+        val detectedCategory = recordCategorizer(
+            title = rawTitle,
+            isReminder = isFutureDate
+        )
+
+        // --- Fuel specific detection ---
+        val fuelTypeHint = detectFuelType(lower)
 
         // --- Amounts & fuel numbers ---
         val costEuro = detectFirstDouble(euroRegex, lower)
         val liters = detectFirstDouble(litersRegex, lower)
         val pricePerLiter = detectFirstDouble(pricePerLiterRegex, lower)
 
-        // --- Date / reminder style detection ---
-        val detectedDate = detectDate(lower)
-        val isFutureDate = detectedDate?.isAfter(nowDate) == true
+        // --- Flags based on the new, accurate category ---
+        val isFuelLike = detectedCategory is RecordCategory.ExpenseCategory.Fuel || fuelTypeHint != null
+        val isReminderLike = detectedCategory is RecordCategory.ReminderCategory || isFutureDate
+        val isExpenseLike = detectedCategory is RecordCategory.ExpenseCategory && !isFuelLike
 
-        val isFuelLike = fuelTypeHint != null || containsAny(lower, FUEL_KEYWORDS)
-        val isReminderLike = isFutureDate || containsAny(lower, REMINDER_KEYWORDS)
-        val isExpenseLike = !isFuelLike && (categoryHint != null || containsAny(lower, EXPENSE_KEYWORDS))
+        // --- Simple service item detection (can be expanded) ---
+        val serviceItems = detectServiceItems(lower)
 
         return ParsedSmartTitle(
             raw = rawTitle,
@@ -67,7 +75,7 @@ class ParseSmartTitleUseCase @Inject constructor() {
             isFuelLike = isFuelLike,
             isExpenseLike = isExpenseLike,
             isReminderLike = isReminderLike,
-            categoryHint = categoryHint,
+            detectedCategory = detectedCategory, // <-- The new, powerful category
             detectedFuelType = fuelTypeHint,
             detectedLiters = liters,
             detectedPricePerLiter = pricePerLiter,
@@ -109,35 +117,15 @@ class ParseSmartTitleUseCase @Inject constructor() {
         }
     }
 
-    private fun detectCategoryAndServiceItems(lower: String): Pair<CategoryHint?, List<String>> {
+    private fun detectServiceItems(lower: String): List<String> {
         val items = mutableListOf<String>()
-        var hint: CategoryHint? = null
-
         if (containsAny(lower, SERVICE_KEYWORDS)) {
-            hint = CategoryHint.SERVICE
             if (lower.contains("λαδια") || lower.contains("ladia")) items += "Λάδια"
             if (lower.contains("φιλτρο") || lower.contains("filtr")) items += "Φίλτρο"
             if (lower.contains("μπουζ") || lower.contains("bouz")) items += "Μπουζί"
             if (lower.contains("φιλτρο αερο") || lower.contains("air filter")) items += "Φίλτρο αέρος"
         }
-
-        if (containsAny(lower, TIRE_KEYWORDS)) {
-            hint = CategoryHint.TIRES
-        }
-
-        if (containsAny(lower, INSURANCE_KEYWORDS)) {
-            hint = CategoryHint.INSURANCE
-        }
-
-        if (containsAny(lower, TAX_KEYWORDS)) {
-            hint = CategoryHint.TAXES
-        }
-
-        if (containsAny(lower, WASH_KEYWORDS)) {
-            hint = CategoryHint.WASH
-        }
-
-        return hint to items
+        return items
     }
 
     private fun detectFirstDouble(regex: Regex, text: String): Double? {
@@ -172,30 +160,6 @@ class ParseSmartTitleUseCase @Inject constructor() {
 
         private val SERVICE_KEYWORDS = listOf(
             "service", "σερβις", "λαδια", "ladia", "filtr", "φιλτρο", "bouzi", "μπουζι"
-        )
-
-        private val TIRE_KEYWORDS = listOf(
-            "λαστιχα", "lastixa", "ελαστικ", "pneumat", "tyre", "tire"
-        )
-
-        private val INSURANCE_KEYWORDS = listOf(
-            "ασφαλεια", "asfal", "insurance"
-        )
-
-        private val TAX_KEYWORDS = listOf(
-            "τελη", "teli", "κυκλοφοριας", "road tax"
-        )
-
-        private val WASH_KEYWORDS = listOf(
-            "πλυσιμο", "plisimo", "car wash", "πλυντηριο"
-        )
-
-        private val REMINDER_KEYWORDS = listOf(
-            "kteo", "κτεο", "service", "ασφαλεια", "τελη", "ελεγχος", "inspection", "υπενθυμιση"
-        )
-
-        private val EXPENSE_KEYWORDS = listOf(
-            "service", "σερβις", "λαστιχα", "ασφαλεια", "φιλτρο", "μπουζι", "πλυσιμο", "πισω φρεν"
         )
     }
 }
