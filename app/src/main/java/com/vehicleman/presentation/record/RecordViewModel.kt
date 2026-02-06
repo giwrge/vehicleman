@@ -62,7 +62,12 @@ class RecordViewModel @Inject constructor(
             }
 
             is RecordEvent.MarkReminderCompleted -> {
-                markReminderCompleted(event.recordId)
+                viewModelScope.launch {
+                    val rec = _state.value.timelineItems.firstOrNull { it.id == event.recordId }
+                    if (rec != null) {
+                        saveRecord(rec.copy(isCompleted = true))
+                    }
+                }
             }
 
             is RecordEvent.DeleteRecord -> {
@@ -97,15 +102,6 @@ class RecordViewModel @Inject constructor(
         viewModelScope.launch {
             recordUseCases.saveRecord(record)
         }
-    }
-
-    // -----------------------------------------------------------------------
-    //  Υπενθυμίσεις
-    // -----------------------------------------------------------------------
-
-    private fun markReminderCompleted(recordId: String) {
-        val rec = _state.value.timelineItems.firstOrNull { it.id == recordId } ?: return
-        saveRecord(rec.copy(isCompleted = true))
     }
 
     // -----------------------------------------------------------------------

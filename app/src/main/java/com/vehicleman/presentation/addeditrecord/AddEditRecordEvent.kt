@@ -33,6 +33,8 @@ sealed class AddEditRecordEvent {
 
     object Save : AddEditRecordEvent()
 
+    data class TranslateTitleConfirmation(val translate: Boolean, val dontAskAgain: Boolean) : AddEditRecordEvent()
+
     object NavigateBackConsumed : AddEditRecordEvent()
     object ErrorShown : AddEditRecordEvent()
 }

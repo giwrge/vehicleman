@@ -30,6 +30,7 @@ object NavDestinations {
     const val VEHICLE_ID_KEY = "vehicleId"
 
     const val RECORD_ID_KEY = "recordId"                       // ✅ ΝΕΟ
+    const val FROM_REMINDER_KEY = "fromReminder"
     const val SUB_DRIVER_ID_KEY = "subDriverId"
     const val FROM_SCREEN_KEY = "fromScreen"
     const val FROM_ID_KEY = "fromId"
@@ -51,9 +52,10 @@ object NavDestinations {
     /**
      * Helper function to build the route for the Add/Edit Entry Form.
      */
-    fun addEditEntryRoute(vehicleId: String, entryId: String? = null) =
-        if (entryId != null) "$ADD_EDIT_ENTRY_ROUTE/$vehicleId/$entryId"
-        else "$ADD_EDIT_ENTRY_ROUTE/$vehicleId/new"
+    fun addEditEntryRoute(vehicleId: String, entryId: String? = null, fromReminder: Boolean = false): String {
+        val route = if (entryId != null) "$ADD_EDIT_ENTRY_ROUTE/$vehicleId/$entryId" else "$ADD_EDIT_ENTRY_ROUTE/$vehicleId/new"
+        return "$route?${FROM_REMINDER_KEY}=$fromReminder"
+    }
 
     /**
      * Helper function to build the route for the Statistic Vehicle Screen.

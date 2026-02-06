@@ -1,7 +1,6 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
     id("kotlin-kapt") // Required for Hilt & Room
     id("com.google.dagger.hilt.android") // Hilt plugin
 }
@@ -12,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.vehicleman"
-        minSdk = 26 // ΑΛΛΑΓΗ: Αυξήθηκε από 24 σε 26 για συμβατότητα με τα adaptive icons
+        minSdk = 26 
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -33,14 +32,18 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17 // ΑΛΛΑΓΗ: Ορίζουμε Java 17
-        targetCompatibility = JavaVersion.VERSION_17 // ΑΛΛΑΓΗ: Ορίζουμε Java 17
+        sourceCompatibility = JavaVersion.VERSION_17 
+        targetCompatibility = JavaVersion.VERSION_17 
     }
     kotlinOptions {
-        jvmTarget = "17" // ΑΛΛΑΓΗ: Ορίζουμε Kotlin JVM Target 17
+        jvmTarget = "17" 
     }
     buildFeatures {
         compose = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.14"
     }
     packaging {
         resources {

@@ -42,6 +42,8 @@ data class AddEditRecordState(
     val showFuelTypeSelection: Boolean = false,
 
     val suggestions: List<SuggestionItem> = emptyList(),   // ✅ CHANGED
+    val suggestionClicked: Boolean = false,
+    val showTranslateTitleDialog: Boolean = false,
 
     val vehicleFuelTypes: List<String> = emptyList(),
     val selectedFuelType: String? = null,

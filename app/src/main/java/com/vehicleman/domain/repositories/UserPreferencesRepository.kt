@@ -33,6 +33,12 @@ enum class SubDriverType {
     SINGLE
 }
 
+enum class TranslateTitlePreference {
+    ASK,
+    ALWAYS,
+    NEVER
+}
+
 data class User(
     val status: UserStatus = UserStatus.FREE,
     val proLevel: ProLevel = ProLevel.NONE,
@@ -53,12 +59,18 @@ interface UserPreferencesRepository {
     val isNightMode: Flow<Boolean>
     suspend fun setNightMode(isNightMode: Boolean)
 
+    val showAutoReminders: Flow<Boolean>
+    suspend fun setShowAutoReminders(show: Boolean)
+
     val vehicleSortOrder: Flow<VehicleSortOrder>
     suspend fun setVehicleSortOrder(sortOrder: VehicleSortOrder)
 
     val customVehicleOrder: Flow<String>
     suspend fun setCustomVehicleOrder(order: String)
-    
+
+    val translateTitlePreference: Flow<TranslateTitlePreference>
+    suspend fun setTranslateTitlePreference(preference: TranslateTitlePreference)
+
     val user: Flow<User>
     suspend fun saveUser(user: User)
     

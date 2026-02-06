@@ -3,9 +3,11 @@ package com.vehicleman.ui.navigation
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.vehicleman.ui.screens.PreferenceScreen
 import com.vehicleman.ui.screens.AddEditRecordScreen
 import com.vehicleman.ui.screens.AddEditVehicleScreen
@@ -92,8 +94,8 @@ fun AppNavigation(
             val vehicleId = backStackEntry.arguments?.getString(NavDestinations.VEHICLE_ID_KEY)
             RecordScreen(
                 navController = navController,
-                onNavigateToAddEditRecord = { vId, recordId ->
-                    navController.navigate(NavDestinations.addEditEntryRoute(vId, recordId))
+                onNavigateToAddEditRecord = { vId, recordId, fromReminder ->
+                    navController.navigate(NavDestinations.addEditEntryRoute(vId, recordId, fromReminder))
                 },
                 onNavigateToStatistics = { currentVehicleId ->
                     navController.navigate("VehicleStatisticsScreen/$currentVehicleId")
@@ -112,7 +114,8 @@ fun AppNavigation(
         }
 
         composable(
-            route = "${NavDestinations.ADD_EDIT_ENTRY_ROUTE}/{${NavDestinations.VEHICLE_ID_KEY}}/{recordId}",
+            route = "${NavDestinations.ADD_EDIT_ENTRY_ROUTE}/{${NavDestinations.VEHICLE_ID_KEY}}/{recordId}?${NavDestinations.FROM_REMINDER_KEY}={${NavDestinations.FROM_REMINDER_KEY}}",
+            arguments = listOf(navArgument(NavDestinations.FROM_REMINDER_KEY) { type = NavType.BoolType; defaultValue = false })
         ) {
             AddEditRecordScreen(
                 navController = navController,

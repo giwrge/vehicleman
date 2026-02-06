@@ -54,6 +54,7 @@ import androidx.navigation.NavController
 import com.vehicleman.R
 import com.vehicleman.domain.repositories.ProLevel
 import com.vehicleman.domain.repositories.SubDriverType
+import com.vehicleman.domain.repositories.TranslateTitlePreference
 import com.vehicleman.domain.repositories.TwinAppRole
 import com.vehicleman.domain.repositories.VehicleSortOrder
 import com.vehicleman.presentation.preference.PreferenceViewModel
@@ -76,6 +77,8 @@ fun PreferenceScreen(
     var showContactDialog by remember { mutableStateOf(false) }
     var showLegalDialog by remember { mutableStateOf(false) }
     val vehicleSortOrder by viewModel.vehicleSortOrder.collectAsState(initial = VehicleSortOrder.ALPHABETICAL)
+    val showAutoReminders by viewModel.showAutoReminders.collectAsState() // <-- ΝΕΑ ΠΡΟΣΘΗΚΗ
+    val translateTitlePreference by viewModel.translateTitlePreference.collectAsState()
     val user by viewModel.user.collectAsState()
     val transparentYellow = Color(0x80FFFF00) // Yellow with 50% transparency
 
@@ -188,6 +191,57 @@ fun PreferenceScreen(
                 // Temporary button to populate database
                 Button(onClick = { viewModel.populateDatabase() }, modifier = Modifier.padding(16.dp)) {
                     Text("Populate Database with Fake Data")
+                }
+
+                // ** Η ΝΕΑ ΡΥΘΜΙΣΗ ΕΙΝΑΙ ΕΔΩ **
+                Card(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp), colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "Auto Reminders", style = MaterialTheme.typography.bodyLarge)
+                            Text(text = "Automatically generate reminders for service, etc.", style = MaterialTheme.typography.bodySmall)
+                        }
+                        Switch(checked = showAutoReminders, onCheckedChange = { 
+                            viewModel.setShowAutoReminders(it)
+                        })
+                    }
+                }
+
+                Card(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp), colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(text = "Translate Title Preference", style = MaterialTheme.typography.bodyLarge)
+                        val radioOptions = listOf(TranslateTitlePreference.ASK, TranslateTitlePreference.ALWAYS, TranslateTitlePreference.NEVER)
+                        radioOptions.forEach { option ->
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .selectable(
+                                        selected = (option == translateTitlePreference),
+                                        onClick = { viewModel.setTranslateTitlePreference(option) }
+                                    )
+                                    .padding(horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = (option == translateTitlePreference),
+                                    onClick = { viewModel.setTranslateTitlePreference(option) }
+                                )
+                                Text(
+                                    text = option.name,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.padding(start = 16.dp)
+                                )
+                            }
+                        }
+                    }
                 }
 
                 Card(modifier = Modifier

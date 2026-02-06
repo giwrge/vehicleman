@@ -44,12 +44,14 @@ import com.vehicleman.ui.navigation.NavDestinations
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.foundation.border
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecordScreen(
     navController: NavController,
-    onNavigateToAddEditRecord: (String, String?) -> Unit,
+    onNavigateToAddEditRecord: (String, String?, Boolean) -> Unit,
     onNavigateToStatistics: (String) -> Unit,
     onNavigateToPreferences: () -> Unit,
     onNavigateToProMode: () -> Unit,
@@ -110,10 +112,10 @@ fun RecordScreen(
                     onNavigateToSignUp = onNavigateToSignUp
                 )
             },
-            snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+            snackbarHost = { TransparentSnackbarHost(hostState = snackbarHostState) },
             floatingActionButton = {
                 FloatingActionButton(
-                    onClick = { state.selectedVehicleId?.let { onNavigateToAddEditRecord(it, "new") } },
+                    onClick = { state.selectedVehicleId?.let { onNavigateToAddEditRecord(it, "new", false) } },
                     containerColor = Color.Transparent,
                     elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp)
                 ) {
@@ -136,7 +138,7 @@ fun RecordScreen(
                         StickyUpcomingReminder(
                             record = it,
                             isNightMode = isNightMode,
-                            onClick = { onNavigateToAddEditRecord(it.vehicleId, it.id) },
+                            onClick = { onNavigateToAddEditRecord(it.vehicleId, it.id, false) },
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                         )
                     }
@@ -156,7 +158,11 @@ fun RecordScreen(
                                         scope.launch {
                                             recentlyDeleted = record
                                             viewModel.deleteRecord(record)
-                                            val result = snackbarHostState.showSnackbar("Η εγγραφή διαγράφηκε", "ΑΝΑΙΡΕΣΗ")
+                                            val result = snackbarHostState.showSnackbar(
+                                                message = "Η εγγραφή διαγράφηκε",
+                                                actionLabel = "ΑΝΑΙΡΕΣΗ",
+                                                duration = SnackbarDuration.Indefinite
+                                            )
                                             if (result == SnackbarResult.ActionPerformed) {
                                                 recentlyDeleted?.let { viewModel.saveRecord(it) }
                                             }
@@ -164,13 +170,20 @@ fun RecordScreen(
                                         true // Confirm the dismiss
                                     }
                                     SwipeToDismissBoxValue.StartToEnd -> {
-                                        onNavigateToAddEditRecord(record.vehicleId, record.id)
+                                        onNavigateToAddEditRecord(record.vehicleId, record.id, false)
                                         false // Do not dismiss the item, just trigger navigation and snap back
                                     }
                                     SwipeToDismissBoxValue.Settled -> false
                                 }
                             }
                         )
+
+                        LaunchedEffect(snackbarHostState.currentSnackbarData) {
+                            if (snackbarHostState.currentSnackbarData != null) {
+                                delay(10000) // 10 seconds
+                                snackbarHostState.currentSnackbarData?.dismiss()
+                            }
+                        }
 
                         SwipeToDismissBox(
                             state = dismissState,
@@ -181,10 +194,45 @@ fun RecordScreen(
                             TimelineRow(
                                 record = record,
                                 isNightMode = isNightMode,
-                                onMarkCompleted = { viewModel.onEvent(RecordEvent.MarkReminderCompleted(record.id)) },
+                                onMarkCompleted = { 
+                                    viewModel.onEvent(RecordEvent.MarkReminderCompleted(record.id))
+                                    onNavigateToAddEditRecord(record.vehicleId, record.id, true)
+                                 },
                                 categorizer = categorizer
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TransparentSnackbarHost(hostState: SnackbarHostState) {
+    SnackbarHost(hostState = hostState) { data ->
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                    .border(1.dp, Color.White, RoundedCornerShape(12.dp))
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    data.visuals.message,
+                    modifier = Modifier.weight(1f, fill = false),
+                    color = Color.White
+                )
+                data.visuals.actionLabel?.let {
+                    TextButton(onClick = { data.performAction() }) {
+                        Text(it, color = Color.White, fontWeight = FontWeight.Bold)
                     }
                 }
             }

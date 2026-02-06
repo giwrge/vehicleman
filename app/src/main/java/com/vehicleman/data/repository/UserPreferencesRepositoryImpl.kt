@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.gson.Gson
+import com.vehicleman.domain.repositories.TranslateTitlePreference
 import com.vehicleman.domain.repositories.User
 import com.vehicleman.domain.repositories.UserPreferencesRepository
 import com.vehicleman.domain.repositories.VehicleSortOrder
@@ -29,6 +30,8 @@ class UserPreferencesRepositoryImpl @Inject constructor(
 
     private object PreferencesKeys {
         val IS_NIGHT_MODE = booleanPreferencesKey("is_night_mode")
+        val SHOW_AUTO_REMINDERS = booleanPreferencesKey("show_auto_reminders")
+        val TRANSLATE_TITLE_PREFERENCE = stringPreferencesKey("translate_title_preference")
         val VEHICLE_SORT_ORDER = stringPreferencesKey("vehicle_sort_order")
         val CUSTOM_VEHICLE_ORDER = stringPreferencesKey("custom_vehicle_order")
         val USER_DATA = stringPreferencesKey("user_data")
@@ -42,6 +45,28 @@ class UserPreferencesRepositoryImpl @Inject constructor(
     override suspend fun setNightMode(isNightMode: Boolean) {
         context.dataStore.edit {
             it[PreferencesKeys.IS_NIGHT_MODE] = isNightMode
+        }
+    }
+
+    override val showAutoReminders: Flow<Boolean> = context.dataStore.data.map {
+        it[PreferencesKeys.SHOW_AUTO_REMINDERS] ?: true // Default to true
+    }
+
+    override suspend fun setShowAutoReminders(show: Boolean) {
+        context.dataStore.edit {
+            it[PreferencesKeys.SHOW_AUTO_REMINDERS] = show
+        }
+    }
+
+    override val translateTitlePreference: Flow<TranslateTitlePreference> = context.dataStore.data.map { preferences ->
+        TranslateTitlePreference.valueOf(
+            preferences[PreferencesKeys.TRANSLATE_TITLE_PREFERENCE] ?: TranslateTitlePreference.ASK.name
+        )
+    }
+
+    override suspend fun setTranslateTitlePreference(preference: TranslateTitlePreference) {
+        context.dataStore.edit {
+            it[PreferencesKeys.TRANSLATE_TITLE_PREFERENCE] = preference.name
         }
     }
 

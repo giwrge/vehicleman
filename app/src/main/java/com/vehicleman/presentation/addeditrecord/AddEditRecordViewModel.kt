@@ -7,6 +7,8 @@ import com.vehicleman.domain.model.Record
 import com.vehicleman.domain.model.RecordType
 import com.vehicleman.domain.model.category.RecordCategory
 import com.vehicleman.domain.repositories.RecordRepository
+import com.vehicleman.domain.repositories.TranslateTitlePreference
+import com.vehicleman.domain.repositories.UserPreferencesRepository
 import com.vehicleman.domain.repositories.VehicleRepository
 import com.vehicleman.domain.use_case.GetLastFuelUpRecord
 import com.vehicleman.domain.use_case.recordcategorizer.RecordCategorizerUseCase
@@ -29,10 +31,12 @@ import com.vehicleman.domain.use_case.record_ai.SuggestionsRequest
 import com.vehicleman.domain.use_case.record_ai.cleanedText
 import com.vehicleman.domain.use_case.recordcategorizer.RecordSynonymDictionary
 import com.vehicleman.domain.use_case.recordcategorizer.RecordSynonymNormalizer
+import com.vehicleman.ui.navigation.NavDestinations
 import com.vehicleman.presentation.record.mapCategoryToDisplayName
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -45,6 +49,7 @@ import javax.inject.Inject
 class AddEditRecordViewModel @Inject constructor(
     private val recordRepository: RecordRepository,
     private val vehicleRepository: VehicleRepository, // (δεν χρησιμοποιείται ακόμα, το κρατάμε)
+    private val userPreferencesRepository: UserPreferencesRepository,
     private val categorizer: RecordCategorizerUseCase,
 
     // 🔥 AI use cases
@@ -65,10 +70,15 @@ class AddEditRecordViewModel @Inject constructor(
     val state = _state.asStateFlow()
 
     private val vehicleId: String =
-        savedStateHandle.get<String>("vehicleId") ?: ""
+        savedStateHandle.get<String>(NavDestinations.VEHICLE_ID_KEY) ?: ""
 
     private val recordId: String? =
-        savedStateHandle.get<String>("recordId")
+        savedStateHandle.get<String>(NavDestinations.RECORD_ID_KEY)
+
+    private val fromReminder: Boolean =
+        savedStateHandle.get<Boolean>(NavDestinations.FROM_REMINDER_KEY) ?: false
+
+    private var originalReminder: Record? = null
 
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy")
 
@@ -87,14 +97,15 @@ class AddEditRecordViewModel @Inject constructor(
         } else {
             _state.update { it.copy(vehicleId = vehicleId) }
 
-            // 🔥 Φόρτωση last FUEL odometer + recent records
             viewModelScope.launch {
                 val lastFuelRecord = getLastFuelUpRecord(vehicleId)
                 lastFuelOdometerKm = lastFuelRecord?.odometer
                 recentRecords = recordRepository.getRecordsByVehicle(vehicleId)
             }
 
-            if (recordId == null || recordId == "new") {
+            if (fromReminder && recordId != null) {
+                convertReminderToExpense(recordId)
+            } else if (recordId == null || recordId == "new") {
                 loadNewRecord()
             } else {
                 loadExistingRecord(recordId)
@@ -103,6 +114,48 @@ class AddEditRecordViewModel @Inject constructor(
             loadVehicleFuelTypes()
         }
     }
+
+    override fun onCleared() {
+        if (fromReminder && !_state.value.navigateBack) {
+            viewModelScope.launch {
+                originalReminder?.let { recordRepository.saveRecord(it.copy(isCompleted = true)) }
+            }
+        }
+        super.onCleared()
+    }
+
+    private fun convertReminderToExpense(reminderId: String) {
+        viewModelScope.launch {
+            val reminder = recordRepository.getRecordById(reminderId)
+            if (reminder == null || !reminder.isReminder) {
+                _state.update { it.copy(errorMessage = "Δεν βρέθηκε η υπενθύμιση.") }
+                return@launch
+            }
+
+            originalReminder = reminder
+
+            _state.update {
+                it.copy(
+                    isLoading = false,
+                    isNew = true, // Treat as a new record
+                    recordId = null, // No ID for the new expense record yet
+                    recordType = RecordType.EXPENSE,
+                    title = reminder.title,
+                    description = reminder.description ?: "",
+                    date = Date(), // Today's date for the expense
+                    dateText = dateFormat.format(Date()),
+                    odometer = reminder.reminderOdometer?.toString() ?: "",
+                    cost = reminder.costReminder?.toString() ?: "",
+                    isReminder = false,
+                    showReminderFields = false,
+                    isReminderSwitchLocked = false
+                )
+            }
+        }
+    }
+
+
+    // ... (rest of the functions remain the same)
 
     // -------------------------------------------------------------------------
     // LOAD VEHICLE FUEL TYPES (προς το παρόν κενό, μέχρι να μπουν τα fields στο Vehicle)
@@ -327,7 +380,7 @@ class AddEditRecordViewModel @Inject constructor(
             is AddEditRecordEvent.LoadExisting -> loadExistingRecord(event.recordId)
 
             is AddEditRecordEvent.TitleChanged -> {
-                _state.update { it.copy(title = event.value) }
+                _state.update { it.copy(title = event.value, suggestions = emptyList(), suggestionClicked = false) } // Important: reset suggestionClicked
                 processIntelligentTitle(event.value)
                 validateSave()
             }
@@ -383,32 +436,11 @@ class AddEditRecordViewModel @Inject constructor(
 
             is AddEditRecordEvent.SuggestionClicked -> {
                 val item = event.item
-
-                when (item.source) {
-                    SuggestionSource.RECENT_RECORD -> {
-                        val id = item.recordId
-                        if (id.isNullOrBlank()) {
-                            _state.update { it.copy(errorMessage = "Το RECENT suggestion δεν έχει recordId.") }
-                        } else {
-                            viewModelScope.launch {
-                                val record = recordRepository.getRecordById(id)
-                                if (record != null) {
-                                    applyRecentRecordAutofill(record)
-                                } else {
-                                    _state.update { it.copy(errorMessage = "Δεν βρέθηκε το template record.") }
-                                }
-                            }
-                        }
-                    }
-
-                    SuggestionSource.DOMAIN_KEYWORD -> {
-                        val category = categorizer(title = item.text, isReminder = false)
-                        val displayName = mapCategoryToDisplayName(category)
-                        _state.update { it.copy(title = displayName) }
-                        processIntelligentTitle(displayName)
-                        validateSave()
-                    }
-                }
+                val category = categorizer(title = item.text, isReminder = false)
+                val displayName = mapCategoryToDisplayName(category)
+                _state.update { it.copy(title = displayName, suggestions = emptyList(), suggestionClicked = true) }
+                processIntelligentTitle(displayName)
+                validateSave()
             }
 
             is AddEditRecordEvent.ToggleReminder -> {
@@ -453,12 +485,36 @@ class AddEditRecordViewModel @Inject constructor(
                 validateSave()
             }
 
-            AddEditRecordEvent.Save -> saveRecord()
+            AddEditRecordEvent.Save -> onSaveClicked()
 
             AddEditRecordEvent.ErrorShown -> _state.update { it.copy(errorMessage = null) }
 
-            AddEditRecordEvent.NavigateBackConsumed -> _state.update { it.copy(navigateBack = false) }
+            AddEditRecordEvent.NavigateBackConsumed -> {
+                _state.update { it.copy(navigateBack = false) }
+            }
+
+            is AddEditRecordEvent.TranslateTitleConfirmation -> {
+                _state.update { it.copy(showTranslateTitleDialog = false) }
+                if (event.dontAskAgain) {
+                    viewModelScope.launch {
+                        val preference = if (event.translate) TranslateTitlePreference.ALWAYS else TranslateTitlePreference.NEVER
+                        userPreferencesRepository.setTranslateTitlePreference(preference)
+                    }
+                }
+                if (event.translate) {
+                    val translatedTitle = mapCategoryToDisplayName(categorizer(title = _state.value.title, isReminder = false))
+                    _state.update { it.copy(title = translatedTitle) }
+                }
+                saveRecord()
+            }
         }
+    }
+
+    private fun isGreglish(text: String): Boolean {
+        if (text.isBlank()) return false
+        val hasLatin = text.any { it in 'a'..'z' || it in 'A'..'Z' }
+        val hasGreek = text.any { it in 'α'..'ω' || it in 'Α'..'Ω' || it in 'ά'..'ώ' || it in 'Ά'..'Ώ' }
+        return hasLatin && !hasGreek
     }
 
     // -------------------------------------------------------------------------
@@ -740,6 +796,26 @@ class AddEditRecordViewModel @Inject constructor(
     // -------------------------------------------------------------------------
     // SAVE
     // -------------------------------------------------------------------------
+    private fun onSaveClicked() {
+        viewModelScope.launch {
+            val s = _state.value
+            if (!s.suggestionClicked && isGreglish(s.title)) {
+                val preference = userPreferencesRepository.translateTitlePreference.first()
+                when (preference) {
+                    TranslateTitlePreference.ASK -> _state.update { it.copy(showTranslateTitleDialog = true) }
+                    TranslateTitlePreference.ALWAYS -> {
+                        val translatedTitle = mapCategoryToDisplayName(categorizer(title = _state.value.title, isReminder = false))
+                        _state.update { it.copy(title = translatedTitle) }
+                        saveRecord()
+                    }
+                    TranslateTitlePreference.NEVER -> saveRecord()
+                }
+            } else {
+                saveRecord()
+            }
+        }
+    }
+
     private fun saveRecord() {
         viewModelScope.launch {
             try {
@@ -747,7 +823,7 @@ class AddEditRecordViewModel @Inject constructor(
                 val reminderOdoInt = s.reminderOdometer.toIntOrNull()
 
                 val record = Record(
-                    id = s.recordId ?: java.util.UUID.randomUUID().toString(),
+                    id = if (fromReminder) java.util.UUID.randomUUID().toString() else s.recordId ?: java.util.UUID.randomUUID().toString(),
                     vehicleId = s.vehicleId,
                     recordType = s.recordType,
                     title = s.title,
@@ -766,6 +842,11 @@ class AddEditRecordViewModel @Inject constructor(
                 )
 
                 recordRepository.saveRecord(record)
+
+                if (fromReminder) {
+                    originalReminder?.let { recordRepository.deleteRecord(it) }
+                }
+
                 _state.update { it.copy(navigateBack = true) }
 
             } catch (e: Exception) {

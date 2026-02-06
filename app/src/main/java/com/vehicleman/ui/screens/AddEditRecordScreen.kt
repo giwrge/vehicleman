@@ -100,6 +100,33 @@ fun AddEditRecordScreen(
         }
     }
 
+    if (state.showTranslateTitleDialog) {
+        var dontAskAgain by remember { mutableStateOf(false) }
+        AlertDialog(
+            onDismissRequest = { viewModel.onEvent(AddEditRecordEvent.TranslateTitleConfirmation(translate = false, dontAskAgain = false)) },
+            title = { Text("Μετάφραση Τίτλου") },
+            text = { 
+                Column {
+                    Text("Ο τίτλος φαίνεται να είναι γραμμένος σε Grenglish. Θέλετε να τον μεταφράσουμε στα Ελληνικά;") 
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = dontAskAgain, onCheckedChange = { dontAskAgain = it })
+                        Text("Να μην ερωτηθώ ξανά")
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { viewModel.onEvent(AddEditRecordEvent.TranslateTitleConfirmation(translate = true, dontAskAgain = dontAskAgain)) }) {
+                    Text("Ναι")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.onEvent(AddEditRecordEvent.TranslateTitleConfirmation(translate = false, dontAskAgain = dontAskAgain)) }) {
+                    Text("Όχι")
+                }
+            }
+        )
+    }
+
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {

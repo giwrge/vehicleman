@@ -2,6 +2,7 @@ package com.vehicleman.presentation.preference
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vehicleman.domain.repositories.TranslateTitlePreference
 import com.vehicleman.domain.repositories.User
 import com.vehicleman.domain.repositories.UserPreferencesRepository
 import com.vehicleman.domain.repositories.VehicleSortOrder
@@ -21,6 +22,12 @@ class PreferenceViewModel @Inject constructor(
     val isNightMode = userPreferencesRepository.isNightMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
+    val showAutoReminders = userPreferencesRepository.showAutoReminders // <-- ΝΕΑ ΠΡΟΣΘΗΚΗ
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val translateTitlePreference = userPreferencesRepository.translateTitlePreference
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TranslateTitlePreference.ASK)
+
     val vehicleSortOrder = userPreferencesRepository.vehicleSortOrder
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), VehicleSortOrder.ALPHABETICAL)
 
@@ -30,6 +37,18 @@ class PreferenceViewModel @Inject constructor(
     fun setNightMode(isNightMode: Boolean) {
         viewModelScope.launch {
             userPreferencesRepository.setNightMode(isNightMode)
+        }
+    }
+
+    fun setShowAutoReminders(show: Boolean) { // <-- ΝΕΑ ΠΡΟΣΘΗΚΗ
+        viewModelScope.launch {
+            userPreferencesRepository.setShowAutoReminders(show)
+        }
+    }
+
+    fun setTranslateTitlePreference(preference: TranslateTitlePreference) {
+        viewModelScope.launch {
+            userPreferencesRepository.setTranslateTitlePreference(preference)
         }
     }
 
