@@ -2,6 +2,7 @@ package com.vehicleman.ui.screens
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -77,10 +78,11 @@ fun PreferenceScreen(
     var showContactDialog by remember { mutableStateOf(false) }
     var showLegalDialog by remember { mutableStateOf(false) }
     val vehicleSortOrder by viewModel.vehicleSortOrder.collectAsState(initial = VehicleSortOrder.ALPHABETICAL)
-    val showAutoReminders by viewModel.showAutoReminders.collectAsState() // <-- ΝΕΑ ΠΡΟΣΘΗΚΗ
+    val showAutoReminders by viewModel.showAutoReminders.collectAsState()
     val translateTitlePreference by viewModel.translateTitlePreference.collectAsState()
     val user by viewModel.user.collectAsState()
     val transparentYellow = Color(0x80FFFF00) // Yellow with 50% transparency
+    var translatePreferenceExpanded by remember { mutableStateOf(false) }
 
     val isSingleSubDriver = user.twinAppRole == TwinAppRole.SUB_DRIVER && user.subDriverType == SubDriverType.SINGLE
 
@@ -216,29 +218,33 @@ fun PreferenceScreen(
                 Card(modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp), colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.clickable { translatePreferenceExpanded = !translatePreferenceExpanded }.padding(16.dp)) {
                         Text(text = "Translate Title Preference", style = MaterialTheme.typography.bodyLarge)
-                        val radioOptions = listOf(TranslateTitlePreference.ASK, TranslateTitlePreference.ALWAYS, TranslateTitlePreference.NEVER)
-                        radioOptions.forEach { option ->
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .selectable(
-                                        selected = (option == translateTitlePreference),
-                                        onClick = { viewModel.setTranslateTitlePreference(option) }
-                                    )
-                                    .padding(horizontal = 16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                RadioButton(
-                                    selected = (option == translateTitlePreference),
-                                    onClick = { viewModel.setTranslateTitlePreference(option) }
-                                )
-                                Text(
-                                    text = option.name,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.padding(start = 16.dp)
-                                )
+                        AnimatedVisibility(visible = translatePreferenceExpanded) {
+                            Column {
+                                val radioOptions = listOf(TranslateTitlePreference.ASK, TranslateTitlePreference.ALWAYS, TranslateTitlePreference.NEVER)
+                                radioOptions.forEach { option ->
+                                    Row(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .selectable(
+                                                selected = (option == translateTitlePreference),
+                                                onClick = { viewModel.setTranslateTitlePreference(option) }
+                                            )
+                                            .padding(horizontal = 16.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        RadioButton(
+                                            selected = (option == translateTitlePreference),
+                                            onClick = { viewModel.setTranslateTitlePreference(option) }
+                                        )
+                                        Text(
+                                            text = option.name,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            modifier = Modifier.padding(start = 16.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

@@ -262,7 +262,10 @@ private fun RecordScreenTopAppBar(
                     modifier = Modifier.clickable { vehicleMenuExpanded = true },
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(selectedVehicle?.let { "${it.make} ${it.model}" } ?: "Επιλογή Οχήματος")
+                    Text(
+                        text = selectedVehicle?.let { "${it.make} ${it.model}" } ?: "Επιλογή Οχήματος",
+                        style = MaterialTheme.typography.titleSmall
+                    )
                     Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "Select vehicle")
                 }
                 DropdownMenu(

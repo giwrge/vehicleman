@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Date
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @HiltViewModel
@@ -142,10 +143,15 @@ class RecordViewModel @Inject constructor(
                 val timeline = result.timelineItems
                 val now = Date()
 
-                // Πρώτη μελλοντική υπενθύμιση για sticky note
+                // Πρώτη μελλοντική υπενθύμιση για sticky note, εντός 90 ημερών
                 val latestUpcoming = timeline
                     .filter { it.isReminder && it.reminderDate?.after(now) == true }
                     .minByOrNull { it.reminderDate!!.time }
+                    ?.let { reminder ->
+                        val diffInMillis = reminder.reminderDate!!.time - now.time
+                        val diffInDays = TimeUnit.MILLISECONDS.toDays(diffInMillis)
+                        if (diffInDays <= 90) reminder else null
+                    }
 
                 // Index για scroll στο "σήμερα"
                 val scrollIndex = timeline.indexOfFirst { record ->
