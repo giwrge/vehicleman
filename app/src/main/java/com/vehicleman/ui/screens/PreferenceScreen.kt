@@ -194,6 +194,10 @@ fun PreferenceScreen(
                 Button(onClick = { viewModel.populateDatabase() }, modifier = Modifier.padding(16.dp)) {
                     Text("Populate Database with Fake Data")
                 }
+                Button(onClick = { viewModel.resetToFree() }, modifier = Modifier.padding(16.dp)) {
+                    Text("Reset to Free")
+                }
+
 
                 // ** Η ΝΕΑ ΡΥΘΜΙΣΗ ΕΙΝΑΙ ΕΔΩ **
                 Card(modifier = Modifier

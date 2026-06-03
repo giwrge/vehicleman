@@ -2,6 +2,7 @@ package com.vehicleman.presentation.preference
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.vehicleman.domain.repositories.ProLevel
 import com.vehicleman.domain.repositories.TranslateTitlePreference
 import com.vehicleman.domain.repositories.User
 import com.vehicleman.domain.repositories.UserPreferencesRepository
@@ -9,6 +10,7 @@ import com.vehicleman.domain.repositories.VehicleSortOrder
 import com.vehicleman.domain.use_case.RecordUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -55,6 +57,13 @@ class PreferenceViewModel @Inject constructor(
     fun setVehicleSortOrder(sortOrder: VehicleSortOrder) {
         viewModelScope.launch {
             userPreferencesRepository.setVehicleSortOrder(sortOrder)
+        }
+    }
+
+    fun resetToFree() {
+        viewModelScope.launch {
+            val currentUser = user.first()
+            userPreferencesRepository.saveUser(currentUser.copy(proLevel = ProLevel.NONE))
         }
     }
 
