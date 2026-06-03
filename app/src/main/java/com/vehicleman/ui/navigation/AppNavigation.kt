@@ -152,7 +152,7 @@ fun AppNavigation(
         }
 
         composable(NavDestinations.PRO_MODE_ROUTE) {
-            PromodeScreen(navController = navController)
+            PromodeScreen(navController = navController, isNightMode = isNightMode)
         }
 
         composable(NavDestinations.SIGN_UP_ROUTE) {
