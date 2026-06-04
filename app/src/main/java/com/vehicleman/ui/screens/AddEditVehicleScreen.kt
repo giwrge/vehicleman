@@ -1,11 +1,13 @@
 package com.vehicleman.ui.screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -14,12 +16,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.vehicleman.R
@@ -27,6 +31,8 @@ import com.vehicleman.presentation.vehicles.VehicleFormEvent
 import com.vehicleman.presentation.vehicles.VehicleFormState
 import com.vehicleman.ui.navigation.NavDestinations
 import com.vehicleman.ui.viewmodel.AddEditVehicleViewModel
+import com.vehicleman.ui.screens.components.GlassBox
+import com.vehicleman.ui.screens.components.GlassTextField
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -40,6 +46,10 @@ fun AddEditVehicleScreen(
     isNightMode: Boolean
 ) {
     val state by addEditVehicleViewModel.state.collectAsState()
+
+    val contentColor = if (isNightMode) Color.White else Color(0xFF1A1A1A)
+    val glassColor = if (isNightMode) Color(0xFF707070).copy(alpha = 0.8f) else Color.White.copy(alpha = 0.92f)
+    val glassBorderColor = if (isNightMode) Color.White.copy(alpha = 0.15f) else Color.Black.copy(alpha = 0.1f)
 
     LaunchedEffect(vehicleId) {
         if (vehicleId != null && vehicleId != "new") {
@@ -67,156 +77,296 @@ fun AddEditVehicleScreen(
             painter = if (isNightMode) painterResource(id = R.mipmap.img_home_background_night) else painterResource(id = R.mipmap.img_home_background),
             contentDescription = "Background",
             contentScale = ContentScale.FillBounds,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .blur(if (isNightMode) 70.dp else 24.dp)
         )
 
         Scaffold(
             containerColor = Color.Transparent,
             topBar = {
-                TopBar(
-                    state = state,
-                    navController = navController,
-                    onSave = { addEditVehicleViewModel.onEvent(VehicleFormEvent.Submit) }
+                TopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+                    title = { 
+                        Text(
+                            text = if (state.id == null) "Προσθήκη Οχήματος" else "Επεξεργασία Οχήματος", 
+                            color = contentColor, 
+                            style = MaterialTheme.typography.titleLarge, 
+                            fontWeight = FontWeight.Bold, 
+                            modifier = Modifier.padding(start = 8.dp)
+                        ) 
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(48.dp)) {
+                            Image(
+                                painter = painterResource(id = R.mipmap.ic_backarrow), 
+                                contentDescription = "Πίσω", 
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { addEditVehicleViewModel.onEvent(VehicleFormEvent.Submit) }, modifier = Modifier.size(48.dp)) {
+                            Image(
+                                painter = painterResource(id = R.mipmap.ic_save), 
+                                contentDescription = "Αποθήκευση", 
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
+                    }
                 )
             }
         ) { innerPadding ->
-            AddEditVehicleForm(
+            Column(
                 modifier = Modifier
-                    .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(16.dp),
-                state = state,
-                onEvent = addEditVehicleViewModel::onEvent
-            )
-
-            state.errorMessage?.let {
-                val snackbarHostState = remember { SnackbarHostState() }
-                LaunchedEffect(it) {
-                    snackbarHostState.showSnackbar(it)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // SECTION 1: Make & Model
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    GlassBox(
+                        modifier = Modifier.weight(1f),
+                        label = "Μάρκα",
+                        isNightMode = isNightMode,
+                        glassColor = glassColor,
+                        glassBorderColor = glassBorderColor
+                    ) {
+                        GlassTextField(
+                            value = state.make,
+                            onValueChange = { addEditVehicleViewModel.onEvent(VehicleFormEvent.MakeChanged(it)) },
+                            placeholder = "π.χ. Toyota",
+                            isNightMode = isNightMode
+                        )
+                    }
+                    GlassBox(
+                        modifier = Modifier.weight(1f),
+                        label = "Μοντέλο",
+                        isNightMode = isNightMode,
+                        glassColor = glassColor,
+                        glassBorderColor = glassBorderColor
+                    ) {
+                        GlassTextField(
+                            value = state.model,
+                            onValueChange = { addEditVehicleViewModel.onEvent(VehicleFormEvent.ModelChanged(it)) },
+                            placeholder = "π.χ. Corolla",
+                            isNightMode = isNightMode
+                        )
+                    }
                 }
-                SnackbarHost(hostState = snackbarHostState, modifier = Modifier.padding(innerPadding))
+
+                // SECTION 2: Plate & Year
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    GlassBox(
+                        modifier = Modifier.weight(1.2f),
+                        label = "Πινακίδα",
+                        isNightMode = isNightMode,
+                        glassColor = glassColor,
+                        glassBorderColor = glassBorderColor
+                    ) {
+                        GlassTextField(
+                            value = state.plateNumber,
+                            onValueChange = { addEditVehicleViewModel.onEvent(VehicleFormEvent.PlateNumberChanged(it)) },
+                            placeholder = "ABC-1234",
+                            isNightMode = isNightMode
+                        )
+                    }
+                    GlassBox(
+                        modifier = Modifier.weight(0.8f),
+                        label = "Έτος",
+                        isNightMode = isNightMode,
+                        glassColor = glassColor,
+                        glassBorderColor = glassBorderColor
+                    ) {
+                        GlassTextField(
+                            value = state.year,
+                            onValueChange = { addEditVehicleViewModel.onEvent(VehicleFormEvent.YearChanged(it)) },
+                            keyboardType = KeyboardType.Number,
+                            placeholder = "2020",
+                            isNightMode = isNightMode
+                        )
+                    }
+                }
+
+                // SECTION 3: Odometer
+                GlassBox(
+                    modifier = Modifier.fillMaxWidth(),
+                    label = "Χιλιόμετρα (Οδόμετρο)",
+                    isNightMode = isNightMode,
+                    glassColor = glassColor,
+                    glassBorderColor = glassBorderColor
+                ) {
+                    GlassTextField(
+                        value = state.currentOdometer,
+                        onValueChange = { addEditVehicleViewModel.onEvent(VehicleFormEvent.CurrentOdometerChanged(it)) },
+                        keyboardType = KeyboardType.Number,
+                        placeholder = "0",
+                        isNightMode = isNightMode
+                    )
+                }
+
+                // SECTION 4: Fuel Types
+                FuelTypeSelectorGlass(
+                    selectedFuelTypes = state.fuelTypes,
+                    onFuelTypeChanged = { addEditVehicleViewModel.onEvent(VehicleFormEvent.FuelTypeChanged(it)) },
+                    isNightMode = isNightMode,
+                    glassColor = glassColor,
+                    glassBorderColor = glassBorderColor
+                )
+
+                Text(
+                    text = "Συντήρηση",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = contentColor,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    GlassBox(
+                        modifier = Modifier.weight(1f),
+                        label = "Λάδια (km)",
+                        isNightMode = isNightMode,
+                        glassColor = glassColor,
+                        glassBorderColor = glassBorderColor
+                    ) {
+                        GlassTextField(
+                            value = state.oilChangeKm,
+                            onValueChange = { addEditVehicleViewModel.onEvent(VehicleFormEvent.OilChangeKmChanged(it)) },
+                            keyboardType = KeyboardType.Number,
+                            placeholder = "κάθε Χ km",
+                            isNightMode = isNightMode
+                        )
+                    }
+                    GlassBox(
+                        modifier = Modifier.weight(1.2f),
+                        label = "Ημ/νία Λαδιών",
+                        isNightMode = isNightMode,
+                        glassColor = glassColor,
+                        glassBorderColor = glassBorderColor
+                    ) {
+                        DatePickerGlassField(
+                            value = state.oilChangeDate,
+                            onValueChange = { addEditVehicleViewModel.onEvent(VehicleFormEvent.OilChangeDateChanged(it)) },
+                            isNightMode = isNightMode
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    GlassBox(
+                        modifier = Modifier.weight(1f),
+                        label = "Ελαστικά (km)",
+                        isNightMode = isNightMode,
+                        glassColor = glassColor,
+                        glassBorderColor = glassBorderColor
+                    ) {
+                        GlassTextField(
+                            value = state.tiresChangeKm,
+                            onValueChange = { addEditVehicleViewModel.onEvent(VehicleFormEvent.TiresChangeKmChanged(it)) },
+                            keyboardType = KeyboardType.Number,
+                            placeholder = "κάθε Χ km",
+                            isNightMode = isNightMode
+                        )
+                    }
+                    GlassBox(
+                        modifier = Modifier.weight(1.2f),
+                        label = "Ημ/νία Ελαστικών",
+                        isNightMode = isNightMode,
+                        glassColor = glassColor,
+                        glassBorderColor = glassBorderColor
+                    ) {
+                        DatePickerGlassField(
+                            value = state.tiresChangeDate,
+                            onValueChange = { addEditVehicleViewModel.onEvent(VehicleFormEvent.TiresChangeDateChanged(it)) },
+                            isNightMode = isNightMode
+                        )
+                    }
+                }
+
+                Text(
+                    text = "Ασφάλεια & Τέλη",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = contentColor,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    GlassBox(
+                        modifier = Modifier.weight(1f),
+                        label = "Λήξη Ασφάλειας",
+                        isNightMode = isNightMode,
+                        glassColor = glassColor,
+                        glassBorderColor = glassBorderColor
+                    ) {
+                        DatePickerGlassField(
+                            value = state.insuranceExpiryDate,
+                            onValueChange = { addEditVehicleViewModel.onEvent(VehicleFormEvent.InsuranceExpiryDateChanged(it)) },
+                            isNightMode = isNightMode
+                        )
+                    }
+                    GlassBox(
+                        modifier = Modifier.weight(1f),
+                        label = "Λήξη Τελών",
+                        isNightMode = isNightMode,
+                        glassColor = glassColor,
+                        glassBorderColor = glassBorderColor
+                    ) {
+                        DatePickerGlassField(
+                            value = state.taxesExpiryDate,
+                            onValueChange = { addEditVehicleViewModel.onEvent(VehicleFormEvent.TaxesExpiryDateChanged(it)) },
+                            isNightMode = isNightMode
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                state.errorMessage?.let {
+                    val snackbarHostState = remember { SnackbarHostState() }
+                    LaunchedEffect(it) {
+                        snackbarHostState.showSnackbar(it)
+                    }
+                    SnackbarHost(hostState = snackbarHostState)
+                }
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TopBar(
-    state: VehicleFormState,
-    navController: NavController,
-    onSave: () -> Unit
+fun FuelTypeSelectorGlass(
+    selectedFuelTypes: String,
+    onFuelTypeChanged: (String) -> Unit,
+    isNightMode: Boolean,
+    glassColor: Color,
+    glassBorderColor: Color
 ) {
-    TopAppBar(
-        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
-        title = { Text(if (state.id == null) "Προσθήκη Οχήματος" else "Επεξεργασία Οχήματος", color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.padding(start = 16.dp)) },
-        navigationIcon = {
-            IconButton(onClick = { navController.popBackStack() }, modifier = Modifier.size(40.dp)) {
-                Image(painter = painterResource(id = R.mipmap.ic_backarrow), contentDescription = "Πίσω")
-            }
-        },
-        actions = {
-            IconButton(onClick = onSave) {
-                Image(painter = painterResource(id = R.mipmap.ic_save), contentDescription = "Αποθήκευση")
-            }
-        }
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AddEditVehicleForm(
-    modifier: Modifier = Modifier,
-    state: VehicleFormState,
-    onEvent: (VehicleFormEvent) -> Unit
-) {
-    val textFieldColors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = MaterialTheme.colorScheme.primary,
-        unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        focusedTextColor = MaterialTheme.colorScheme.onBackground,
-        unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
-        cursorColor = MaterialTheme.colorScheme.primary,
-        focusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
-    )
-
-    Column(
-        modifier = modifier.verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        OutlinedTextField(value = state.make, onValueChange = { onEvent(VehicleFormEvent.MakeChanged(it)) }, label = { Text("Μάρκα") }, modifier = Modifier.fillMaxWidth(), colors = textFieldColors)
-        OutlinedTextField(value = state.model, onValueChange = { onEvent(VehicleFormEvent.ModelChanged(it)) }, label = { Text("Μοντέλο") }, modifier = Modifier.fillMaxWidth(), colors = textFieldColors)
-        OutlinedTextField(value = state.plateNumber, onValueChange = { onEvent(VehicleFormEvent.PlateNumberChanged(it)) }, label = { Text("Αριθμός Πινακίδας") }, modifier = Modifier.fillMaxWidth(), colors = textFieldColors)
-        OutlinedTextField(value = state.year, onValueChange = { onEvent(VehicleFormEvent.YearChanged(it)) }, label = { Text("Έτος Κατασκευής") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), colors = textFieldColors)
-        OutlinedTextField(
-            value = state.currentOdometer,
-            onValueChange = { onEvent(VehicleFormEvent.CurrentOdometerChanged(it)) },
-            label = { Text("Χιλιόμετρα (Οδόμετρο)") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors
-        )
-
-        FuelTypeSelector(selectedFuelTypes = state.fuelTypes, onFuelTypeChanged = { onEvent(VehicleFormEvent.FuelTypeChanged(it)) })
-
-        Divider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-
-        Text("Συντήρηση", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
-
-        OutlinedTextField(
-            value = state.oilChangeKm,
-            onValueChange = { onEvent(VehicleFormEvent.OilChangeKmChanged(it)) },
-            label = { Text("Αλλαγή Λαδιών (κάθε Χ km)") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors
-        )
-        DatePickerField(label = "Αλλαγή Λαδιών (ημερομηνία)", value = state.oilChangeDate, onValueChange = { onEvent(VehicleFormEvent.OilChangeDateChanged(it)) }, colors = textFieldColors)
-        OutlinedTextField(
-            value = state.tiresChangeKm,
-            onValueChange = { onEvent(VehicleFormEvent.TiresChangeKmChanged(it)) },
-            label = { Text("Αλλαγή Ελαστικών (κάθε Χ km)") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier.fillMaxWidth(),
-            colors = textFieldColors
-        )
-        DatePickerField(label = "Αλλαγή Ελαστικών (ημερομηνία)", value = state.tiresChangeDate, onValueChange = { onEvent(VehicleFormEvent.TiresChangeDateChanged(it)) }, colors = textFieldColors)
-
-        Divider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-
-        Text("Ασφάλεια & Τέλη", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
-
-        DatePickerField(label = "Ημ/νία Λήξης Ασφάλειας", value = state.insuranceExpiryDate, onValueChange = { onEvent(VehicleFormEvent.InsuranceExpiryDateChanged(it)) }, colors = textFieldColors)
-        DatePickerField(label = "Ημ/νία Λήξης Τελών", value = state.taxesExpiryDate, onValueChange = { onEvent(VehicleFormEvent.TaxesExpiryDateChanged(it)) }, colors = textFieldColors)
-
-        Spacer(modifier = Modifier.height(24.dp))
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun FuelTypeSelector(selectedFuelTypes: String, onFuelTypeChanged: (String) -> Unit) {
     val fuelCategories = remember {
         linkedMapOf(
-            "Ηλεκτρικό:" to listOf(
-                "Ρεύμα" to "electric"
-            ),
-            "Βενζίνη:" to listOf(
-                "unleaded_95" to "unleaded_95",
-                "unleaded_98" to "unleaded_98",
-                "unleaded_100" to "unleaded_100"
-            ),
-            "Πετρέλαιο:" to listOf(
-                "diesel" to "diesel",
-                "b7 (Diesel με 7% βιοντίζελ)" to "b7"
-            ),
-            "Υγραέριο (LPG):" to listOf(
-                "lpg" to "lpg",
-                "autogas" to "autogas"
-            ),
-            "Φυσικό Αέριο (CNG):" to listOf(
-                "cng" to "cng"
-            )
+            "Ηλεκτρικό:" to listOf("Ρεύμα" to "electric"),
+            "Βενζίνη:" to listOf("95" to "unleaded_95", "98" to "unleaded_98", "100" to "unleaded_100"),
+            "Πετρέλαιο:" to listOf("diesel" to "diesel", "b7" to "b7"),
+            "Υγραέριο (LPG):" to listOf("lpg" to "lpg", "autogas" to "autogas"),
+            "Φυσικό Αέριο (CNG):" to listOf("cng" to "cng")
         )
     }
 
@@ -226,30 +376,28 @@ fun FuelTypeSelector(selectedFuelTypes: String, onFuelTypeChanged: (String) -> U
 
     var showDialog by remember { mutableStateOf(false) }
 
-    val disabledTextFieldColors = OutlinedTextFieldDefaults.colors(
-        disabledTextColor = MaterialTheme.colorScheme.onSurface,
-        disabledBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-    )
-
-    Box(modifier = Modifier.clickable { showDialog = true }) {
+    GlassBox(
+        modifier = Modifier.fillMaxWidth(),
+        label = "Τύπος Καυσίμου",
+        onClick = { showDialog = true },
+        isNightMode = isNightMode,
+        glassColor = glassColor,
+        glassBorderColor = glassBorderColor
+    ) {
         val selectedDisplayNames = selectedFuelTypes
             .split(", ")
             .filter { it.isNotBlank() }
             .map { valueToDisplayMap[it] ?: it }
             .joinToString(", ")
 
-        OutlinedTextField(
-            value = selectedDisplayNames,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("Τύπος Καυσίμου") },
-            modifier = Modifier.fillMaxWidth(),
-            colors = disabledTextFieldColors,
-            enabled = false
-        )
+        Box(modifier = Modifier.padding(vertical = 12.dp)) {
+            Text(
+                text = if (selectedDisplayNames.isEmpty()) "Επιλογή Καυσίμου" else selectedDisplayNames,
+                color = (if (isNightMode) Color.White else Color.Black).copy(alpha = if (selectedDisplayNames.isEmpty()) 0.4f else 1f),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 
     if (showDialog) {
@@ -262,9 +410,9 @@ fun FuelTypeSelector(selectedFuelTypes: String, onFuelTypeChanged: (String) -> U
                         item {
                             Text(
                                 text = category,
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
+                                modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
                             )
                         }
                         items(fuels) { (displayName, storedValue) ->
@@ -301,37 +449,25 @@ fun FuelTypeSelector(selectedFuelTypes: String, onFuelTypeChanged: (String) -> U
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DatePickerField(
-    label: String,
+fun DatePickerGlassField(
     value: String,
     onValueChange: (String) -> Unit,
-    colors: TextFieldColors
+    isNightMode: Boolean
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
     val locale = Locale("el")
-    val dateFormatter = SimpleDateFormat("EEEE, dd/MM/yyyy", locale)
-    
-    val disabledTextFieldColors = OutlinedTextFieldDefaults.colors(
-        disabledTextColor = MaterialTheme.colorScheme.onSurface,
-        disabledBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
-    )
+    val dateFormatter = SimpleDateFormat("dd/MM/yyyy", locale)
+    val contentColor = if (isNightMode) Color.White else Color.Black
 
     Box(modifier = Modifier.clickable { showDatePicker = true }) {
-        OutlinedTextField(
-            value = value.toLongOrNull()?.let { dateFormatter.format(Date(it)) } ?: "",
-            onValueChange = { },
-            readOnly = true,
-            label = { Text(label) },
-            modifier = Modifier.fillMaxWidth(),
-            trailingIcon = {
-                Icon(imageVector = Icons.Default.DateRange, contentDescription = "Select Date", tint = MaterialTheme.colorScheme.onSurfaceVariant)
-            },
-            colors = disabledTextFieldColors,
-            enabled = false // Make the text field non-editable but clickable via the Box
-        )
+        Box(modifier = Modifier.padding(vertical = 12.dp)) {
+            Text(
+                text = value.toLongOrNull()?.let { dateFormatter.format(Date(it)) } ?: "Επιλογή",
+                color = contentColor.copy(alpha = if (value.isEmpty()) 0.4f else 1f),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 
     if (showDatePicker) {
@@ -351,7 +487,7 @@ fun DatePickerField(
                 ) { Text("OK") }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
+                TextButton(onClick = { showDatePicker = false }) { Text("Άκυρο") }
             }
         ) {
             DatePicker(state = datePickerState)
