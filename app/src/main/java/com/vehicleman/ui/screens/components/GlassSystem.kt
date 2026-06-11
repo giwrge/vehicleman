@@ -10,10 +10,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -75,14 +77,48 @@ fun GlassTextField(
     placeholder: String = "",
     keyboardType: KeyboardType = KeyboardType.Text,
     singleLine: Boolean = true,
-    isNightMode: Boolean
+    isNightMode: Boolean,
+    onFocusChanged: (Boolean) -> Unit = {}
 ) {
     val contentColor = if (isNightMode) Color.White else Color.Black
     TextField(
         value = value,
         onValueChange = onValueChange,
         placeholder = { Text(placeholder, color = contentColor.copy(alpha = 0.4f), fontSize = 14.sp) },
-        modifier = modifier,
+        modifier = modifier.onFocusChanged { onFocusChanged(it.isFocused) },
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.Transparent,
+            unfocusedContainerColor = Color.Transparent,
+            disabledContainerColor = Color.Transparent,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent,
+            focusedTextColor = contentColor,
+            unfocusedTextColor = contentColor,
+            cursorColor = contentColor
+        ),
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        singleLine = singleLine,
+        textStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold, color = contentColor)
+    )
+}
+
+@Composable
+fun GlassTextFieldWithSelection(
+    value: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "",
+    keyboardType: KeyboardType = KeyboardType.Text,
+    singleLine: Boolean = true,
+    isNightMode: Boolean,
+    onFocusChanged: (Boolean) -> Unit = {}
+) {
+    val contentColor = if (isNightMode) Color.White else Color.Black
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        placeholder = { Text(placeholder, color = contentColor.copy(alpha = 0.4f), fontSize = 14.sp) },
+        modifier = modifier.onFocusChanged { onFocusChanged(it.isFocused) },
         colors = TextFieldDefaults.colors(
             focusedContainerColor = Color.Transparent,
             unfocusedContainerColor = Color.Transparent,

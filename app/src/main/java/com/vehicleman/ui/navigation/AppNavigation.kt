@@ -13,7 +13,6 @@ import com.vehicleman.ui.screens.AddEditRecordScreen
 import com.vehicleman.ui.screens.AddEditVehicleScreen
 import com.vehicleman.ui.screens.BackupScreen
 import com.vehicleman.ui.screens.CustomSortScreen
-import com.vehicleman.ui.screens.DriverStatisticsScreen
 import com.vehicleman.ui.screens.DriversScreen
 import com.vehicleman.ui.screens.HomeScreen
 import com.vehicleman.ui.screens.ImportWizardScreen
@@ -22,12 +21,11 @@ import com.vehicleman.ui.screens.RecordScreen
 import com.vehicleman.ui.screens.RestoreScreen
 import com.vehicleman.ui.screens.SingupScreen
 import com.vehicleman.ui.screens.SplashScreen
-import com.vehicleman.ui.screens.StatisticVehicleScreen
 import com.vehicleman.ui.screens.StatisticsScreen
+import com.vehicleman.ui.screens.DetailedAnalysisScreen
 import com.vehicleman.ui.screens.SubDriverPermissionsScreen
 import com.vehicleman.ui.screens.TwinAppSetupScreen
 import com.vehicleman.ui.screens.UsersScreen
-import com.vehicleman.ui.screens.VehicleStatisticsScreen
 import com.vehicleman.ui.viewmodel.HomeViewModel
 
 @Composable
@@ -98,7 +96,7 @@ fun AppNavigation(
                     navController.navigate(NavDestinations.addEditEntryRoute(vId, recordId, fromReminder))
                 },
                 onNavigateToStatistics = { currentVehicleId ->
-                    navController.navigate("VehicleStatisticsScreen/$currentVehicleId")
+                    navController.navigate(NavDestinations.detailedAnalysisRoute(NavDestinations.TYPE_VEHICLE, currentVehicleId))
                 },
                 onNavigateToPreferences = {
                     navController.navigate("${NavDestinations.PREFERENCE_ROUTE}/record_screen/${vehicleId ?: ""}")
@@ -123,26 +121,20 @@ fun AppNavigation(
             )
         }
 
-
-
         composable("${NavDestinations.STATISTICS_ROUTE}/{${NavDestinations.FROM_SCREEN_KEY}}/{${NavDestinations.FROM_ID_KEY}}") { backStackEntry ->
             val fromScreen = backStackEntry.arguments?.getString(NavDestinations.FROM_SCREEN_KEY)
             val fromId = backStackEntry.arguments?.getString(NavDestinations.FROM_ID_KEY)
             StatisticsScreen(navController = navController, fromScreen = fromScreen, fromId = fromId, isNightMode = isNightMode)
         }
 
-        composable("DriverStatisticsScreen/{driverId}") { 
-            DriverStatisticsScreen(navController = navController, isNightMode = isNightMode)
-        }
-
-        composable("VehicleStatisticsScreen/{vehicleId}") {
-            VehicleStatisticsScreen(navController = navController, isNightMode = isNightMode)
-        }
-
         composable(
-            route = "${NavDestinations.STATISTIC_VEHICLE_ROUTE}/{${NavDestinations.VEHICLE_ID_KEY}}"
+            route = "${NavDestinations.DETAILED_ANALYSIS_ROUTE}/{${NavDestinations.ANALYSIS_TYPE_KEY}}/{${NavDestinations.ANALYSIS_ID_KEY}}",
+            arguments = listOf(
+                navArgument(NavDestinations.ANALYSIS_TYPE_KEY) { type = NavType.StringType },
+                navArgument(NavDestinations.ANALYSIS_ID_KEY) { type = NavType.StringType }
+            )
         ) {
-            StatisticVehicleScreen(navController = navController)
+            DetailedAnalysisScreen(navController = navController, isNightMode = isNightMode)
         }
 
         composable("${NavDestinations.PREFERENCE_ROUTE}/{${NavDestinations.FROM_SCREEN_KEY}}/{${NavDestinations.FROM_ID_KEY}}") { backStackEntry ->

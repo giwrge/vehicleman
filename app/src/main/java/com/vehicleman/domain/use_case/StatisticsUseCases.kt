@@ -4,5 +4,6 @@ import javax.inject.Inject
 
 data class StatisticsUseCases @Inject constructor(
     val getVehicleStatistics: GetVehicleStatistics,
-    val getVehicleConsumption: GetVehicleConsumption
+    val getVehicleConsumption: GetVehicleConsumption,
+    val getDetailedStatistics: GetDetailedStatisticsUseCase
 )

@@ -11,6 +11,7 @@ data class RecordEntity(
     val vehicleId: String,
 
     val recordType: String, // "EXPENSE", "REMINDER", "FUEL_UP"
+    val category: String?,  // "FUEL", "SERVICE", "TIRES", etc.
     val title: String,
     val description: String?,
 
@@ -22,6 +23,7 @@ data class RecordEntity(
     val quantity: Double?,
     val pricePerUnit: Double?,
     val fuelType: String?,
+    val isFullTank: Boolean, // ✅ NEW
 
     // Reminder fields
     val isReminder: Boolean,
