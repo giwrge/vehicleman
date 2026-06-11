@@ -3,7 +3,9 @@ package com.vehicleman.ui.screens
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
@@ -16,9 +18,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -34,15 +37,18 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -81,8 +87,14 @@ fun PreferenceScreen(
     val showAutoReminders by viewModel.showAutoReminders.collectAsState()
     val translateTitlePreference by viewModel.translateTitlePreference.collectAsState()
     val user by viewModel.user.collectAsState()
-    val transparentYellow = Color(0x80FFFF00) // Yellow with 50% transparency
     var translatePreferenceExpanded by remember { mutableStateOf(false) }
+    
+    val contentColor = if (isNightMode) Color.White else Color.Black
+    val generalGradient = Brush.verticalGradient(listOf(Color(0xFF795548).copy(alpha = 0.4f), Color.Transparent))
+    val dataSyncGradient = Brush.verticalGradient(listOf(Color(0xFF4CAF50).copy(alpha = 0.4f), Color.Transparent))
+    val userMgmtGradient = Brush.verticalGradient(listOf(Color(0xFF2196F3).copy(alpha = 0.4f), Color.Transparent))
+    val aboutGradient = Brush.verticalGradient(listOf(Color(0xFF9C27B0).copy(alpha = 0.3f), Color.Transparent))
+    val proGradient = Brush.verticalGradient(listOf(Color(0xFFFFD700).copy(alpha = 0.5f), Color.Transparent))
 
     val isSingleSubDriver = user.twinAppRole == TwinAppRole.SUB_DRIVER && user.subDriverType == SubDriverType.SINGLE
 
@@ -132,16 +144,17 @@ fun PreferenceScreen(
             containerColor = Color.Transparent,
             topBar = {
                 TopAppBar(
-                    title = { Text(text = "Settings") },
+                    title = { Text(text = "Settings", color = contentColor) },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = contentColor)
                         }
-                    }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             }
         ) { paddingValues ->
-            var totalDragAmount by remember { mutableStateOf(0f) }
+            var totalDragAmount by remember { mutableFloatStateOf(0f) }
             Column(
                 modifier = Modifier
                     .padding(paddingValues)
@@ -168,10 +181,9 @@ fun PreferenceScreen(
                     }
             ) {
                 // General
-                Text(text = "General", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
-                Card(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp), colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                Text(text = "General", style = MaterialTheme.typography.titleMedium, color = contentColor, modifier = Modifier.padding(16.dp))
+                
+                PreferenceCard(brush = generalGradient, contentColor = contentColor) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -179,8 +191,8 @@ fun PreferenceScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Night Mode", style = MaterialTheme.typography.bodyLarge)
-                            Text(text = "Enable dark theme", style = MaterialTheme.typography.bodySmall)
+                            Text(text = "Night Mode", style = MaterialTheme.typography.bodyLarge, color = contentColor)
+                            Text(text = "Enable dark theme", style = MaterialTheme.typography.bodySmall, color = contentColor.copy(alpha = 0.7f))
                         }
                         Switch(checked = isNightMode, onCheckedChange = { 
                             coroutineScope.launch {
@@ -190,6 +202,8 @@ fun PreferenceScreen(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(8.dp))
+
                 // Temporary button to populate database
                 Button(onClick = { viewModel.populateDatabase() }, modifier = Modifier.padding(16.dp)) {
                     Text("Populate Database with Fake Data")
@@ -198,11 +212,7 @@ fun PreferenceScreen(
                     Text("Reset to Free")
                 }
 
-
-                // ** Η ΝΕΑ ΡΥΘΜΙΣΗ ΕΙΝΑΙ ΕΔΩ **
-                Card(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp), colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                PreferenceCard(brush = generalGradient, contentColor = contentColor) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -210,8 +220,8 @@ fun PreferenceScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Auto Reminders", style = MaterialTheme.typography.bodyLarge)
-                            Text(text = "Automatically generate reminders for service, etc.", style = MaterialTheme.typography.bodySmall)
+                            Text(text = "Auto Reminders", style = MaterialTheme.typography.bodyLarge, color = contentColor)
+                            Text(text = "Automatically generate reminders for service, etc.", style = MaterialTheme.typography.bodySmall, color = contentColor.copy(alpha = 0.7f))
                         }
                         Switch(checked = showAutoReminders, onCheckedChange = { 
                             viewModel.setShowAutoReminders(it)
@@ -219,11 +229,11 @@ fun PreferenceScreen(
                     }
                 }
 
-                Card(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp), colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                PreferenceCard(brush = generalGradient, contentColor = contentColor) {
                     Column(modifier = Modifier.clickable { translatePreferenceExpanded = !translatePreferenceExpanded }.padding(16.dp)) {
-                        Text(text = "Translate Title Preference", style = MaterialTheme.typography.bodyLarge)
+                        Text(text = "Translate Title Preference", style = MaterialTheme.typography.bodyLarge, color = contentColor)
                         AnimatedVisibility(visible = translatePreferenceExpanded) {
                             Column {
                                 val radioOptions = listOf(TranslateTitlePreference.ASK, TranslateTitlePreference.ALWAYS, TranslateTitlePreference.NEVER)
@@ -245,6 +255,7 @@ fun PreferenceScreen(
                                         Text(
                                             text = option.name,
                                             style = MaterialTheme.typography.bodyLarge,
+                                            color = contentColor,
                                             modifier = Modifier.padding(start = 16.dp)
                                         )
                                     }
@@ -254,9 +265,9 @@ fun PreferenceScreen(
                     }
                 }
 
-                Card(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp), colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                PreferenceCard(brush = generalGradient, contentColor = contentColor) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -264,19 +275,23 @@ fun PreferenceScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Test Mode", style = MaterialTheme.typography.bodyLarge)
-                            Text(text = "Bypass Pro restrictions", style = MaterialTheme.typography.bodySmall)
+                            Text(text = "Test Mode", style = MaterialTheme.typography.bodyLarge, color = contentColor)
+                            Text(text = "Bypass Pro restrictions", style = MaterialTheme.typography.bodySmall, color = contentColor.copy(alpha = 0.7f))
                         }
                         Switch(checked = user.isTestMode, onCheckedChange = { 
                             // viewModel.setTestMode(it) // TODO: Re-implement this
                         })
                     }
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 val isPro = user.proLevel != ProLevel.NONE || user.isTestMode
-                Card(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .clickable(enabled = isPro && !isSingleSubDriver) { showSortDialog = true }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                PreferenceCard(
+                    brush = generalGradient, 
+                    contentColor = contentColor,
+                    modifier = Modifier.clickable(enabled = isPro && !isSingleSubDriver) { showSortDialog = true }
+                ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -284,8 +299,16 @@ fun PreferenceScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Modify Vehicle List Sorting", style = MaterialTheme.typography.bodyLarge, color = if (isPro && !isSingleSubDriver) Color.Unspecified else Color.Gray)
-                            Text(text = "Change how vehicles are displayed in the main list", style = MaterialTheme.typography.bodySmall, color = if (isPro && !isSingleSubDriver) Color.Unspecified else Color.Gray)
+                            Text(
+                                text = "Modify Vehicle List Sorting", 
+                                style = MaterialTheme.typography.bodyLarge, 
+                                color = if (isPro && !isSingleSubDriver) contentColor else Color.Gray
+                            )
+                            Text(
+                                text = "Change how vehicles are displayed in the main list", 
+                                style = MaterialTheme.typography.bodySmall, 
+                                color = if (isPro && !isSingleSubDriver) contentColor.copy(alpha = 0.7f) else Color.Gray
+                            )
                         }
                         if (!isPro) {
                             Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
@@ -295,11 +318,13 @@ fun PreferenceScreen(
 
                 if (!isSingleSubDriver) { // Hide Data & Sync for SingleSubDrivers
                     // Data & Sync
-                    Text(text = "Data & Sync", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
-                    Card(modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .clickable(enabled = isPro) { navController.navigate(NavDestinations.BACKUP_ROUTE) }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                    Text(text = "Data & Sync", style = MaterialTheme.typography.titleMedium, color = contentColor, modifier = Modifier.padding(16.dp))
+                    
+                    PreferenceCard(
+                        brush = dataSyncGradient, 
+                        contentColor = contentColor,
+                        modifier = Modifier.clickable(enabled = isPro) { navController.navigate(NavDestinations.BACKUP_ROUTE) }
+                    ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -307,18 +332,22 @@ fun PreferenceScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = "Backup", style = MaterialTheme.typography.bodyLarge, color = if (isPro) Color.Unspecified else Color.Gray)
-                                Text(text = "Save a backup of your data", style = MaterialTheme.typography.bodySmall, color = if (isPro) Color.Unspecified else Color.Gray)
+                                Text(text = "Backup", style = MaterialTheme.typography.bodyLarge, color = if (isPro) contentColor else Color.Gray)
+                                Text(text = "Save a backup of your data", style = MaterialTheme.typography.bodySmall, color = if (isPro) contentColor.copy(alpha = 0.7f) else Color.Gray)
                             }
                             if (!isPro) {
                                  Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
                             }
                         }
                     }
-                    Card(modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clickable(enabled = isPro) { navController.navigate(NavDestinations.RESTORE_ROUTE) }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    PreferenceCard(
+                        brush = dataSyncGradient, 
+                        contentColor = contentColor,
+                        modifier = Modifier.clickable(enabled = isPro) { navController.navigate(NavDestinations.RESTORE_ROUTE) }
+                    ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -326,19 +355,23 @@ fun PreferenceScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = "Restore", style = MaterialTheme.typography.bodyLarge, color = if (isPro) Color.Unspecified else Color.Gray)
-                                Text(text = "Restore your data from a backup", style = MaterialTheme.typography.bodySmall, color = if (isPro) Color.Unspecified else Color.Gray)
+                                Text(text = "Restore", style = MaterialTheme.typography.bodyLarge, color = if (isPro) contentColor else Color.Gray)
+                                Text(text = "Restore your data from a backup", style = MaterialTheme.typography.bodySmall, color = if (isPro) contentColor.copy(alpha = 0.7f) else Color.Gray)
                             }
                              if (!isPro) {
                                  Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     val isPro1 = user.proLevel >= ProLevel.PRO_1 || user.isTestMode
-                    Card(modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .clickable(enabled = isPro1) { navController.navigate(NavDestinations.IMPORT_WIZARD_ROUTE) }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                    PreferenceCard(
+                        brush = dataSyncGradient, 
+                        contentColor = contentColor,
+                        modifier = Modifier.clickable(enabled = isPro1) { navController.navigate(NavDestinations.IMPORT_WIZARD_ROUTE) }
+                    ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -346,19 +379,23 @@ fun PreferenceScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = "Import Data", style = MaterialTheme.typography.bodyLarge, color = if (isPro1) Color.Unspecified else Color.Gray)
-                                Text(text = "Transfer data from supported apps", style = MaterialTheme.typography.bodySmall, color = if (isPro1) Color.Unspecified else Color.Gray)
+                                Text(text = "Import Data", style = MaterialTheme.typography.bodyLarge, color = if (isPro1) contentColor else Color.Gray)
+                                Text(text = "Transfer data from supported apps", style = MaterialTheme.typography.bodySmall, color = if (isPro1) contentColor.copy(alpha = 0.7f) else Color.Gray)
                             }
                              if (!isPro1) {
                                  Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
                             }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     val isPro2 = user.proLevel >= ProLevel.PRO_2 || user.isTestMode
-                    Card(modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clickable(enabled = isPro2) { showExportDialog = true }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                    PreferenceCard(
+                        brush = dataSyncGradient, 
+                        contentColor = contentColor,
+                        modifier = Modifier.clickable(enabled = isPro2) { showExportDialog = true }
+                    ) {
                          Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -366,8 +403,8 @@ fun PreferenceScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = "Export Data", style = MaterialTheme.typography.bodyLarge, color = if (isPro2) Color.Unspecified else Color.Gray)
-                                Text(text = "Export your data to an external file", style = MaterialTheme.typography.bodySmall, color = if (isPro2) Color.Unspecified else Color.Gray)
+                                Text(text = "Export Data", style = MaterialTheme.typography.bodyLarge, color = if (isPro2) contentColor else Color.Gray)
+                                Text(text = "Export your data to an external file", style = MaterialTheme.typography.bodySmall, color = if (isPro2) contentColor.copy(alpha = 0.7f) else Color.Gray)
                             }
                              if (!isPro2) {
                                  Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
@@ -378,11 +415,13 @@ fun PreferenceScreen(
 
                 if (!isSingleSubDriver) { // Hide User & Device Management for SingleSubDrivers
                     // User & Device Management
-                    Text(text = "User & Device Management", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
-                    Card(modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .clickable { navController.navigate(NavDestinations.SIGN_UP_ROUTE) }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                    Text(text = "User & Device Management", style = MaterialTheme.typography.titleMedium, color = contentColor, modifier = Modifier.padding(16.dp))
+                    
+                    PreferenceCard(
+                        brush = userMgmtGradient, 
+                        contentColor = contentColor,
+                        modifier = Modifier.clickable { navController.navigate(NavDestinations.SIGN_UP_ROUTE) }
+                    ) {
                          Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -390,15 +429,19 @@ fun PreferenceScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = "Sign up user", style = MaterialTheme.typography.bodyLarge)
-                                Text(text = "Free user becomes a registered user", style = MaterialTheme.typography.bodySmall)
+                                Text(text = "Sign up user", style = MaterialTheme.typography.bodyLarge, color = contentColor)
+                                Text(text = "Free user becomes a registered user", style = MaterialTheme.typography.bodySmall, color = contentColor.copy(alpha = 0.7f))
                             }
                         }
                     }
-                    Card(modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .clickable(enabled = isPro) { navController.navigate(NavDestinations.DRIVERS_ROUTE) }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    PreferenceCard(
+                        brush = userMgmtGradient, 
+                        contentColor = contentColor,
+                        modifier = Modifier.clickable(enabled = isPro) { navController.navigate(NavDestinations.DRIVERS_ROUTE) }
+                    ) {
                          Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -406,18 +449,22 @@ fun PreferenceScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = "Manage Drivers", style = MaterialTheme.typography.bodyLarge, color = if (isPro) Color.Unspecified else Color.Gray)
-                                Text(text = "Assign vehicles to drivers for statistics", style = MaterialTheme.typography.bodySmall, color = if (isPro) Color.Unspecified else Color.Gray)
+                                Text(text = "Manage Drivers", style = MaterialTheme.typography.bodyLarge, color = if (isPro) contentColor else Color.Gray)
+                                Text(text = "Assign vehicles to drivers for statistics", style = MaterialTheme.typography.bodySmall, color = if (isPro) contentColor.copy(alpha = 0.7f) else Color.Gray)
                             }
                             if (!isPro) {
                                 Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
                             }
                         }
                     }
-                     Card(modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .clickable(enabled = isPro) { navController.navigate(NavDestinations.TWIN_APP_SETUP_ROUTE) }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                     PreferenceCard(
+                        brush = userMgmtGradient, 
+                        contentColor = contentColor,
+                        modifier = Modifier.clickable(enabled = isPro) { navController.navigate(NavDestinations.TWIN_APP_SETUP_ROUTE) }
+                    ) {
                          Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -425,8 +472,8 @@ fun PreferenceScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = "Twin App", style = MaterialTheme.typography.bodyLarge, color = if (isPro) Color.Unspecified else Color.Gray)
-                                Text(text = "Sync data with a second device in real time", style = MaterialTheme.typography.bodySmall, color = if (isPro) Color.Unspecified else Color.Gray)
+                                Text(text = "Twin App", style = MaterialTheme.typography.bodyLarge, color = if (isPro) contentColor else Color.Gray)
+                                Text(text = "Sync data with a second device in real time", style = MaterialTheme.typography.bodySmall, color = if (isPro) contentColor.copy(alpha = 0.7f) else Color.Gray)
                             }
                             if (!isPro) {
                                 Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
@@ -436,11 +483,13 @@ fun PreferenceScreen(
                 }
 
                 // About
-                Text(text = "About", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
-                Card(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .clickable { showAppInfoDialog = true }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                Text(text = "About", style = MaterialTheme.typography.titleMedium, color = contentColor, modifier = Modifier.padding(16.dp))
+                
+                PreferenceCard(
+                    brush = aboutGradient, 
+                    contentColor = contentColor,
+                    modifier = Modifier.clickable { showAppInfoDialog = true }
+                ) {
                      Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -448,15 +497,19 @@ fun PreferenceScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "App Info", style = MaterialTheme.typography.bodyLarge)
-                            Text(text = "Version, manufacturer, etc.", style = MaterialTheme.typography.bodySmall)
+                            Text(text = "App Info", style = MaterialTheme.typography.bodyLarge, color = contentColor)
+                            Text(text = "Version, manufacturer, etc.", style = MaterialTheme.typography.bodySmall, color = contentColor.copy(alpha = 0.7f))
                         }
                     }
                 }
-                Card(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .clickable { showContactDialog = true }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                PreferenceCard(
+                    brush = aboutGradient, 
+                    contentColor = contentColor,
+                    modifier = Modifier.clickable { showContactDialog = true }
+                ) {
                      Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -464,15 +517,19 @@ fun PreferenceScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Contact Info", style = MaterialTheme.typography.bodyLarge)
-                            Text(text = "Email, website, etc.", style = MaterialTheme.typography.bodySmall)
+                            Text(text = "Contact Info", style = MaterialTheme.typography.bodyLarge, color = contentColor)
+                            Text(text = "Email, website, etc.", style = MaterialTheme.typography.bodySmall, color = contentColor.copy(alpha = 0.7f))
                         }
                     }
                 }
-                Card(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .clickable { showLegalDialog = true }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                PreferenceCard(
+                    brush = aboutGradient, 
+                    contentColor = contentColor,
+                    modifier = Modifier.clickable { showLegalDialog = true }
+                ) {
                      Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -480,19 +537,20 @@ fun PreferenceScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Legal", style = MaterialTheme.typography.bodyLarge)
-                            Text(text = "Terms of Use, Privacy Policy, etc.", style = MaterialTheme.typography.bodySmall)
+                            Text(text = "Legal", style = MaterialTheme.typography.bodyLarge, color = contentColor)
+                            Text(text = "Terms of Use, Privacy Policy, etc.", style = MaterialTheme.typography.bodySmall, color = contentColor.copy(alpha = 0.7f))
                         }
                     }
                 }
 
                 // Pro Mode
                 if (user.proLevel == ProLevel.NONE) {
-                    Text(text = "Pro Mode", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp))
-                    Card(modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .clickable { navController.navigate(NavDestinations.PRO_MODE_ROUTE) }, colors = CardDefaults.cardColors(containerColor = transparentYellow)) {
+                    Text(text = "Pro Mode", style = MaterialTheme.typography.titleMedium, color = contentColor, modifier = Modifier.padding(16.dp))
+                    PreferenceCard(
+                        brush = proGradient, 
+                        contentColor = contentColor,
+                        modifier = Modifier.clickable { navController.navigate(NavDestinations.PRO_MODE_ROUTE) }
+                    ) {
                          Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -500,14 +558,39 @@ fun PreferenceScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(text = "Upgrade to Pro", style = MaterialTheme.typography.bodyLarge)
-                                Text(text = "Unlock all exclusive features", style = MaterialTheme.typography.bodySmall)
+                                Text(text = "Upgrade to Pro", style = MaterialTheme.typography.bodyLarge, color = contentColor)
+                                Text(text = "Unlock all exclusive features", style = MaterialTheme.typography.bodySmall, color = contentColor.copy(alpha = 0.7f))
                             }
                             Icon(imageVector = Icons.Default.Star, contentDescription = "Pro", tint = Color.Gray)
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun PreferenceCard(
+    brush: Brush,
+    contentColor: Color,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        border = BorderStroke(0.5.dp, contentColor.copy(alpha = 0.3f))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(brush)
+        ) {
+            content()
         }
     }
 }
