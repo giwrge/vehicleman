@@ -9,6 +9,8 @@ sealed class AddEditRecordEvent {
     data class LoadExisting(val recordId: String) : AddEditRecordEvent()
 
     data class TitleChanged(val value: String) : AddEditRecordEvent()
+    data class TitleFieldValueChanged(val value: androidx.compose.ui.text.input.TextFieldValue) : AddEditRecordEvent() // ✅ NEW
+    object TitleFocusLost : AddEditRecordEvent() // ✅ NEW
     data class DescriptionChanged(val value: String) : AddEditRecordEvent()
     data class DateTextChanged(val value: String) : AddEditRecordEvent()
     data class DateChanged(val value: Date) : AddEditRecordEvent()
@@ -18,6 +20,7 @@ sealed class AddEditRecordEvent {
     data class QuantityChanged(val value: String) : AddEditRecordEvent()
     data class PricePerUnitChanged(val value: String) : AddEditRecordEvent()
     data class FuelTypeChanged(val value: String) : AddEditRecordEvent()
+    object ToggleFullTank : AddEditRecordEvent() // ✅ NEW
 
     data class RecordTypeChanged(val value: RecordType) : AddEditRecordEvent()
 

@@ -3,6 +3,8 @@ package com.vehicleman.data
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.vehicleman.data.dao.DriverDao
 import com.vehicleman.data.dao.RecordDao
 import com.vehicleman.data.dao.VehicleDao
@@ -30,5 +32,12 @@ abstract class VehicleDatabase : RoomDatabase() {
 
     companion object {
         const val DATABASE_NAME = "vehicle_man_db"
+
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Προσθήκη του νέου πεδίου costReminder στην υπάρχουσα βάση
+                db.execSQL("ALTER TABLE records ADD COLUMN costReminder REAL")
+            }
+        }
     }
 }

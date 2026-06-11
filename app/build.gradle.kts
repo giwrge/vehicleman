@@ -1,13 +1,13 @@
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("kotlin-kapt") // Required for Hilt & Room
-    id("com.google.dagger.hilt.android") // Hilt plugin
+    alias(libs.plugins.vmanAgp)
+    alias(libs.plugins.vmanKgp)
+    alias(libs.plugins.vmanKapt)
+    alias(libs.plugins.vmanHilt)
 }
 
 android {
     namespace = "com.vehicleman"
-    compileSdk = 34 // Targeting SDK 34 is better for modern Compose
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.vehicleman"
@@ -53,56 +53,51 @@ android {
 }
 
 dependencies {
-
-    // Compose BOM - This ensures all Compose libraries are compatible
-    val composeBom = platform("androidx.compose:compose-bom:2024.06.00")
+    // Compose BOM
+    val composeBom = platform(libs.androidxComposeBom)
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
-    // Android Core
-    implementation("androidx.core:core-ktx:1.12.0")
-
-    // FIX: Splash Screen API
-    implementation("androidx.core:core-splashscreen:1.0.1")
+    // Android Core & Splash
+    implementation(libs.androidxCoreKtx)
+    implementation(libs.androidxCoreSplashscreen)
 
     // Lifecycle & ViewModel
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.3")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.3") // For collectAsStateWithLifecycle
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
+    implementation(libs.androidxLifecycleRuntimeKtx)
+    implementation(libs.androidxLifecycleRuntimeCompose)
+    implementation(libs.androidxLifecycleViewmodelKtx)
 
-    // Compose - No versions needed here, they are managed by the BOM
-    implementation("androidx.activity:activity-compose:1.8.2")
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material:material-icons-extended") // For Icons like Add, Delete, etc.
-    implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
-    implementation("co.yml:ycharts:2.1.0")
+    // Compose
+    implementation(libs.androidxActivityCompose)
+    implementation(libs.androidxComposeUi)
+    implementation(libs.androidxComposeUiGraphics)
+    implementation(libs.androidxComposeUiToolingPreview)
+    implementation(libs.androidxComposeMaterial3)
+    implementation(libs.androidxComposeMaterialIconsExtended)
+    implementation(libs.composeReorderableLib)
+    implementation(libs.ychartsLib)
 
-    // DataStore
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
-
-    // Gson
-    implementation("com.google.code.gson:gson:2.10.1")
+    // DataStore & Gson
+    implementation(libs.datastorePreferencesLib)
+    implementation(libs.googleGsonLib)
 
     // Compose Tooling
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    debugImplementation(libs.androidxComposeUiTooling)
+    debugImplementation(libs.androidxComposeUiTestManifest)
 
-    // Hilt (Dependency Injection)
-    implementation("com.google.dagger:hilt-android:2.52")
-    kapt("com.google.dagger:hilt-android-compiler:2.52")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    // Hilt
+    implementation(libs.hiltAndroidLib)
+    kapt(libs.hiltCompilerLib)
+    implementation(libs.hiltNavigationComposeLib)
 
-    // Room (Database)
-    implementation("androidx.room:room-runtime:2.6.1")
-    kapt("androidx.room:room-compiler:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1") // Coroutine support
+    // Room
+    implementation(libs.roomRuntimeLib)
+    kapt(libs.roomCompilerLib)
+    implementation(libs.roomKtxLib)
 
     // Testing
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation(libs.junitLib)
+    androidTestImplementation(libs.androidxJunitLib)
+    androidTestImplementation(libs.androidxEspressoCoreLib)
+    androidTestImplementation(libs.androidxComposeUiTestJunit4)
 }

@@ -1,5 +1,6 @@
 package com.vehicleman.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -35,6 +36,7 @@ import com.vehicleman.domain.use_case.record_ai.SuggestionItem
 import com.vehicleman.domain.use_case.record_ai.SuggestionSource
 import com.vehicleman.ui.screens.components.GlassBox
 import com.vehicleman.ui.screens.components.GlassTextField
+import com.vehicleman.ui.screens.components.GlassTextFieldWithSelection
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -187,11 +189,14 @@ fun AddEditRecordScreen(
                             glassColor = glassColor,
                             glassBorderColor = glassBorderColor
                         ) {
-                            GlassTextField(
-                                value = state.title,
-                                onValueChange = { viewModel.onEvent(AddEditRecordEvent.TitleChanged(it)) },
-                                placeholder = "π.χ. Service",
-                                isNightMode = isNightMode
+                            GlassTextFieldWithSelection(
+                                value = state.titleFieldValue,
+                                onValueChange = { tfv -> viewModel.onEvent(AddEditRecordEvent.TitleFieldValueChanged(tfv)) },
+                                placeholder = "π.χ. Service ή Βενζίνη 50€",
+                                isNightMode = isNightMode,
+                                onFocusChanged = { isFocused ->
+                                    if (!isFocused) viewModel.onEvent(AddEditRecordEvent.TitleFocusLost)
+                                }
                             )
                         }
 
@@ -211,7 +216,7 @@ fun AddEditRecordScreen(
                         }
                     }
 
-                    // ROW 2: ACTION TILES (AI Suggestions in 2x2 Grid)
+                    // ROW 2: AI Suggestions (Moved under title)
                     if (state.suggestions.isNotEmpty()) {
                         SuggestionsGrid(
                             suggestions = state.suggestions,
@@ -221,8 +226,6 @@ fun AddEditRecordScreen(
                             glassBorderColor = glassBorderColor
                         )
                     }
-
-                    // ROW 3: MEASUREMENT WIDGETS (Odometer & Main Cost)
                     if (state.recordType != RecordType.REMINDER || !state.isFutureDate) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -268,37 +271,76 @@ fun AddEditRecordScreen(
                         }
                     }
 
-                    // ROW 4: FUEL DATA (3-Column specialized technical grid)
+                    // ROW 4: FUEL DATA (Enhanced with Selection Chips)
                     if (state.recordType == RecordType.FUEL_UP) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            GlassBox(modifier = Modifier.weight(1f), label = "Λίτρα", icon = R.drawable.ic_fuel, isNightMode = isNightMode, glassColor = glassColor, glassBorderColor = glassBorderColor) {
-                                GlassTextField(
-                                    value = state.quantity,
-                                    onValueChange = { viewModel.onEvent(AddEditRecordEvent.QuantityChanged(it)) },
-                                    keyboardType = KeyboardType.Number,
-                                    placeholder = "0.0",
-                                    isNightMode = isNightMode
-                                )
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                GlassBox(modifier = Modifier.weight(1f), label = "Λίτρα", icon = R.drawable.ic_fuel, isNightMode = isNightMode, glassColor = glassColor, glassBorderColor = glassBorderColor) {
+                                    GlassTextField(
+                                        value = state.quantity,
+                                        onValueChange = { viewModel.onEvent(AddEditRecordEvent.QuantityChanged(it)) },
+                                        keyboardType = KeyboardType.Number,
+                                        placeholder = "0.0",
+                                        isNightMode = isNightMode
+                                    )
+                                }
+                                GlassBox(modifier = Modifier.weight(1f), label = "€/lt", isNightMode = isNightMode, glassColor = glassColor, glassBorderColor = glassBorderColor) {
+                                    GlassTextField(
+                                        value = state.pricePerUnit,
+                                        onValueChange = { viewModel.onEvent(AddEditRecordEvent.PricePerUnitChanged(it)) },
+                                        keyboardType = KeyboardType.Number,
+                                        placeholder = "0.000",
+                                        isNightMode = isNightMode
+                                    )
+                                }
                             }
-                            GlassBox(modifier = Modifier.weight(1f), label = "€/lt", isNightMode = isNightMode, glassColor = glassColor, glassBorderColor = glassBorderColor) {
-                                GlassTextField(
-                                    value = state.pricePerUnit,
-                                    onValueChange = { viewModel.onEvent(AddEditRecordEvent.PricePerUnitChanged(it)) },
-                                    keyboardType = KeyboardType.Number,
-                                    placeholder = "0.000",
-                                    isNightMode = isNightMode
-                                )
-                            }
-                            GlassBox(modifier = Modifier.weight(1f), label = "Τύπος", isNightMode = isNightMode, glassColor = glassColor, glassBorderColor = glassBorderColor) {
-                                GlassTextField(
-                                    value = state.fuelTypeText,
-                                    onValueChange = { viewModel.onEvent(AddEditRecordEvent.FuelTypeChanged(it)) },
-                                    placeholder = "95",
-                                    isNightMode = isNightMode
-                                )
+
+                            // Fuel Type Selection Chips from Vehicle List
+                            if (state.vehicleFuelTypes.isNotEmpty()) {
+                                GlassBox(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    label = "Τύπος Καυσίμου Οχήματος",
+                                    isNightMode = isNightMode,
+                                    glassColor = glassColor,
+                                    glassBorderColor = glassBorderColor
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        state.vehicleFuelTypes.forEach { fuelType ->
+                                            FuelChip(
+                                                fuelType = fuelType,
+                                                isSelected = state.fuelTypeText == fuelType,
+                                                onClick = { viewModel.onEvent(AddEditRecordEvent.FuelTypeChanged(fuelType)) },
+                                                isNightMode = isNightMode
+                                            )
+                                        }
+
+                                        // Full Tank Toggle Chip
+                                        FuelChip(
+                                            fuelType = "full_tank",
+                                            displayName = "Γέμισμα Ρεζερβουάρ",
+                                            isSelected = state.isFullTank,
+                                            onClick = { viewModel.onEvent(AddEditRecordEvent.ToggleFullTank) },
+                                            isNightMode = isNightMode,
+                                            activeColor = Color(0xFF2196F3)
+                                        )
+                                    }
+                                }
+                            } else {
+                                // Fallback to manual entry if no fuel types defined for vehicle
+                                GlassBox(modifier = Modifier.fillMaxWidth(), label = "Τύπος (Μη ορισμένο)", isNightMode = isNightMode, glassColor = glassColor, glassBorderColor = glassBorderColor) {
+                                    GlassTextField(
+                                        value = state.fuelTypeText,
+                                        onValueChange = { viewModel.onEvent(AddEditRecordEvent.FuelTypeChanged(it)) },
+                                        placeholder = "95",
+                                        isNightMode = isNightMode
+                                    )
+                                }
                             }
                         }
                     }
@@ -406,6 +448,47 @@ fun AddEditRecordScreen(
             ) {
                 DatePicker(state = datePickerState)
             }
+        }
+    }
+}
+
+@Composable
+private fun FuelChip(
+    fuelType: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    isNightMode: Boolean,
+    displayName: String? = null, // ✅ Added
+    activeColor: Color = Color(0xFF4CAF50) // ✅ Added
+) {
+    val finalDisplayName = displayName ?: when (fuelType) {
+        "unleaded_95" -> "95"
+        "unleaded_98" -> "98"
+        "unleaded_100" -> "100"
+        "diesel" -> "Diesel"
+        "lpg" -> "LPG"
+        "electric" -> "Ρεύμα"
+        else -> fuelType
+    }
+    val contentColor = if (isNightMode) Color.White else Color.Black
+    val backgroundColor = if (isSelected) activeColor else contentColor.copy(alpha = 0.1f)
+
+    Surface(
+        onClick = onClick,
+        color = backgroundColor,
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.height(32.dp)
+    ) {
+        Box(
+            modifier = Modifier.padding(horizontal = 12.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = finalDisplayName,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = if (isSelected) Color.White else contentColor
+            )
         }
     }
 }

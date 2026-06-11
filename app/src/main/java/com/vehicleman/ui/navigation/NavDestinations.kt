@@ -11,9 +11,9 @@ object NavDestinations {
     const val ENTRY_LIST_ROUTE = "entry_list_route"
     const val ADD_EDIT_ENTRY_ROUTE = "add_edit_entry_route"
 
-    const val ADD_EDIT_RECORD_ROUTE = "add_edit_record_route"   // ✅ ΝΕΟ
+    const val ADD_EDIT_RECORD_ROUTE = "add_edit_record_route"
     const val STATISTICS_ROUTE = "statistics_route"
-    const val STATISTIC_VEHICLE_ROUTE = "statistic_vehicle_route"
+    const val DETAILED_ANALYSIS_ROUTE = "detailed_analysis_route" // ✅ New Unified Analysis Route
     const val PREFERENCE_ROUTE = "preference_route"
     const val PRO_MODE_ROUTE = "pro_mode_route"
     const val SIGN_UP_ROUTE = "sign_up_route"
@@ -28,56 +28,37 @@ object NavDestinations {
 
     // Argument Keys
     const val VEHICLE_ID_KEY = "vehicleId"
-
-    const val RECORD_ID_KEY = "recordId"                       // ✅ ΝΕΟ
+    const val ANALYSIS_TYPE_KEY = "analysisType" // "vehicle" or "user"
+    const val ANALYSIS_ID_KEY = "analysisId"
+    const val RECORD_ID_KEY = "recordId"
     const val FROM_REMINDER_KEY = "fromReminder"
     const val SUB_DRIVER_ID_KEY = "subDriverId"
     const val FROM_SCREEN_KEY = "fromScreen"
     const val FROM_ID_KEY = "fromId"
 
-    // Screen Identifiers for Navigation
+    // Screen Identifiers
     const val HOME_IDENTIFIER = "home"
     const val RECORD_IDENTIFIER = "record"
+    
+    // Analysis Types
+    const val TYPE_VEHICLE = "vehicle"
+    const val TYPE_USER = "user"
 
-    /**
-     * Helper function to build the route for the Add/Edit Vehicle Form.
-     */
     fun addEditVehicleRoute(vehicleId: String) = "$ADD_EDIT_VEHICLE_ROUTE/$vehicleId"
-
-    /**
-     * Helper function to build the route for the Vehicle Entry List.
-     */
     fun entryListRoute(vehicleId: String) = "$ENTRY_LIST_ROUTE/$vehicleId"
+    fun detailedAnalysisRoute(type: String, id: String) = "$DETAILED_ANALYSIS_ROUTE/$type/$id"
 
-    /**
-     * Helper function to build the route for the Add/Edit Entry Form.
-     */
-    fun addEditEntryRoute(vehicleId: String, entryId: String? = null, fromReminder: Boolean = false): String {
-        val route = if (entryId != null) "$ADD_EDIT_ENTRY_ROUTE/$vehicleId/$entryId" else "$ADD_EDIT_ENTRY_ROUTE/$vehicleId/new"
-        return "$route?${FROM_REMINDER_KEY}=$fromReminder"
-    }
-
-    /**
-     * Helper function to build the route for the Statistic Vehicle Screen.
-     */
-    fun statisticVehicleRoute(vehicleId: String) = "$STATISTIC_VEHICLE_ROUTE/$vehicleId"
-
-    /**
-     * Helper function to build the route for the Statistics Screen.
-     */
     fun statisticsRoute(fromScreen: String, fromId: String? = null) = 
         "$STATISTICS_ROUTE/$fromScreen/${fromId ?: "-1"}"
 
-    /**
-     * Helper function to build the route for the Preference Screen.
-     */
     fun preferenceRoute(fromScreen: String, fromId: String? = null) = 
         "$PREFERENCE_ROUTE/$fromScreen/${fromId ?: "-1"}"
 
-    // Helper route builder for Add/Edit Record
+    fun addEditEntryRoute(vehicleId: String, recordId: String? = null, fromReminder: Boolean = false): String {
+        val rId = recordId ?: "new"
+        return "$ADD_EDIT_ENTRY_ROUTE/$vehicleId/$rId?$FROM_REMINDER_KEY=$fromReminder"
+    }
+
     fun addEditRecordRoute(vehicleId: String, recordId: String? = null): String =
-        if (recordId == null)
-            "$ADD_EDIT_RECORD_ROUTE/$vehicleId/new"
-        else
-            "$ADD_EDIT_RECORD_ROUTE/$vehicleId/$recordId"
+        if (recordId == null) "$ADD_EDIT_RECORD_ROUTE/$vehicleId/new" else "$ADD_EDIT_RECORD_ROUTE/$vehicleId/$recordId"
 }

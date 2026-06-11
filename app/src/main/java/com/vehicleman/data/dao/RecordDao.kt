@@ -33,11 +33,7 @@ interface RecordDao {
     @Query("DELETE FROM records")
     suspend fun deleteAllRecords()
 
-    @Query("""
-    SELECT * FROM records
-    WHERE vehicleId = :vehicleId AND recordType = 'FUEL_UP'
-    ORDER BY date DESC LIMIT 1
-""")
+    @Query("SELECT * FROM records WHERE vehicleId = :vehicleId AND recordType = 'FUEL_UP' ORDER BY date DESC LIMIT 1")
     suspend fun getLastFuelUpRecord(vehicleId: String): RecordEntity?
 
 

@@ -1,22 +1,20 @@
 package com.vehicleman.ui.screens
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,13 +23,13 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,16 +42,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.vehicleman.R
 import com.vehicleman.domain.model.Driver
 import com.vehicleman.presentation.addeditvehicle.VehicleDisplayItem
-import com.vehicleman.presentation.statistics.NavigationState
 import com.vehicleman.presentation.statistics.StatisticsEvent
-import com.vehicleman.presentation.statistics.StatisticsState
 import com.vehicleman.presentation.statistics.StatisticsViewModel
 import com.vehicleman.ui.navigation.NavDestinations
 
@@ -70,12 +68,8 @@ fun StatisticsScreen(
     val navigationState by viewModel.navigationState.collectAsStateWithLifecycle()
 
     LaunchedEffect(navigationState) {
-        navigationState.navigateToDriverStatistics?.let {
-            navController.navigate("DriverStatisticsScreen/$it")
-            viewModel.onEvent(StatisticsEvent.NavigationHandled)
-        }
-        navigationState.navigateToVehicleStatistics?.let {
-            navController.navigate("VehicleStatisticsScreen/$it")
+        navigationState.navigateToDetailedAnalysis?.let { route ->
+            navController.navigate(route)
             viewModel.onEvent(StatisticsEvent.NavigationHandled)
         }
     }
@@ -92,17 +86,19 @@ fun StatisticsScreen(
             containerColor = Color.Transparent,
             topBar = {
                 TopAppBar(
-                    title = { Text("Statistics") },
+                    title = { Text("Statistics", color = Color.White) },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                         }
-                    }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
                 )
             }
         ) { paddingValues ->
             var totalDragAmount by remember { mutableStateOf(0f) }
-            Column(
+            
+            Row(
                 modifier = Modifier
                     .padding(paddingValues)
                     .fillMaxSize()
@@ -114,11 +110,11 @@ fun StatisticsScreen(
                                 totalDragAmount += dragAmount
                             },
                             onDragEnd = {
-                                if (totalDragAmount > 30) { // Swipe Right
+                                if (totalDragAmount > 30) { // Swipe Right to go back
                                     val route = when (fromScreen) {
                                         NavDestinations.HOME_IDENTIFIER -> NavDestinations.HOME_ROUTE
                                         NavDestinations.RECORD_IDENTIFIER -> NavDestinations.entryListRoute(fromId ?: "")
-                                        else -> NavDestinations.HOME_ROUTE // Default fallback
+                                        else -> NavDestinations.HOME_ROUTE
                                     }
                                     navController.navigate(route)
                                 }
@@ -127,31 +123,51 @@ fun StatisticsScreen(
                     }
             ) {
                 if (state.isLoading) {
-                    CircularProgressIndicator()
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = Color.White)
+                    }
                 } else {
-                    // Drivers Section
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        items(state.drivers) { driver ->
-                            DriverCard(driver = driver, onClick = { viewModel.onEvent(StatisticsEvent.OnDriverClick(driver)) })
+                    // Left Column: Vehicles (65%)
+                    Column(modifier = Modifier.weight(0.65f)) {
+                        Text(
+                            "Οχήματα",
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                        LazyColumn(
+                            contentPadding = PaddingValues(start = 16.dp, end = 8.dp, bottom = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(state.vehicles) { vehicle ->
+                                StatisticsVehicleCard(
+                                    vehicle = vehicle,
+                                    onClick = { viewModel.onEvent(StatisticsEvent.OnVehicleClick(vehicle)) }
+                                )
+                            }
                         }
                     }
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp))
-
-                    // Vehicles Section
-                    LazyColumn(
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        items(state.vehicles) { vehicle ->
-                            StatisticsVehicleCard(
-                                vehicle = vehicle,
-                                onClick = { viewModel.onEvent(StatisticsEvent.OnVehicleClick(vehicle)) }
-                            )
+                    // Right Column: Users (35%)
+                    Column(modifier = Modifier.weight(0.35f)) {
+                        Text(
+                            "Χρήστες",
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                        LazyColumn(
+                            contentPadding = PaddingValues(start = 8.dp, end = 16.dp, bottom = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(state.drivers) { driver ->
+                                DriverStatisticsCard(
+                                    driver = driver,
+                                    onClick = { viewModel.onEvent(StatisticsEvent.OnDriverClick(driver)) }
+                                )
+                            }
                         }
                     }
                 }
@@ -161,54 +177,65 @@ fun StatisticsScreen(
 }
 
 @Composable
-fun DriverCard(driver: Driver, onClick: () -> Unit) {
-    val transparentLightGray = Color(0x80D3D3D3)
-    Card(
-        modifier = Modifier.clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = transparentLightGray),
-        border = BorderStroke(1.dp, Color.Black)
-    ) {
-        Text(
-            text = driver.name,
-            modifier = Modifier.padding(16.dp),
-            color = MaterialTheme.colorScheme.onSurface
-        )
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
 fun StatisticsVehicleCard(
     vehicle: VehicleDisplayItem,
     onClick: () -> Unit
 ) {
-    val transparentLightGray = Color(0x80D3D3D3)
+    val glassColor = Color.White.copy(alpha = 0.15f)
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(120.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = transparentLightGray),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        border = BorderStroke(1.dp, Color.Black)
+            .height(110.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = glassColor),
+        border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.3f))
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .combinedClickable(onClick = onClick)
-                .padding(12.dp)
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.Center
         ) {
-            Column(
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 16.dp),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(vehicle.name, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                Text("Πινακίδα: ${vehicle.licensePlate}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
-                Text(vehicle.odometerText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
-                Text("Καύσιμο: ${vehicle.fuelTypes.joinToString(", ")}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
-            }
+            Text(vehicle.name, fontWeight = FontWeight.Bold, color = Color.White, maxLines = 1)
+            Text(vehicle.licensePlate, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
+            Text(vehicle.odometerText, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.8f))
+            Text(
+                vehicle.fuelTypes.joinToString(", "),
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.6f),
+                maxLines = 1
+            )
+        }
+    }
+}
+
+@Composable
+fun DriverStatisticsCard(
+    driver: Driver,
+    onClick: () -> Unit
+) {
+    val glassColor = Color.White.copy(alpha = 0.15f)
+    val isMainUser = driver.driverId == "main_user"
+    
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(80.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isMainUser) Color.Yellow.copy(alpha = 0.2f) else glassColor
+        ),
+        border = BorderStroke(0.5.dp, Color.White.copy(alpha = 0.3f))
+    ) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                text = driver.name,
+                fontWeight = if (isMainUser) FontWeight.ExtraBold else FontWeight.Medium,
+                color = if (isMainUser) Color.Yellow else Color.White,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(4.dp),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
         }
     }
 }

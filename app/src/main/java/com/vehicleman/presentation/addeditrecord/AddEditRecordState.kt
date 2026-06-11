@@ -3,6 +3,7 @@ package com.vehicleman.presentation.addeditrecord
 import com.vehicleman.domain.model.RecordType
 import com.vehicleman.domain.model.category.RecordCategory
 import com.vehicleman.domain.use_case.record_ai.SuggestionItem
+import androidx.compose.ui.text.input.TextFieldValue
 import java.util.Date
 
 data class AddEditRecordState(
@@ -16,6 +17,7 @@ data class AddEditRecordState(
 
     val recordType: RecordType = RecordType.EXPENSE,
     val title: String = "",
+    val titleFieldValue: TextFieldValue = TextFieldValue(""), // ✅ NEW
     val description: String = "",
     val date: Date = Date(),
     val dateText: String = "",
@@ -28,6 +30,7 @@ data class AddEditRecordState(
 
     val fuelType: String? = null,
     val fuelTypeText: String = "",
+    val isFullTank: Boolean = false, // ✅ NEW
 
     val isReminder: Boolean = false,
     val isCompleted: Boolean = false,

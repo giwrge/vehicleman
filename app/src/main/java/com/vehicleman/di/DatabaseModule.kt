@@ -23,7 +23,10 @@ object DatabaseModule {
             app,
             VehicleDatabase::class.java,
             VehicleDatabase.DATABASE_NAME
-        ).fallbackToDestructiveMigration().build()
+        )
+            .addMigrations(VehicleDatabase.MIGRATION_7_8)
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides
