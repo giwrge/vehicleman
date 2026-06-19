@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -59,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.vehicleman.R
+import com.vehicleman.domain.model.Vehicle
 import com.vehicleman.domain.repositories.ProLevel
 import com.vehicleman.domain.repositories.SubDriverType
 import com.vehicleman.domain.repositories.TranslateTitlePreference
@@ -83,10 +86,15 @@ fun PreferenceScreen(
     var showAppInfoDialog by remember { mutableStateOf(false) }
     var showContactDialog by remember { mutableStateOf(false) }
     var showLegalDialog by remember { mutableStateOf(false) }
+    var showFakeDataDialog by remember { mutableStateOf(false) }
+    var showClearDataDialog by remember { mutableStateOf(false) }
+    
     val vehicleSortOrder by viewModel.vehicleSortOrder.collectAsState(initial = VehicleSortOrder.ALPHABETICAL)
     val showAutoReminders by viewModel.showAutoReminders.collectAsState()
     val translateTitlePreference by viewModel.translateTitlePreference.collectAsState()
     val user by viewModel.user.collectAsState()
+    val vehicles by viewModel.vehicles.collectAsState()
+    
     var translatePreferenceExpanded by remember { mutableStateOf(false) }
     
     val contentColor = if (isNightMode) Color.White else Color.Black
@@ -130,6 +138,39 @@ fun PreferenceScreen(
 
     if (showLegalDialog) {
         LegalDialog(onDismiss = { showLegalDialog = false })
+    }
+
+    if (showFakeDataDialog) {
+        FakeDataDialog(
+            vehicles = vehicles,
+            onDismiss = { showFakeDataDialog = false },
+            onPopulate = { vehicleId -> viewModel.populateDatabase(vehicleId) },
+            onDelete = { vehicleId -> viewModel.deleteFakeData(vehicleId) },
+            isNightMode = isNightMode
+        )
+    }
+
+    if (showClearDataDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearDataDialog = false },
+            title = { Text("Διαγραφή Δεδομένων") },
+            text = { Text("Είστε σίγουροι ότι θέλετε να διαγράψετε όλες τις εγγραφές (καύσιμα, service, υπενθυμίσεις) και τους οδηγούς; Τα οχήματά σας δεν θα διαγραφούν.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.clearAllData()
+                        showClearDataDialog = false
+                    }
+                ) {
+                    Text("Διαγραφή", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearDataDialog = false }) {
+                    Text("Ακύρωση")
+                }
+            }
+        )
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -204,10 +245,48 @@ fun PreferenceScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Temporary button to populate database
-                Button(onClick = { viewModel.populateDatabase() }, modifier = Modifier.padding(16.dp)) {
-                    Text("Populate Database with Fake Data")
+                // Database Management
+                Text(text = "Database Management", style = MaterialTheme.typography.titleMedium, color = contentColor, modifier = Modifier.padding(16.dp))
+                PreferenceCard(
+                    brush = dataSyncGradient,
+                    contentColor = contentColor,
+                    modifier = Modifier.clickable { showFakeDataDialog = true }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "Manage Fake Data", style = MaterialTheme.typography.bodyLarge, color = contentColor)
+                            Text(text = "Populate or delete realistic dummy records", style = MaterialTheme.typography.bodySmall, color = contentColor.copy(alpha = 0.7f))
+                        }
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                PreferenceCard(
+                    brush = Brush.verticalGradient(listOf(Color.Red.copy(alpha = 0.2f), Color.Transparent)),
+                    contentColor = contentColor,
+                    modifier = Modifier.clickable { showClearDataDialog = true }
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(text = "Διαγραφή εγγραφών και χρηστών", style = MaterialTheme.typography.bodyLarge, color = Color.Red)
+                            Text(text = "Καθαρισμός ιστορικού και οδηγών χωρίς διαγραφή οχημάτων", style = MaterialTheme.typography.bodySmall, color = contentColor.copy(alpha = 0.7f))
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Button(onClick = { viewModel.resetToFree() }, modifier = Modifier.padding(16.dp)) {
                     Text("Reset to Free")
                 }
@@ -679,7 +758,7 @@ fun AppInfoDialog(onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(onClick = { onDismiss() }) {
                 Text("OK")
             }
         }
@@ -737,8 +816,86 @@ fun LegalDialog(onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(onClick = { onDismiss() }) {
                 Text("OK")
+            }
+        }
+    )
+}
+
+@Composable
+fun FakeDataDialog(
+    vehicles: List<Vehicle>,
+    onDismiss: () -> Unit,
+    onPopulate: (String) -> Unit,
+    onDelete: (String) -> Unit,
+    isNightMode: Boolean
+) {
+    var selectedVehicleId by remember { mutableStateOf(vehicles.firstOrNull()?.id ?: "") }
+    var actionType by remember { mutableStateOf("populate") } // "populate" or "delete"
+
+    val contentColor = if (isNightMode) Color.White else Color.Black
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Manage Fake Data") },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                Text("Select Action:", fontWeight = FontWeight.Bold, color = contentColor)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(selected = actionType == "populate", onClick = { actionType = "populate" })
+                    Text("Populate", modifier = Modifier.clickable { actionType = "populate" }, color = contentColor)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    RadioButton(selected = actionType == "delete", onClick = { actionType = "delete" })
+                    Text("Delete", modifier = Modifier.clickable { actionType = "delete" }, color = contentColor)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text("Select Vehicle:", fontWeight = FontWeight.Bold, color = contentColor)
+                if (vehicles.isEmpty()) {
+                    Text("No vehicles found.", color = Color.Red)
+                } else {
+                    vehicles.forEach { vehicle ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedVehicleId = vehicle.id }
+                                .padding(vertical = 4.dp)
+                        ) {
+                            RadioButton(
+                                selected = selectedVehicleId == vehicle.id,
+                                onClick = { selectedVehicleId = vehicle.id }
+                            )
+                            Text(
+                                text = "${vehicle.name} (${vehicle.plateNumber})",
+                                color = contentColor,
+                                modifier = Modifier.padding(start = 8.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = selectedVehicleId.isNotEmpty(),
+                onClick = {
+                    if (actionType == "populate") {
+                        onPopulate(selectedVehicleId)
+                    } else {
+                        onDelete(selectedVehicleId)
+                    }
+                    onDismiss()
+                }
+            ) {
+                Text("Execute")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
             }
         }
     )
