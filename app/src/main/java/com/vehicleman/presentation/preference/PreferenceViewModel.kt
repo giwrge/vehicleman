@@ -7,6 +7,7 @@ import com.vehicleman.domain.repositories.TranslateTitlePreference
 import com.vehicleman.domain.repositories.User
 import com.vehicleman.domain.repositories.UserPreferencesRepository
 import com.vehicleman.domain.repositories.VehicleSortOrder
+import com.vehicleman.domain.use_case.ClearAllDataExceptVehiclesUseCase
 import com.vehicleman.domain.use_case.RecordUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,7 +19,9 @@ import javax.inject.Inject
 @HiltViewModel
 class PreferenceViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
-    private val recordUseCases: RecordUseCases
+    private val recordUseCases: RecordUseCases,
+    private val vehicleRepository: com.vehicleman.domain.repositories.VehicleRepository,
+    private val clearAllDataExceptVehiclesUseCase: ClearAllDataExceptVehiclesUseCase
 ) : ViewModel() {
 
     val isNightMode = userPreferencesRepository.isNightMode
@@ -35,6 +38,9 @@ class PreferenceViewModel @Inject constructor(
 
     val user = userPreferencesRepository.user
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), User())
+
+    val vehicles = vehicleRepository.getAllVehicles()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList<com.vehicleman.domain.model.Vehicle>())
 
     fun setNightMode(isNightMode: Boolean) {
         viewModelScope.launch {
@@ -71,9 +77,21 @@ class PreferenceViewModel @Inject constructor(
         // TODO: Implement data export
     }
 
-    fun populateDatabase() {
+    fun populateDatabase(vehicleId: String? = null) {
         viewModelScope.launch {
-            recordUseCases.populateDatabaseWithFakeDataUseCase()
+            recordUseCases.populateDatabaseWithFakeDataUseCase(vehicleId)
+        }
+    }
+
+    fun deleteFakeData(vehicleId: String) {
+        viewModelScope.launch {
+            recordUseCases.populateDatabaseWithFakeDataUseCase.deleteFakeData(vehicleId)
+        }
+    }
+
+    fun clearAllData() {
+        viewModelScope.launch {
+            clearAllDataExceptVehiclesUseCase()
         }
     }
 }
